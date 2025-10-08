@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Logs
+logs/
+*.log
+
+# Data
+data/trades.csv
+data/backtest_results.csv
+data/trading_bot.db
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config (optional - wenn du deine persönlichen Configs nicht teilen willst)
+# config/trading_config.json
+
+# Jupyter Notebooks (falls du welche erstellst)
+*.ipynb_checkpoints/
+
+# Distribution
+dist/
+build/
+*.egg-info/
