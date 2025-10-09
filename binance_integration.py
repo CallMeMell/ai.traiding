@@ -447,6 +447,82 @@ class PaperTradingExecutor:
             'win_rate': (len(winning_trades) / len(trades) * 100) if trades else 0,
             'open_positions': len(self.positions)
         }
+    
+    def cancel_order(self, symbol: str, order_id: str) -> bool:
+        """
+        Cancel an order (simulated for paper trading)
+        
+        Note: Paper trading executes orders immediately, so this is mainly
+        for interface compatibility.
+        
+        Args:
+            symbol: Trading symbol
+            order_id: Order ID to cancel
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        logger.info(f"📋 Paper Trading: Order cancellation requested for {order_id}")
+        logger.info(f"   Note: Paper trading orders execute immediately")
+        return True
+    
+    def get_open_orders(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get open orders (always empty for paper trading)
+        
+        Args:
+            symbol: Trading symbol (optional)
+        
+        Returns:
+            Empty list (paper trading executes immediately)
+        """
+        logger.debug("Paper Trading: No open orders (immediate execution)")
+        return []
+    
+    def get_account_balance(self, asset: str = 'USDT') -> Dict[str, float]:
+        """
+        Get account balance
+        
+        Args:
+            asset: Asset symbol (default: 'USDT')
+        
+        Returns:
+            Dictionary with free, locked, and total balance
+        """
+        if asset == 'USDT':
+            return {
+                'free': self.capital,
+                'locked': 0.0,
+                'total': self.capital
+            }
+        
+        # Check if we have a position in this asset
+        for symbol, position in self.positions.items():
+            if asset in symbol:
+                return {
+                    'free': position['quantity'],
+                    'locked': 0.0,
+                    'total': position['quantity']
+                }
+        
+        return {'free': 0.0, 'locked': 0.0, 'total': 0.0}
+    
+    def close_position(self, symbol: str, current_price: float) -> Dict[str, Any]:
+        """
+        Close a position
+        
+        Args:
+            symbol: Trading symbol
+            current_price: Current market price
+        
+        Returns:
+            Result dictionary with trade details
+        """
+        if symbol not in self.positions:
+            logger.warning(f"No position found for {symbol}")
+            return {'status': 'FAILED', 'reason': 'No position'}
+        
+        return self.sell(symbol, current_price)
 
 
 # ========== BEISPIEL-VERWENDUNG ==========
