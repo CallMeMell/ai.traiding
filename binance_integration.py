@@ -20,10 +20,15 @@ from dotenv import load_dotenv
 try:
     from binance.client import Client
     from binance.exceptions import BinanceAPIException
-    from binance import ThreadedWebSocketManager
+    # ThreadedWebSocketManager is optional and not critical for basic functionality
+    try:
+        from binance.streams import ThreadedWebSocketManager
+    except ImportError:
+        ThreadedWebSocketManager = None
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
+    ThreadedWebSocketManager = None
     logging.warning("python-binance nicht installiert. Installiere mit: pip install python-binance")
 
 load_dotenv()
@@ -77,7 +82,7 @@ class BinanceDataProvider:
             logger.warning("⚠️ Binance PRODUCTION Client initialisiert")
         
         # WebSocket Manager (optional)
-        self.ws_manager: Optional[ThreadedWebSocketManager] = None
+        self.ws_manager: Optional[Any] = None  # ThreadedWebSocketManager if available
         
         # Rate Limiting
         self.last_request_time = 0
