@@ -13,6 +13,12 @@ Flask>=3.0.0
 matplotlib>=3.7.0
 plotly>=5.18.0
 
+# Security and Encryption
+cryptography>=41.0.0
+
+# HTTP Requests (for webhooks and alerts)
+requests>=2.31.0
+
 # Optional: For extended features
 # seaborn>=0.12.0    # For visualizations
 # scipy>=1.10.0      # For statistical analysis
