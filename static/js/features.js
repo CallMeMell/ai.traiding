@@ -382,8 +382,8 @@ const Features = {
             <div class="sessions-panel">
                 <div class="panel-header">
                     <div class="filter-controls">
-                        <input type="text" id="sessionSearch" class="form-control" placeholder="Search sessions...">
-                        <select id="sessionFilter" class="form-control">
+                        <input type="text" id="sessionSearch" class="form-control" placeholder="Search sessions..." oninput="Features.loadSessions()">
+                        <select id="sessionFilter" class="form-control" onchange="Features.loadSessions()">
                             <option value="all">All Sessions</option>
                             <option value="profitable">Profitable Only</option>
                             <option value="loss">Loss Only</option>

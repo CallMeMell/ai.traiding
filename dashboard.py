@@ -883,6 +883,8 @@ if FLASK_AVAILABLE:
         print(f"   - http://localhost:{port}/api/trades")
         print(f"   - http://localhost:{port}/api/config")
         print(f"   - http://localhost:{port}/api/status")
+        print(f"   - http://localhost:{port}/api/sessions")
+        print(f"   - http://localhost:{port}/api/sessions/<session_id>")
         print("📊 Drücke Ctrl+C zum Beenden")
         print("=" * 70)
         

@@ -93,6 +93,17 @@ MASTER_VERSION/
 - **Export-Funktionen**: HTML, PNG (Matplotlib), HTML (Plotly)
 - **Persistente Konfiguration**: Browser-Cache/Database Storage
 
+### ✅ View Session Feature 🆕
+- **Session Management**: View and analyze all past trading sessions
+- **Performance Analytics**: Comprehensive metrics for each session (P&L, win rate, trades)
+- **Interactive Charts**: Visualize trade execution prices and patterns with Chart.js
+- **Search & Filter**: Real-time search and filter by profitability
+- **Session Details**: Drill down into individual sessions to see complete execution history
+- **Export Functionality**: Export session data to CSV for further analysis
+- **Responsive UI**: Modern, mobile-friendly interface with dark mode support
+
+📖 **[Read the View Session Guide](VIEW_SESSION_GUIDE.md)** for complete documentation.
+
 ### ✅ Live Market Monitoring 🆕
 - **Real-time Monitoring**: Track multiple trading pairs simultaneously
 - **Strategy Integration**: Automated signal detection with existing strategies
