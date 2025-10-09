@@ -870,127 +870,6 @@ class EnhancedPaperTradingExecutor(BrokerInterface):
         return True
 
 
-class SimulatedLiveTradingBrokerAdapter(BrokerInterface):
-    """
-    Adapter to make SimulatedLiveTradingEnvironment compatible with BrokerInterface
-    
-    Provides realistic trading simulation with slippage, fees, and delays.
-    """
-    
-    def __init__(self, initial_capital: float = 10000.0,
-                 use_live_data: bool = False,
-                 enable_slippage: bool = True,
-                 enable_fees: bool = True,
-                 enable_execution_delay: bool = True,
-                 api_key: Optional[str] = None,
-                 api_secret: Optional[str] = None):
-        """Initialize adapter with simulated environment"""
-        super().__init__(api_key, api_secret, True)
-        
-        from simulated_live_trading import SimulatedLiveTradingEnvironment
-        
-        self.env = SimulatedLiveTradingEnvironment(
-            initial_capital=initial_capital,
-            use_live_data=use_live_data,
-            enable_slippage=enable_slippage,
-            enable_fees=enable_fees,
-            enable_execution_delay=enable_execution_delay
-        )
-        
-        self._initialized = True
-        logger.info(f"✓ Simulated Live Trading Broker initialized")
-    
-    def place_market_order(self, symbol: str, quantity: float, 
-                          side: str, **kwargs) -> Dict[str, Any]:
-        """Place market order through simulated environment"""
-        current_price = kwargs.get('current_price')
-        result = self.env.place_market_order(symbol, quantity, side, current_price)
-        
-        # Convert to standard format
-        return {
-            'order_id': result.order_id,
-            'symbol': result.symbol,
-            'quantity': result.filled_quantity,
-            'side': result.side,
-            'type': result.order_type,
-            'status': result.status,
-            'filled_quantity': result.filled_quantity,
-            'avg_price': result.execution_price,
-            'timestamp': result.timestamp.isoformat(),
-            'fees': result.fees,
-            'slippage': result.slippage,
-            'slippage_percent': result.slippage_percent
-        }
-    
-    def place_limit_order(self, symbol: str, quantity: float, 
-                         side: str, price: float, **kwargs) -> Dict[str, Any]:
-        """Limit orders not yet supported in simulated environment"""
-        raise NotImplementedError("Limit orders not yet supported in simulated environment")
-    
-    def cancel_order(self, symbol: str, order_id: str) -> bool:
-        """Cancel order - not applicable for simulated market orders"""
-        return False
-    
-    def get_order_status(self, symbol: str, order_id: str) -> Dict[str, Any]:
-        """Get order status"""
-        if order_id in self.env.orders:
-            result = self.env.orders[order_id]
-            return {
-                'order_id': result.order_id,
-                'symbol': result.symbol,
-                'status': result.status,
-                'filled_quantity': result.filled_quantity,
-                'avg_price': result.execution_price
-            }
-        return {'status': 'NOT_FOUND'}
-    
-    def get_open_orders(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Get open orders - always empty for market orders"""
-        return []
-    
-    def get_account_balance(self, asset: Optional[str] = None) -> Dict[str, float]:
-        """Get account balance"""
-        balance = self.env.get_account_balance()
-        return {
-            'free': balance['capital'],
-            'locked': 0.0,
-            'total': balance['total_equity']
-        }
-    
-    def get_positions(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Get open positions"""
-        positions = self.env.get_positions()
-        result = []
-        for sym, pos in positions.items():
-            if symbol is None or sym == symbol:
-                result.append({
-                    'symbol': sym,
-                    'quantity': pos['quantity'],
-                    'entry_price': pos['entry_price'],
-                    'current_price': pos['current_price'],
-                    'unrealized_pnl': pos['unrealized_pnl'],
-                    'side': 'LONG'
-                })
-        return result
-    
-    def close_position(self, symbol: str) -> bool:
-        """Close position"""
-        if symbol in self.env.positions:
-            pos = self.env.positions[symbol]
-            current_price = self.env._get_current_price(symbol)
-            self.env.place_market_order(symbol, pos['quantity'], 'SELL', current_price)
-            return True
-        return False
-    
-    def get_performance_metrics(self):
-        """Get comprehensive performance metrics"""
-        return self.env.get_performance_metrics()
-    
-    def save_session_log(self, filepath: str = None):
-        """Save session log"""
-        self.env.save_session_log(filepath)
-
-
 class BrokerFactory:
     """
     Factory class for creating broker instances
@@ -1033,33 +912,6 @@ class BrokerFactory:
                 api_secret=api_secret,
                 paper_trading=True
             )
-        elif broker_type == 'simulated':
-            # Use realistic simulated live-trading environment
-            try:
-                from simulated_live_trading import SimulatedLiveTradingEnvironment
-                
-                initial_capital = kwargs.get('initial_capital', 10000.0)
-                use_live_data = kwargs.get('use_live_data', False)
-                enable_slippage = kwargs.get('enable_slippage', True)
-                enable_fees = kwargs.get('enable_fees', True)
-                enable_execution_delay = kwargs.get('enable_execution_delay', True)
-                
-                return SimulatedLiveTradingBrokerAdapter(
-                    initial_capital=initial_capital,
-                    use_live_data=use_live_data,
-                    enable_slippage=enable_slippage,
-                    enable_fees=enable_fees,
-                    enable_execution_delay=enable_execution_delay
-                )
-            except ImportError:
-                logger.warning("Simulated live trading not available, falling back to paper trading")
-                initial_capital = kwargs.get('initial_capital', 10000.0)
-                return EnhancedPaperTradingExecutor(
-                    initial_capital=initial_capital,
-                    api_key=api_key,
-                    api_secret=api_secret,
-                    paper_trading=True
-                )
         else:
             raise ValueError(f"Unsupported broker type: {broker_type}")
 
@@ -1080,8 +932,8 @@ if __name__ == "__main__":
     print("  Broker API Integration - Example")
     print("=" * 70)
     
-    # Example 1: Paper Trading (Basic)
-    print("\n1. Paper Trading Example (Basic)...")
+    # Example 1: Paper Trading
+    print("\n1. Paper Trading Example...")
     paper_broker = BrokerFactory.create_broker('paper', initial_capital=10000)
     
     # Get balance
@@ -1094,25 +946,6 @@ if __name__ == "__main__":
     
     # Get positions
     positions = paper_broker.get_positions()
-    print(f"Positions: {len(positions)}")
-    
-    # Example 2: Simulated Live Trading (Realistic)
-    print("\n2. Simulated Live Trading Example (Realistic)...")
-    sim_broker = BrokerFactory.create_broker('simulated', initial_capital=10000)
-    
-    # Get balance
-    balance = sim_broker.get_account_balance('USDT')
-    print(f"Balance: ${balance['total']:.2f}")
-    
-    # Place order with realistic conditions
-    order = sim_broker.place_market_order('BTCUSDT', 0.1, 'BUY', current_price=50000)
-    print(f"Order placed: {order['order_id']}")
-    print(f"Execution price: ${order['avg_price']:.2f}")
-    print(f"Slippage: {order['slippage_percent']:.4f}%")
-    print(f"Fees: ${order['fees']:.2f}")
-    
-    # Get positions
-    positions = sim_broker.get_positions()
     print(f"Positions: {len(positions)}")
     
     print("\n✓ Example completed!")

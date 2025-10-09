@@ -122,30 +122,6 @@ class TradingConfig:
     volume_spike_multiplier: float = 2.0  # Volume multiplier for spike detection
     enable_strategy_alerts: bool = True  # Enable alerts for strategy signals
     
-    # ========== SIMULATED LIVE TRADING ==========
-    # Realistic trading simulation parameters
-    enable_slippage: bool = True
-    slippage_min_percent: float = 0.01  # Minimum slippage (0.01%)
-    slippage_max_percent: float = 0.1   # Maximum slippage (0.1%)
-    slippage_volatility_factor: float = 1.5  # Multiplier based on volatility
-    
-    enable_execution_delay: bool = True
-    execution_delay_min_ms: int = 50    # Minimum execution delay (50ms)
-    execution_delay_max_ms: int = 200   # Maximum execution delay (200ms)
-    
-    # Transaction fees (maker/taker model)
-    enable_transaction_fees: bool = True
-    maker_fee_percent: float = 0.075    # Maker fee (0.075%)
-    taker_fee_percent: float = 0.075    # Taker fee (0.075%)
-    
-    # Market impact simulation
-    enable_market_impact: bool = True
-    market_impact_factor: float = 0.001  # Impact per 1% of daily volume
-    
-    # Order book depth simulation
-    simulate_partial_fills: bool = True
-    min_fill_percent: float = 90.0      # Minimum fill percentage for large orders
-    
     def validate(self) -> tuple[bool, Optional[str]]:
         """
         Validiere Konfiguration

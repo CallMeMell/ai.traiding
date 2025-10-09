@@ -103,18 +103,6 @@ MASTER_VERSION/
 
 📖 **[Read the Live Market Monitor Guide](LIVE_MARKET_MONITOR_GUIDE.md)** for complete documentation.
 
-### ✅ Simulated Live-Trading Environment 🆕
-- **Realistic Simulation**: Test strategies with near real-time conditions without risking real money
-- **Order Execution Delays**: Simulates 50-200ms delays typical of real exchanges
-- **Price Slippage**: 0.01-0.1% slippage based on order size and market volatility
-- **Transaction Fees**: Maker/taker fee model (0.075% default)
-- **Market Impact**: Larger orders experience higher slippage
-- **Comprehensive Metrics**: Sharpe ratio, drawdown, P&L, fees, slippage tracking
-- **Live Data Integration**: Can use real market data or simulated price feeds
-- **Session Logging**: Export complete trading session logs with execution details
-
-📖 **[Quick Start Guide](QUICK_START_SIMULATED_TRADING.md)** | **[Full Documentation](SIMULATED_LIVE_TRADING_GUIDE.md)**
-
 ---
 
 ## 🚀 Installation
