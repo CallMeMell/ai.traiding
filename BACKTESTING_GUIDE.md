@@ -539,11 +539,298 @@ metrics = calculate_performance_metrics(
 
 ---
 
+## Batch Backtesting
+
+### Overview
+
+The batch backtesting feature allows you to test multiple strategies simultaneously with the same historical data and compare their performance side-by-side.
+
+### Quick Start
+
+```python
+from batch_backtester import BatchBacktester
+from utils import generate_sample_data
+from strategy import MACrossoverStrategy, RSIStrategy
+
+# Generate data
+data = generate_sample_data(n_bars=1000, start_price=30000)
+
+# Create batch backtester
+batch_tester = BatchBacktester(initial_capital=10000.0, trade_size=100.0)
+
+# Add strategies
+batch_tester.add_strategy(
+    'MA Crossover (20/50)',
+    MACrossoverStrategy({'short_window': 20, 'long_window': 50})
+)
+batch_tester.add_strategy(
+    'RSI Mean Reversion',
+    RSIStrategy({'window': 14, 'oversold_threshold': 35})
+)
+
+# Run batch backtest
+batch_tester.run_batch(data)
+
+# Export results
+batch_tester.export_results(output_dir='data')
+
+# Generate visualizations
+batch_tester.visualize_results(output_dir='data', use_plotly=False)
+```
+
+### Running from Command Line
+
+```bash
+python batch_backtester.py
+```
+
+Follow the interactive prompts to:
+1. Select data source (simulated or CSV)
+2. Set initial capital and trade size
+3. Run batch backtest on all configured strategies
+4. Export results and generate visualizations
+
+### Batch Backtest Output
+
+The batch backtester generates:
+
+1. **Summary CSV**: `batch_backtest_summary.csv`
+   - Strategy names
+   - Total trades, ROI, Win Rate
+   - Sharpe Ratio, Max Drawdown
+   - Best/Worst trades
+
+2. **Individual Trade CSVs**: `trades_<strategy_name>.csv`
+   - Detailed trade history for each strategy
+
+3. **Performance Rankings**:
+   - Strategies sorted by ROI
+   - Top 3 detailed results
+   - Emoji indicators for top performers (🥇🥈🥉)
+
+---
+
+## Visualization Features
+
+### Overview
+
+Visualizations provide clear, interpretable charts for analyzing backtest performance. Both Matplotlib (static) and Plotly (interactive) formats are supported.
+
+### Available Visualizations
+
+#### 1. Equity Curve
+Shows capital growth over time during the backtest.
+
+```python
+from utils import generate_equity_curve_chart
+
+# Generate with Matplotlib (PNG)
+generate_equity_curve_chart(
+    equity_curve,
+    'data/equity_curve.png',
+    use_plotly=False
+)
+
+# Generate with Plotly (HTML)
+generate_equity_curve_chart(
+    equity_curve,
+    'data/equity_curve.html',
+    use_plotly=True
+)
+```
+
+#### 2. Drawdown Chart
+Visualizes peak-to-trough declines in portfolio value.
+
+```python
+from utils import generate_drawdown_chart
+
+generate_drawdown_chart(
+    equity_curve,
+    'data/drawdown.png',
+    use_plotly=False
+)
+```
+
+#### 3. P&L Distribution
+Histogram showing the distribution of profit/loss per trade.
+
+```python
+from utils import generate_pnl_distribution_chart
+
+generate_pnl_distribution_chart(
+    trades,
+    'data/pnl_distribution.png',
+    use_plotly=False
+)
+```
+
+### Integrated Visualization in Backtester
+
+```python
+from backtester import Backtester
+
+backtester = Backtester(initial_capital=10000.0)
+data = generate_sample_data(n_bars=1000)
+
+# Run backtest
+backtester.run(data)
+
+# Generate all visualizations
+charts = backtester.visualize_results(
+    output_dir='data',
+    use_plotly=False  # or True for interactive charts
+)
+
+# Charts contains paths to generated files
+print(charts)
+# Output: {
+#   'equity_curve': 'data/equity_curve.png',
+#   'drawdown': 'data/drawdown.png',
+#   'pnl_distribution': 'data/pnl_distribution.png'
+# }
+```
+
+### Visualization Formats
+
+#### Matplotlib (Static PNG)
+- **Pros**: Fast, lightweight, universally compatible
+- **Cons**: Not interactive
+- **Use case**: Reports, documentation, batch processing
+
+#### Plotly (Interactive HTML)
+- **Pros**: Interactive hover, zoom, pan capabilities
+- **Cons**: Larger file sizes
+- **Use case**: Detailed analysis, presentations
+
+### Batch Visualization
+
+```python
+# After running batch backtest
+batch_tester.visualize_results(output_dir='data', use_plotly=False)
+
+# Generates for each strategy:
+# - equity_<strategy_name>.png
+# - drawdown_<strategy_name>.png
+# - pnl_<strategy_name>.png
+```
+
+---
+
+## API Reference - New Features
+
+### BatchBacktester
+
+```python
+class BatchBacktester:
+    def __init__(self, initial_capital: float = 10000.0, trade_size: float = 100.0)
+    def add_strategy(self, name: str, strategy: Any)
+    def run_batch(self, data: pd.DataFrame)
+    def export_results(self, output_dir: str = "data")
+    def visualize_results(self, output_dir: str = "data", use_plotly: bool = False)
+```
+
+### Visualization Functions
+
+```python
+def generate_equity_curve_chart(
+    equity_curve: list,
+    output_file: str = None,
+    use_plotly: bool = False,
+    title: str = "Equity Curve"
+) -> str
+
+def generate_drawdown_chart(
+    equity_curve: list,
+    output_file: str = None,
+    use_plotly: bool = False,
+    title: str = "Drawdown"
+) -> str
+
+def generate_pnl_distribution_chart(
+    trades: list,
+    output_file: str = None,
+    use_plotly: bool = False,
+    title: str = "P&L Distribution"
+) -> str
+```
+
+### Backtester.visualize_results()
+
+```python
+def visualize_results(
+    self,
+    output_dir: str = "data",
+    use_plotly: bool = False
+) -> Dict[str, str]
+```
+
+Returns dictionary mapping chart type to file path.
+
+---
+
+## Examples
+
+### Example 1: Compare Golden Cross Variations
+
+```python
+from batch_backtester import BatchBacktester
+from golden_cross_strategy import GoldenCrossStrategy
+from utils import generate_sample_data
+
+data = generate_sample_data(n_bars=2000, start_price=30000)
+batch_tester = BatchBacktester(initial_capital=10000.0)
+
+# Test different window combinations
+batch_tester.add_strategy(
+    'Golden Cross (50/200)',
+    GoldenCrossStrategy({'short_window': 50, 'long_window': 200})
+)
+batch_tester.add_strategy(
+    'Golden Cross (20/100)',
+    GoldenCrossStrategy({'short_window': 20, 'long_window': 100})
+)
+batch_tester.add_strategy(
+    'Golden Cross (100/300)',
+    GoldenCrossStrategy({'short_window': 100, 'long_window': 300})
+)
+
+batch_tester.run_batch(data)
+batch_tester.export_results()
+batch_tester.visualize_results(use_plotly=True)
+```
+
+### Example 2: Generate Report with All Visualizations
+
+```python
+from backtester import Backtester
+from utils import generate_sample_data
+
+# Run backtest
+backtester = Backtester(initial_capital=50000.0)
+data = generate_sample_data(n_bars=1500, start_price=40000)
+backtester.run(data)
+
+# Save results
+backtester.save_results('data/my_backtest.csv')
+
+# Generate visualizations
+charts = backtester.visualize_results(output_dir='data/charts', use_plotly=True)
+
+print("Generated charts:")
+for chart_type, path in charts.items():
+    print(f"  {chart_type}: {path}")
+```
+
+---
+
 ## References
 
 - [Sharpe Ratio Explanation](https://www.investopedia.com/terms/s/sharperatio.asp)
 - [Maximum Drawdown](https://www.investopedia.com/terms/m/maximum-drawdown-mdd.asp)
 - [Backtesting Best Practices](https://www.quantstart.com/articles/Backtesting-Systematic-Trading-Strategies-in-Python/)
+- [Matplotlib Documentation](https://matplotlib.org/stable/contents.html)
+- [Plotly Documentation](https://plotly.com/python/)
 
 ---
 
@@ -551,11 +838,11 @@ metrics = calculate_performance_metrics(
 
 For issues or questions:
 1. Check this guide
-2. Review test files for examples
+2. Review test files for examples (especially `test_batch_backtesting.py`)
 3. Run the demo script for interactive help
-4. Check the logs in `logs/backtest_reversal.log`
+4. Check the logs in `logs/trading_bot.log`
 
 ---
 
 **Last Updated**: 2024-10-09
-**Version**: 1.0.0
+**Version**: 2.0.0
