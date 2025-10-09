@@ -16,7 +16,14 @@ from config import config
 from strategy import TradingStrategy
 from utils import setup_logging, TradeLogger, generate_sample_data, validate_ohlcv_data
 
-# Try to import Alpaca integration
+# Try to import Binance integration (Primary)
+try:
+    from binance_integration import BinanceDataProvider, PaperTradingExecutor
+    BINANCE_AVAILABLE = True
+except ImportError:
+    BINANCE_AVAILABLE = False
+
+# Try to import Alpaca integration (Legacy support)
 try:
     from alpaca_integration import AlpacaDataProvider, AlpacaOrderExecutor
     ALPACA_AVAILABLE = True
@@ -30,9 +37,9 @@ is_running = False
 
 class LiveTradingBot:
     """
-    Live Trading Bot with Alpaca API Integration
+    Live Trading Bot with Binance API Integration
     
-    Supports both live trading with Alpaca API and simulated trading.
+    Supports both live trading with Binance API and simulated trading.
     Mode is determined by API key availability.
     """
     
@@ -41,8 +48,8 @@ class LiveTradingBot:
         Initialize Trading Bot
         
         Args:
-            use_live_data: True to use Alpaca API, False for simulation
-            paper_trading: True for paper trading, False for live trading
+            use_live_data: True to use Binance API, False for simulation
+            paper_trading: True for paper trading (testnet), False for live trading
         """
         global logger
         logger = setup_logging(
@@ -56,38 +63,60 @@ class LiveTradingBot:
         logger.info("🚀 LIVE TRADING BOT GESTARTET")
         logger.info("=" * 70)
         
-        # Initialize Alpaca integration if available and requested
-        self.use_live_data = use_live_data and ALPACA_AVAILABLE
+        # Initialize Binance integration if available and requested
+        self.use_live_data = use_live_data and BINANCE_AVAILABLE
         self.paper_trading = paper_trading
-        self.alpaca_data_provider = None
-        self.alpaca_order_executor = None
+        self.binance_data_provider = None
+        self.binance_order_executor = None
+        self.api_type = 'simulation'
         
         if self.use_live_data:
             try:
                 # Check if API keys are available
-                if config.ALPACA_API_KEY and config.ALPACA_SECRET_KEY:
-                    self.alpaca_data_provider = AlpacaDataProvider(paper=paper_trading)
+                if paper_trading:
+                    # Use testnet keys for paper trading
+                    api_key = config.BINANCE_TESTNET_API_KEY or config.BINANCE_API_KEY
+                    api_secret = config.BINANCE_TESTNET_SECRET_KEY or config.BINANCE_SECRET_KEY
+                else:
+                    # Use production keys for live trading
+                    api_key = config.BINANCE_API_KEY
+                    api_secret = config.BINANCE_SECRET_KEY
+                
+                if api_key and api_secret:
+                    self.binance_data_provider = BinanceDataProvider(
+                        api_key=api_key,
+                        api_secret=api_secret,
+                        testnet=paper_trading
+                    )
                     
                     # Test connection
-                    if self.alpaca_data_provider.test_connection():
-                        logger.info("✓ Alpaca Data Provider initialized")
+                    if self.binance_data_provider.test_connection():
+                        logger.info(f"✓ Binance Data Provider initialized ({'Testnet' if paper_trading else 'Live'})")
                         
-                        # Initialize order executor if keys are available
-                        self.alpaca_order_executor = AlpacaOrderExecutor(paper=paper_trading)
-                        logger.info("✓ Alpaca Order Executor initialized")
+                        # Initialize order executor for paper trading
+                        if paper_trading:
+                            self.binance_order_executor = PaperTradingExecutor(
+                                initial_capital=config.initial_capital
+                            )
+                            logger.info("✓ Binance Paper Trading Executor initialized")
+                        else:
+                            # For live trading, we'll use the data provider's order methods
+                            logger.warning("⚠️ Live trading mode - using real orders!")
+                        
+                        self.api_type = 'binance'
                     else:
-                        logger.warning("⚠️ Alpaca connection failed, falling back to simulation")
+                        logger.warning("⚠️ Binance connection failed, falling back to simulation")
                         self.use_live_data = False
-                        self.alpaca_data_provider = None
+                        self.binance_data_provider = None
                 else:
-                    logger.warning("⚠️ Alpaca API keys not found, using simulation mode")
+                    logger.warning("⚠️ Binance API keys not found, using simulation mode")
                     self.use_live_data = False
             except Exception as e:
-                logger.error(f"❌ Error initializing Alpaca: {e}")
+                logger.error(f"❌ Error initializing Binance: {e}")
                 logger.info("Falling back to simulation mode")
                 self.use_live_data = False
-                self.alpaca_data_provider = None
-                self.alpaca_order_executor = None
+                self.binance_data_provider = None
+                self.binance_order_executor = None
         
         if not self.use_live_data:
             logger.info("📊 Running in SIMULATION mode")
@@ -111,37 +140,37 @@ class LiveTradingBot:
         logger.info(f"Update Interval: {config.update_interval}s")
         logger.info(f"Active Strategies: {config.active_strategies}")
         logger.info(f"Cooperation Logic: {config.cooperation_logic}")
-        logger.info(f"Mode: {'LIVE (Alpaca)' if self.use_live_data else 'SIMULATION'}")
-        logger.info(f"Trading Type: {'PAPER' if paper_trading else 'LIVE'}")
+        logger.info(f"Mode: {'LIVE (Binance)' if self.use_live_data else 'SIMULATION'}")
+        logger.info(f"Trading Type: {'PAPER (Testnet)' if paper_trading else 'LIVE'}")
         logger.info("=" * 70)
     
     def initialize_data(self):
-        """Initialize market data (from Alpaca or simulated)"""
-        if self.use_live_data and self.alpaca_data_provider:
+        """Initialize market data (from Binance or simulated)"""
+        if self.use_live_data and self.binance_data_provider:
             try:
-                logger.info(f"Loading historical data from Alpaca for {config.trading_symbol}...")
+                logger.info(f"Loading historical data from Binance for {config.trading_symbol}...")
                 
-                # Convert trading symbol format if needed (BTC/USDT -> BTCUSD)
-                symbol = config.trading_symbol.replace('/', '').replace('USDT', 'USD')
+                # Convert trading symbol format if needed (BTC/USDT -> BTCUSDT)
+                symbol = config.trading_symbol.replace('/', '')
                 
-                # Get historical data from Alpaca
-                self.data = self.alpaca_data_provider.get_historical_bars(
+                # Get historical data from Binance
+                self.data = self.binance_data_provider.get_historical_klines(
                     symbol=symbol,
-                    timeframe='15min',
+                    interval='15m',
                     limit=500
                 )
                 
-                if len(self.data) > 0:
+                if self.data is not None and len(self.data) > 0:
                     self.current_index = len(self.data) - 1
-                    logger.info(f"✓ {len(self.data)} bars loaded from Alpaca")
+                    logger.info(f"✓ {len(self.data)} bars loaded from Binance")
                 else:
-                    logger.warning("No data from Alpaca, falling back to simulation")
+                    logger.warning("No data from Binance, falling back to simulation")
                     self.use_live_data = False
                     self.data = generate_sample_data(n_bars=500, start_price=30000)
                     self.current_index = len(self.data) - 1
                     
             except Exception as e:
-                logger.error(f"Error loading Alpaca data: {e}")
+                logger.error(f"Error loading Binance data: {e}")
                 logger.info("Falling back to simulation mode")
                 self.use_live_data = False
                 self.data = generate_sample_data(n_bars=500, start_price=30000)
@@ -153,15 +182,15 @@ class LiveTradingBot:
             logger.info(f"✓ {len(self.data)} candles generated")
     
     def add_new_candle(self):
-        """Add new candle (from Alpaca or simulated)"""
+        """Add new candle (from Binance or simulated)"""
         if self.data is None:
             return
         
-        if self.use_live_data and self.alpaca_data_provider:
+        if self.use_live_data and self.binance_data_provider:
             try:
-                # Get latest data from Alpaca
-                symbol = config.trading_symbol.replace('/', '').replace('USDT', 'USD')
-                current_price = self.alpaca_data_provider.get_current_price(symbol)
+                # Get latest data from Binance
+                symbol = config.trading_symbol.replace('/', '')
+                current_price = self.binance_data_provider.get_current_price(symbol)
                 
                 if current_price > 0:
                     # Create new candle with current price

@@ -43,6 +43,17 @@ try:
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
+    # Create placeholder classes to avoid NameError
+    TradingClient = None
+    StockHistoricalDataClient = None
+    StockBarsRequest = None
+    StockLatestQuoteRequest = None
+    TimeFrame = None
+    MarketOrderRequest = None
+    LimitOrderRequest = None
+    OrderSide = None
+    TimeInForce = None
+    OrderType = None
     logging.warning("alpaca-py not installed. Install with: pip install alpaca-py")
 
 # Load environment variables from keys.env or .env
