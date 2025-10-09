@@ -138,6 +138,33 @@ LOG_LEVEL=INFO
 
 ## 📊 Verwendung
 
+### 🌐 Dashboard starten (NEU!)
+
+**Professionelles Web-Dashboard mit interaktiven Charts:**
+
+```bash
+# Windows:
+start_dashboard.bat
+
+# Linux/Mac:
+./start_dashboard.sh
+
+# Oder manuell:
+python dashboard.py
+```
+
+Öffne dann http://localhost:5000 im Browser.
+
+**Dashboard Features:**
+- 📈 Live Performance-Metriken (P&L, Win Rate, etc.)
+- 📊 3 Interaktive Charts (Equity Curve, P&L Distribution, Strategy Performance)
+- 📋 Recent Trades Übersicht
+- ⚙️ Bot Configuration Display
+- 🔄 Auto-Refresh alle 30 Sekunden
+- 📱 Responsive Design
+
+**Vollständige Dokumentation:** Siehe [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md)
+
 ### 🏃 Backtest durchführen
 
 Teste deine Strategie mit historischen oder simulierten Daten:
@@ -444,13 +471,14 @@ pip install -r requirements.txt
 
 ## 🚧 Nächste Schritte / TODO
 
+- [x] **Web-Dashboard mit Flask** ✅ (NEU in v1.1!)
+- [x] **Real-time Charting mit Chart.js** ✅ (NEU in v1.1!)
 - [ ] Echte API-Integration (Alpaca, Binance)
 - [ ] Stop-Loss & Take-Profit Mechanik
 - [ ] Trailing Stop Implementation
 - [ ] Position Sizing basierend auf Risiko
 - [ ] Machine Learning für Signal-Optimierung
-- [ ] Web-Dashboard mit Flask/FastAPI
-- [ ] Real-time Charting mit Plotly
+- [ ] WebSocket für Live-Updates ohne Refresh
 - [ ] Telegram/Discord Benachrichtigungen
 - [ ] Database Support (SQLite/PostgreSQL)
 - [ ] Multi-Symbol Trading
@@ -470,6 +498,14 @@ pip install -r requirements.txt
 ---
 
 ## 📝 Version History
+
+**v1.1 - Dashboard Update (Oktober 2024)**
+- ✨ **NEU: Professional Web Dashboard** mit Flask
+- ✨ **NEU: Interaktive Charts** (Equity Curve, P&L, Strategy Performance)
+- ✨ **NEU: Live Performance-Metriken** mit Auto-Refresh
+- 🎨 Moderne UI mit Gradient-Design
+- 📱 Responsive Layout für Mobile/Tablet
+- 🧹 Code-Optimierung: Repository um 433MB reduziert
 
 **v1.0 - Master Version (Oktober 2024)**
 - Konsolidierung aller vier Entwicklungsstufen
