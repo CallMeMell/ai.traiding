@@ -12,11 +12,11 @@ Die Master-Version ist architektonisch produktionsreif, simuliert aber derzeit d
 **WARNUNG:** Trading birgt erhebliche Risiken. Dieser Bot ist primär zu Bildungszwecken gedacht. Teste ausgiebig mit Paper-Trading bevor du echtes Kapital riskierst. Keine Garantie für Profite.
 
 ### Welche Börsen werden unterstützt?
-**PRIMARY**: Alpaca API (Aktien/ETFs/Krypto) - vollständig integriert
-**LEGACY**: Binance (Krypto) - für Abwärtskompatibilität
+**PRIMARY**: Binance API (Krypto) - vollständig integriert, 24/7 Trading
+**LEGACY**: Alpaca API (Aktien/ETFs/Krypto) - für Abwärtskompatibilität
 **ZUKUNFT**: Interactive Brokers, andere via CCXT
 
-Der Bot nutzt primär Alpaca für Live-Trading. Binance-Integration ist weiterhin verfügbar für Legacy-Support.
+Der Bot nutzt primär Binance für Live-Trading. Alpaca-Integration ist weiterhin verfügbar für Legacy-Support.
 
 ---
 
@@ -34,21 +34,24 @@ pip3 install -r requirements.txt
 ### Muss ich API-Keys haben?
 **Nein**, für Backtests und simuliertes Live-Trading sind keine API-Keys nötig. Der Bot läuft im Simulationsmodus ohne Keys.
 
-**Ja**, für echtes Live-Trading mit Alpaca brauchst du API Keys.
+**Ja**, für echtes Live-Trading mit Binance brauchst du API Keys.
 
 ### Wo speichere ich meine API-Keys?
 **NEU**: Erstelle eine `keys.env` Datei im Hauptverzeichnis:
 ```env
 # keys.env
-ALPACA_API_KEY=dein_key_hier
-ALPACA_SECRET_KEY=dein_secret_hier
-ALPACA_BASE_URL=https://paper-api.alpaca.markets
+BINANCE_API_KEY=dein_binance_api_key_hier
+BINANCE_SECRET_KEY=dein_binance_secret_hier
+
+# Für Testnet (Paper Trading)
+BINANCE_TESTNET_API_KEY=dein_testnet_key_hier
+BINANCE_TESTNET_SECRET_KEY=dein_testnet_secret_hier
 ```
 
 **Alternativ**: Nutze `.env` Datei (Kopie von `.env.example`):
 ```env
-ALPACA_API_KEY=dein_key_hier
-ALPACA_SECRET_KEY=dein_secret_hier
+BINANCE_API_KEY=dein_binance_api_key_hier
+BINANCE_SECRET_KEY=dein_binance_secret_hier
 ```
 
 **Wichtig:** 
@@ -341,31 +344,40 @@ if current_price <= stop_loss_price:
     # SELL ausführen
 ```
 
-### Wie integriere ich Alpaca API?
-**NEU**: Alpaca ist bereits vollständig integriert!
+### Wie integriere ich Binance API?
+**NEU**: Binance ist bereits vollständig integriert!
 
 1. **API Keys holen:**
-   - Registriere dich bei https://alpaca.markets/
-   - Erstelle API Keys im Dashboard
-   - Für Paper Trading: https://paper-api.alpaca.markets
+   - Für Testnet (empfohlen): https://testnet.binance.vision/
+   - Für Production: https://www.binance.com/ (Vorsicht!)
+   - Erstelle API Keys mit nur Trading-Rechten (KEINE Withdrawal-Rechte!)
 
 2. **Keys konfigurieren:**
    ```bash
    # Erstelle keys.env Datei
-   cp keys.env keys.env.local
+   cp keys.env.template keys.env
    
    # Füge deine Keys ein:
-   ALPACA_API_KEY=dein_api_key
-   ALPACA_SECRET_KEY=dein_secret_key
-   ALPACA_BASE_URL=https://paper-api.alpaca.markets
+   BINANCE_API_KEY=dein_api_key
+   BINANCE_SECRET_KEY=dein_secret_key
+   
+   # Für Testnet:
+   BINANCE_TESTNET_API_KEY=dein_testnet_key
+   BINANCE_TESTNET_SECRET_KEY=dein_testnet_secret
    ```
 
 3. **Bot starten:**
    ```bash
+   # Paper Trading (Testnet)
    python3 main.py
+   
+   # Golden Cross Bot
+   python3 golden_cross_bot.py --mode paper --symbol BTCUSDT
    ```
    
-Der Bot erkennt automatisch die API Keys und nutzt Alpaca!
+Der Bot erkennt automatisch die API Keys und nutzt Binance!
+
+**WICHTIG**: Starte IMMER mit Testnet zum Testen!
 
 ### Wie erstelle ich eine Web-GUI?
 Nutze FastAPI + React:

@@ -4,6 +4,17 @@
 
 Diese Master-Version konsolidiert die besten Features aus vier Evolutionsstufen in eine produktionsreife, modulare Anwendung.
 
+## 🔥 Now with Binance API Integration!
+
+The bot now uses **Binance API** as the primary trading platform:
+- ✅ **24/7 Cryptocurrency Trading**
+- ✅ **Testnet Support** for risk-free paper trading
+- ✅ **Low Fees** and high liquidity
+- ✅ **1000+ Trading Pairs**
+- ✅ **Production-Ready** with comprehensive error handling
+
+📖 **[Read the Binance Migration Guide](BINANCE_MIGRATION_GUIDE.md)** for detailed setup instructions.
+
 ---
 
 ## 📁 Dateistruktur
@@ -38,12 +49,21 @@ MASTER_VERSION/
 
 ## 🎯 Kern-Features
 
+### ✅ Binance API Integration
+- **Primary Trading Platform**: Binance (Cryptocurrency)
+- **Testnet Support**: Risk-free paper trading
+- **24/7 Trading**: Crypto markets never close
+- **Real-time Data**: Live price feeds and historical data
+- **Order Execution**: Market and limit orders
+- **Legacy Support**: Alpaca API still available
+
 ### ✅ Multi-Strategy System
-- **4 professionelle Strategien:**
+- **5 professionelle Strategien:**
   - **MA Crossover**: Trend-Following mit Moving Averages (mittel- bis langfristig)
   - **RSI Mean Reversion**: Überverkauft/Überkauft Strategie (Seitwärtsmärkte)
   - **Bollinger Bands**: Volatilitäts-Breakout Strategie
   - **EMA Crossover**: Schnelle Trend-Strategie für Daytrading
+  - **LSOB (Long-Short On Breakout)**: Advanced volatility breakout strategy
 
 ### ✅ Signal-Aggregation
 - **AND Logic**: Konservativ - Alle Strategien müssen zustimmen
@@ -69,7 +89,7 @@ MASTER_VERSION/
 - **Interaktive Metriken**: Total P&L, Win Rate, ROI, etc.
 - **Modal-Fenster**: Metriken und Diagramme hinzufügen/entfernen
 - **Mehrere Diagrammtypen**: Line, Bar, Pie Charts
-- **Echtzeitdaten**: Integration mit Alpaca API (simuliert)
+- **Echtzeitdaten**: Integration mit Binance API (or simulation mode)
 - **Export-Funktionen**: HTML, PNG (Matplotlib), HTML (Plotly)
 - **Persistente Konfiguration**: Browser-Cache/Database Storage
 
