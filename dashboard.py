@@ -628,6 +628,150 @@ if FLASK_AVAILABLE:
         _web_dashboard = create_dashboard(trades_file, config_file)
         return _web_dashboard
     
+    def _get_session_list() -> List[Dict[str, Any]]:
+        """
+        Get list of all trading sessions from logs directory
+        
+        Returns:
+            List of session summaries
+        """
+        sessions = []
+        logs_dir = "logs"
+        
+        if not os.path.exists(logs_dir):
+            return sessions
+        
+        # Scan for session log files
+        for filename in os.listdir(logs_dir):
+            if filename.startswith("simulated_trading_session_") and filename.endswith(".log"):
+                filepath = os.path.join(logs_dir, filename)
+                session_data = _parse_session_log(filepath)
+                if session_data:
+                    sessions.append(session_data)
+        
+        # Sort by timestamp (most recent first)
+        sessions.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        return sessions
+    
+    def _parse_session_log(filepath: str) -> Optional[Dict[str, Any]]:
+        """
+        Parse a session log file and extract key metrics
+        
+        Args:
+            filepath: Path to session log file
+            
+        Returns:
+            Dictionary with session summary or None if parsing fails
+        """
+        try:
+            with open(filepath, 'r') as f:
+                content = f.read()
+            
+            # Extract session ID from filename
+            filename = os.path.basename(filepath)
+            session_id = filename.replace("simulated_trading_session_", "").replace(".log", "")
+            
+            # Extract key metrics using simple parsing
+            lines = content.split('\n')
+            session_data = {
+                'id': session_id,
+                'filename': filename,
+                'timestamp': '',
+                'initial_capital': 0.0,
+                'final_equity': 0.0,
+                'total_pnl': 0.0,
+                'total_trades': 0,
+                'win_rate': 0.0,
+                'status': 'completed'
+            }
+            
+            for line in lines:
+                line = line.strip()
+                if line.startswith('Session Start:'):
+                    session_data['timestamp'] = line.split(':', 1)[1].strip()
+                elif line.startswith('Initial Capital:'):
+                    value = line.split('$')[1].replace(',', '')
+                    session_data['initial_capital'] = float(value)
+                elif line.startswith('Final Equity:'):
+                    value = line.split('$')[1].replace(',', '')
+                    session_data['final_equity'] = float(value)
+                elif line.startswith('Total P&L:'):
+                    value = line.split('$')[1].replace(',', '')
+                    session_data['total_pnl'] = float(value)
+                elif line.startswith('total_orders:'):
+                    session_data['total_trades'] = int(line.split(':')[1].strip())
+                elif line.startswith('win_rate:'):
+                    session_data['win_rate'] = float(line.split(':')[1].strip())
+            
+            return session_data
+        except Exception as e:
+            logger.error(f"Error parsing session log {filepath}: {e}")
+            return None
+    
+    def _get_session_details(session_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get detailed information for a specific session
+        
+        Args:
+            session_id: Session ID
+            
+        Returns:
+            Detailed session data or None if not found
+        """
+        logs_dir = "logs"
+        filepath = os.path.join(logs_dir, f"simulated_trading_session_{session_id}.log")
+        
+        if not os.path.exists(filepath):
+            return None
+        
+        try:
+            with open(filepath, 'r') as f:
+                content = f.read()
+            
+            # Parse full session details
+            lines = content.split('\n')
+            session_data = {
+                'id': session_id,
+                'timestamp': '',
+                'metrics': {},
+                'trades': [],
+                'performance': {}
+            }
+            
+            current_section = None
+            current_trade = {}
+            
+            for line in lines:
+                line_stripped = line.strip()
+                
+                if 'PERFORMANCE METRICS' in line:
+                    current_section = 'metrics'
+                    continue
+                elif 'EXECUTION HISTORY' in line:
+                    current_section = 'trades'
+                    continue
+                
+                if current_section == 'metrics' and ':' in line_stripped:
+                    key, value = line_stripped.split(':', 1)
+                    session_data['metrics'][key.strip()] = value.strip()
+                elif current_section == 'trades':
+                    if line_stripped.startswith('Order ID:'):
+                        if current_trade:
+                            session_data['trades'].append(current_trade)
+                        current_trade = {'order_id': line_stripped.split(':', 1)[1].strip()}
+                    elif ':' in line_stripped and current_trade:
+                        key, value = line_stripped.split(':', 1)
+                        current_trade[key.strip().lower().replace(' ', '_')] = value.strip()
+            
+            # Add last trade
+            if current_trade:
+                session_data['trades'].append(current_trade)
+            
+            return session_data
+        except Exception as e:
+            logger.error(f"Error loading session details for {session_id}: {e}")
+            return None
+    
     @app.route('/')
     def index():
         """Main dashboard page"""
@@ -683,6 +827,28 @@ if FLASK_AVAILABLE:
             'status': 'running',
             'last_update': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
+    
+    @app.route('/api/sessions')
+    def api_sessions():
+        """API endpoint for listing trading sessions"""
+        try:
+            sessions = _get_session_list()
+            return jsonify(sessions)
+        except Exception as e:
+            logger.error(f"Error fetching sessions: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/sessions/<session_id>')
+    def api_session_detail(session_id):
+        """API endpoint for session details"""
+        try:
+            session_data = _get_session_details(session_id)
+            if session_data is None:
+                return jsonify({'error': 'Session not found'}), 404
+            return jsonify(session_data)
+        except Exception as e:
+            logger.error(f"Error fetching session {session_id}: {e}")
+            return jsonify({'error': str(e)}), 500
     
     def start_web_dashboard(host: str = '0.0.0.0', port: int = 5000, 
                            trades_file: str = "data/trades.csv",
