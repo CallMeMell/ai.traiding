@@ -1,11 +1,31 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Bot Dashboard</title>
+    <meta name="description" content="Professional Trading Bot Dashboard - Real-time monitoring and analytics">
+    <meta name="theme-color" content="#667eea">
+    <title>Trading Bot Dashboard - Real-time Analytics</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Trading Bot">
+    
+    <!-- External Dependencies -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- Enhanced Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/features.css') }}">
+    
+    <!-- Inline Critical Styles (fallback) -->
     <style>
         * {
             margin: 0;
@@ -241,15 +261,45 @@
         <!-- Header -->
         <div class="header">
             <h1><i class="fas fa-chart-line"></i> Trading Bot Dashboard</h1>
-            <div class="status-badge" id="statusBadge">
-                <i class="fas fa-circle"></i>
-                <span id="statusText">Running</span>
+            <div class="header-right">
+                <button id="themeToggle" class="theme-toggle" title="Toggle Dark Mode" aria-label="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="status-badge" id="statusBadge">
+                    <i class="fas fa-circle"></i>
+                    <span id="statusText">Running</span>
+                </div>
             </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <div class="nav-menu">
+            <button class="nav-button active">
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </button>
+            <button class="nav-button">
+                <i class="fas fa-chart-bar"></i>
+                Strategies
+            </button>
+            <button class="nav-button">
+                <i class="fas fa-history"></i>
+                Trade History
+            </button>
+            <button class="nav-button">
+                <i class="fas fa-cog"></i>
+                Settings
+            </button>
+            <button class="nav-button">
+                <i class="fas fa-plug"></i>
+                Broker Connection
+            </button>
         </div>
         
         <!-- Loading Indicator -->
         <div class="loading" id="loading">
-            <i class="fas fa-spinner fa-spin"></i> Loading...
+            <i class="fas fa-spinner fa-spin"></i>
+            <div class="loading-text">Loading dashboard data...</div>
         </div>
         
         <!-- Metrics Grid -->
@@ -306,244 +356,24 @@
         </button>
     </div>
     
+    <!-- Enhanced Dashboard JavaScript -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/features.js') }}"></script>
+    
+    <!-- Service Worker Registration -->
     <script>
-        // Auto-refresh interval (30 seconds)
-        const AUTO_REFRESH_INTERVAL = 30000;
-        
-        // Chart instances
-        let equityChart = null;
-        let pnlChart = null;
-        let strategyChart = null;
-        
-        // Format currency
-        function formatCurrency(value) {
-            return new Intl.NumberFormat('de-DE', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(value);
-        }
-        
-        // Format percentage
-        function formatPercentage(value) {
-            return value.toFixed(2) + '%';
-        }
-        
-        // Load metrics
-        async function loadMetrics() {
-            try {
-                const response = await fetch('/api/metrics');
-                const metrics = await response.json();
-                
-                const grid = document.getElementById('metricsGrid');
-                grid.innerHTML = '';
-                
-                // Define metrics to display
-                const metricConfigs = [
-                    { key: 'total_pnl', label: 'Total P&L', icon: 'fa-dollar-sign', format: 'currency', checkSign: true },
-                    { key: 'current_capital', label: 'Current Capital', icon: 'fa-wallet', format: 'currency' },
-                    { key: 'total_trades', label: 'Total Trades', icon: 'fa-exchange-alt', format: 'number' },
-                    { key: 'win_rate', label: 'Win Rate', icon: 'fa-percentage', format: 'percentage', checkSign: true },
-                    { key: 'best_trade', label: 'Best Trade', icon: 'fa-trophy', format: 'currency' },
-                    { key: 'worst_trade', label: 'Worst Trade', icon: 'fa-exclamation-triangle', format: 'currency' }
-                ];
-                
-                metricConfigs.forEach(config => {
-                    const value = metrics[config.key] || 0;
-                    const card = document.createElement('div');
-                    card.className = 'metric-card';
-                    
-                    // Add positive/negative class
-                    if (config.checkSign) {
-                        if (value > 0) card.classList.add('positive');
-                        else if (value < 0) card.classList.add('negative');
-                    }
-                    
-                    // Format value
-                    let displayValue = value;
-                    if (config.format === 'currency') {
-                        displayValue = formatCurrency(value);
-                    } else if (config.format === 'percentage') {
-                        displayValue = formatPercentage(value);
-                    } else {
-                        displayValue = value;
-                    }
-                    
-                    card.innerHTML = `
-                        <div class="label">
-                            <i class="fas ${config.icon}"></i>
-                            ${config.label}
-                        </div>
-                        <div class="value">${displayValue}</div>
-                    `;
-                    
-                    grid.appendChild(card);
-                });
-            } catch (error) {
-                console.error('Error loading metrics:', error);
-            }
-        }
-        
-        // Load charts
-        async function loadCharts() {
-            try {
-                const response = await fetch('/api/charts');
-                const chartsData = await response.json();
-                
-                // Equity Curve
-                if (chartsData.pnl_history && chartsData.pnl_history.labels) {
-                    const ctx = document.getElementById('equityChart').getContext('2d');
-                    if (equityChart) equityChart.destroy();
-                    
-                    equityChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: chartsData.pnl_history.labels,
-                            datasets: [{
-                                label: 'Capital',
-                                data: chartsData.pnl_history.values,
-                                borderColor: '#667eea',
-                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                                tension: 0.4,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: false
-                                }
-                            }
-                        }
+        // Register service worker for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/js/service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
                     });
-                }
-                
-                // P&L Distribution
-                if (chartsData.win_loss && chartsData.win_loss.labels) {
-                    const ctx = document.getElementById('pnlChart').getContext('2d');
-                    if (pnlChart) pnlChart.destroy();
-                    
-                    const values = chartsData.win_loss.values || [];
-                    const colors = values.map(v => v >= 0 ? '#10b981' : '#ef4444');
-                    
-                    pnlChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: chartsData.win_loss.labels,
-                            datasets: [{
-                                label: 'P&L',
-                                data: values,
-                                backgroundColor: colors
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            }
-                        }
-                    });
-                }
-                
-                // Strategy Performance
-                if (chartsData.strategy_stats && chartsData.strategy_stats.labels) {
-                    const ctx = document.getElementById('strategyChart').getContext('2d');
-                    if (strategyChart) strategyChart.destroy();
-                    
-                    strategyChart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: chartsData.strategy_stats.labels,
-                            datasets: [{
-                                data: chartsData.strategy_stats.values,
-                                backgroundColor: [
-                                    '#667eea',
-                                    '#764ba2',
-                                    '#f093fb',
-                                    '#4facfe',
-                                    '#00f2fe',
-                                    '#43e97b'
-                                ]
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading charts:', error);
-            }
+            });
         }
-        
-        // Load trades
-        async function loadTrades() {
-            try {
-                const response = await fetch('/api/trades');
-                const trades = await response.json();
-                
-                const tbody = document.getElementById('tradesBody');
-                tbody.innerHTML = '';
-                
-                // Show last 20 trades, newest first
-                const recentTrades = trades.slice(-20).reverse();
-                
-                recentTrades.forEach(trade => {
-                    const row = document.createElement('tr');
-                    
-                    const pnl = parseFloat(trade.pnl || 0);
-                    const pnlClass = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
-                    const typeClass = trade.order_type === 'BUY' ? 'trade-type-buy' : 'trade-type-sell';
-                    
-                    row.innerHTML = `
-                        <td>${trade.timestamp}</td>
-                        <td class="${typeClass}">${trade.order_type}</td>
-                        <td>${formatCurrency(parseFloat(trade.price))}</td>
-                        <td>${trade.quantity}</td>
-                        <td>${trade.triggering_strategies || '-'}</td>
-                        <td class="${pnlClass}">${formatCurrency(pnl)}</td>
-                        <td>${formatCurrency(parseFloat(trade.capital))}</td>
-                    `;
-                    
-                    tbody.appendChild(row);
-                });
-            } catch (error) {
-                console.error('Error loading trades:', error);
-            }
-        }
-        
-        // Load all data
-        async function loadAllData() {
-            document.getElementById('loading').style.display = 'block';
-            
-            try {
-                await Promise.all([
-                    loadMetrics(),
-                    loadCharts(),
-                    loadTrades()
-                ]);
-            } catch (error) {
-                console.error('Error loading data:', error);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
-        }
-        
-        // Initialize
-        loadAllData();
-        
-        // Auto-refresh
-        setInterval(loadAllData, AUTO_REFRESH_INTERVAL);
     </script>
 </body>
 </html>

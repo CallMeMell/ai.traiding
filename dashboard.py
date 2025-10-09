@@ -39,7 +39,8 @@ class DashboardConfig:
         'total_trades',
         'best_trade',
         'worst_trade',
-        'avg_pnl'
+        'avg_pnl',
+        'current_capital'
     ]
     
     DEFAULT_CHARTS = [
@@ -144,6 +145,15 @@ class VisualDashboard:
         """
         trades = load_trades_from_csv(self.trades_file)
         all_metrics = calculate_performance_metrics(trades)
+        
+        # Add current capital from last trade
+        if trades:
+            try:
+                all_metrics['current_capital'] = float(trades[-1].get('capital', 0))
+            except (ValueError, TypeError):
+                all_metrics['current_capital'] = 0.0
+        else:
+            all_metrics['current_capital'] = 0.0
         
         # Filter to only configured metrics
         return {k: v for k, v in all_metrics.items() if k in self.config.metrics}
