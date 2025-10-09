@@ -16,11 +16,16 @@ MASTER_VERSION/
 ├── utils.py               # Logging, Validierung, Hilfsfunktionen
 ├── main.py               # Live-Trading Hauptprogramm
 ├── backtester.py         # Backtesting Engine
+├── dashboard.py          # Visual Dashboard & Charts
+├── dashboard_demo.py     # Dashboard Demo-Anwendung
 ├── requirements.txt      # Python-Abhängigkeiten
 │
 ├── data/                 # Datenverzeichnis (automatisch erstellt)
 │   ├── trades.csv        # Trade-History
-│   └── backtest_results.csv  # Backtest-Ergebnisse
+│   ├── dashboard.html    # Exportiertes Dashboard
+│   ├── dashboard_config.json  # Dashboard-Konfiguration
+│   ├── backtest_results.csv  # Backtest-Ergebnisse
+│   └── charts/           # Generierte Diagramme
 │
 ├── logs/                 # Log-Verzeichnis (automatisch erstellt)
 │   └── trading_bot.log   # Vollständiges Log
@@ -59,6 +64,14 @@ MASTER_VERSION/
 - Zentrale `config.py` für alle Parameter
 - Unterstützung für Umgebungsvariablen (.env)
 - JSON Import/Export für Konfigurationen
+
+### ✅ Visual Dashboard
+- **Interaktive Metriken**: Total P&L, Win Rate, ROI, etc.
+- **Modal-Fenster**: Metriken und Diagramme hinzufügen/entfernen
+- **Mehrere Diagrammtypen**: Line, Bar, Pie Charts
+- **Echtzeitdaten**: Integration mit Alpaca API (simuliert)
+- **Export-Funktionen**: HTML, PNG (Matplotlib), HTML (Plotly)
+- **Persistente Konfiguration**: Browser-Cache/Database Storage
 
 ---
 
@@ -315,6 +328,61 @@ print(trades.describe())
 wins = trades[trades['pnl'] > 0]
 print(f"Win Rate: {len(wins)/len(trades)*100:.2f}%")
 ```
+
+---
+
+## 📊 Visual Dashboard verwenden
+
+Das Enhanced Visual Dashboard bietet umfassende Metriken und Visualisierungen.
+
+### Dashboard-Demo starten
+
+```bash
+python dashboard_demo.py
+```
+
+**Hauptfunktionen:**
+1. **Metriken anzeigen**: Zeigt aktuelle Performance-Metriken
+2. **Modal öffnen**: Verwaltet Metriken und Diagramme
+3. **Charts generieren**: Erstellt interaktive Visualisierungen
+4. **HTML exportieren**: Exportiert Dashboard als HTML-Datei
+
+### Programmatische Verwendung
+
+```python
+from dashboard import create_dashboard, DashboardModal
+
+# Dashboard erstellen
+dashboard = create_dashboard()
+
+# Metriken anzeigen
+dashboard.display_metrics_console()
+
+# HTML exportieren
+dashboard.export_dashboard_html('data/dashboard.html')
+
+# Interaktive Charts generieren
+charts = dashboard.generate_all_charts(use_plotly=True)
+```
+
+### Modal-Verwaltung
+
+```python
+# Modal erstellen und öffnen
+modal = DashboardModal(dashboard)
+modal.open()
+
+# Metrik hinzufügen
+modal.add_metric('custom_roi')
+
+# Chart hinzufügen
+modal.add_chart('line', 'Custom P&L', 'pnl_history')
+
+# Modal schließen
+modal.close()
+```
+
+**Weitere Details:** Siehe [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md)
 
 ---
 
