@@ -10,15 +10,11 @@ import pandas as pd
 import numpy as np
 import logging
 
-# Import LSOB strategy
-try:
-    from lsob_strategy import LSOBStrategy
-    LSOB_AVAILABLE = True
-except ImportError:
-    LSOB_AVAILABLE = False
-    logging.warning("LSOB strategy not available")
-
 logger = logging.getLogger(__name__)
+
+# LSOB strategy will be loaded lazily to avoid circular import
+LSOB_AVAILABLE = False
+LSOBStrategy = None
 
 
 # ========== BASE STRATEGY CLASS ==========
@@ -277,22 +273,27 @@ class StrategyManager:
     - Dynamisches Aktivieren/Deaktivieren
     """
     
-    STRATEGY_MAP = {
-        'ma_crossover': MACrossoverStrategy,
-        'rsi': RSIStrategy,
-        'bollinger_bands': BollingerBandsStrategy,
-        'ema_crossover': EMACrossoverStrategy
-    }
-    
-    # Add LSOB strategy if available
-    if LSOB_AVAILABLE:
-        STRATEGY_MAP['lsob'] = LSOBStrategy
-    
     def __init__(self, config: Dict[str, Any]):
         """
         Args:
             config: Konfiguration mit active_strategies, cooperation_logic, strategies
         """
+        # Initialize strategy map with base strategies
+        self.STRATEGY_MAP = {
+            'ma_crossover': MACrossoverStrategy,
+            'rsi': RSIStrategy,
+            'bollinger_bands': BollingerBandsStrategy,
+            'ema_crossover': EMACrossoverStrategy
+        }
+        
+        # Try to add LSOB strategy (lazy import to avoid circular dependency)
+        try:
+            from lsob_strategy import LSOBStrategy
+            self.STRATEGY_MAP['lsob'] = LSOBStrategy
+            logger.debug("✓ LSOB strategy loaded")
+        except ImportError as e:
+            logger.debug(f"LSOB strategy not available: {e}")
+        
         self.config = config
         self.strategies = {}
         self.cooperation_logic = config.get('cooperation_logic', 'OR')
