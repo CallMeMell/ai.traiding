@@ -51,7 +51,8 @@ class ReversalTrailingStopStrategy:
         stop_loss_percent: float = 2.0,
         take_profit_percent: float = 4.0,
         trailing_stop_percent: float = 1.0,
-        initial_direction: str = 'LONG'
+        initial_direction: str = 'LONG',
+        enable_dynamic_adjustment: bool = True
     ):
         """
         Initialize the Reversal-Trailing-Stop strategy
@@ -62,6 +63,7 @@ class ReversalTrailingStopStrategy:
             take_profit_percent: Take-profit percentage (e.g., 4.0 = 4%)
             trailing_stop_percent: Trailing stop distance percentage (e.g., 1.0 = 1%)
             initial_direction: Initial position direction ('LONG' or 'SHORT')
+            enable_dynamic_adjustment: Enable dynamic parameter adjustment based on volatility
         """
         self.initial_capital = initial_capital
         self.capital = initial_capital
@@ -80,12 +82,21 @@ class ReversalTrailingStopStrategy:
         self.winning_trades = 0
         self.losing_trades = 0
         
+        # Dynamic adjustment parameters
+        self.base_stop_loss_percent = self.stop_loss_percent
+        self.base_take_profit_percent = self.take_profit_percent
+        self.base_trailing_stop_percent = self.trailing_stop_percent
+        self.enable_dynamic_adjustment = enable_dynamic_adjustment
+        self.price_history = []  # Track recent prices for volatility calculation
+        self.volatility_window = 20  # Number of candles for volatility calculation
+        
         logger.info(f"✓ ReversalTrailingStopStrategy initialized")
         logger.info(f"  Initial Capital: ${initial_capital:,.2f}")
         logger.info(f"  Stop Loss: {stop_loss_percent}%")
         logger.info(f"  Take Profit: {take_profit_percent}%")
         logger.info(f"  Trailing Stop: {trailing_stop_percent}%")
         logger.info(f"  Initial Direction: {initial_direction}")
+        logger.info(f"  Dynamic Adjustment: {'Enabled' if self.enable_dynamic_adjustment else 'Disabled'}")
     
     def process_candle(self, candle: pd.Series) -> Dict[str, Any]:
         """
@@ -100,6 +111,16 @@ class ReversalTrailingStopStrategy:
         current_price = candle['close']
         high_price = candle['high']
         low_price = candle['low']
+        
+        # Track price history for volatility calculation
+        self.price_history.append(current_price)
+        if len(self.price_history) > self.volatility_window:
+            self.price_history.pop(0)  # Keep only recent history
+        
+        # Calculate and adjust based on volatility (if enabled)
+        if len(self.price_history) >= 2:
+            volatility = self._calculate_market_volatility()
+            self._adjust_parameters_based_on_volatility(volatility)
         
         result = {
             'action': 'HOLD',
@@ -375,6 +396,81 @@ class ReversalTrailingStopStrategy:
             'lowest_price': self.position.lowest_price,
             'capital': self.capital
         }
+    
+    def _calculate_market_volatility(self) -> float:
+        """
+        Calculate recent market volatility using price history
+        
+        Returns:
+            Volatility as a percentage (standard deviation of returns)
+        """
+        if len(self.price_history) < 2:
+            return 0.0
+        
+        # Calculate returns
+        returns = []
+        for i in range(1, len(self.price_history)):
+            ret = (self.price_history[i] - self.price_history[i-1]) / self.price_history[i-1]
+            returns.append(ret)
+        
+        if not returns:
+            return 0.0
+        
+        # Calculate standard deviation
+        mean_return = sum(returns) / len(returns)
+        variance = sum((r - mean_return) ** 2 for r in returns) / len(returns)
+        volatility = (variance ** 0.5) * 100  # Convert to percentage
+        
+        return volatility
+    
+    def _adjust_parameters_based_on_volatility(self, volatility: float):
+        """
+        Dynamically adjust strategy parameters based on market volatility
+        
+        Args:
+            volatility: Current market volatility (as percentage)
+        
+        Adjusts:
+        - High volatility (>2%): Widen stops to avoid premature exits
+        - Low volatility (<0.5%): Tighten stops to lock in profits faster
+        """
+        if not self.enable_dynamic_adjustment:
+            return
+        
+        # Define volatility thresholds
+        HIGH_VOLATILITY_THRESHOLD = 2.0  # 2% volatility
+        LOW_VOLATILITY_THRESHOLD = 0.5   # 0.5% volatility
+        
+        # Adjustment factors
+        if volatility > HIGH_VOLATILITY_THRESHOLD:
+            # High volatility: Widen stops by 50%
+            adjustment_factor = 1.5
+            adjustment_type = "HIGH VOLATILITY"
+        elif volatility < LOW_VOLATILITY_THRESHOLD:
+            # Low volatility: Tighten stops by 25%
+            adjustment_factor = 0.75
+            adjustment_type = "LOW VOLATILITY"
+        else:
+            # Normal volatility: Use base parameters
+            adjustment_factor = 1.0
+            adjustment_type = "NORMAL VOLATILITY"
+        
+        # Calculate adjusted parameters
+        new_stop_loss = self.base_stop_loss_percent * adjustment_factor
+        new_take_profit = self.base_take_profit_percent * adjustment_factor
+        new_trailing_stop = self.base_trailing_stop_percent * adjustment_factor
+        
+        # Update if parameters have changed significantly
+        if abs(new_stop_loss - self.stop_loss_percent) > 0.001:
+            logger.info(f"🔧 DYNAMIC ADJUSTMENT ({adjustment_type}):")
+            logger.info(f"  Volatility: {volatility:.2f}%")
+            logger.info(f"  Stop Loss: {self.stop_loss_percent*100:.2f}% → {new_stop_loss*100:.2f}%")
+            logger.info(f"  Take Profit: {self.take_profit_percent*100:.2f}% → {new_take_profit*100:.2f}%")
+            logger.info(f"  Trailing Stop: {self.trailing_stop_percent*100:.2f}% → {new_trailing_stop*100:.2f}%")
+            
+            self.stop_loss_percent = new_stop_loss
+            self.take_profit_percent = new_take_profit
+            self.trailing_stop_percent = new_trailing_stop
     
     def get_statistics(self) -> Dict[str, Any]:
         """
