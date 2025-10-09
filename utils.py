@@ -405,3 +405,306 @@ class TradeLogger:
         """Lösche alle Trades"""
         self._initialize_file()
         logging.info("Trade-History gelöscht")
+
+
+# ==============================================================================
+# VISUALIZATION FUNCTIONS
+# ==============================================================================
+
+def generate_equity_curve_chart(equity_curve: list, output_file: str = None, 
+                                use_plotly: bool = False, title: str = "Equity Curve"):
+    """
+    Generate equity curve visualization
+    
+    Args:
+        equity_curve: List of dict with 'timestamp' and 'capital' keys, or list of capital values
+        output_file: Path to save chart (optional)
+        use_plotly: Use Plotly instead of Matplotlib
+        title: Chart title
+    
+    Returns:
+        Path to saved file if output_file provided, else None
+    """
+    import numpy as np
+    
+    # Handle different equity_curve formats
+    if not equity_curve:
+        logging.warning("Empty equity curve")
+        return None
+    
+    if isinstance(equity_curve[0], dict):
+        timestamps = [e.get('timestamp', i) for i, e in enumerate(equity_curve)]
+        capitals = [e['capital'] for e in equity_curve]
+    else:
+        # Simple list of values
+        timestamps = list(range(len(equity_curve)))
+        capitals = equity_curve
+    
+    if use_plotly:
+        try:
+            import plotly.graph_objects as go
+            
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=timestamps,
+                y=capitals,
+                mode='lines',
+                name='Equity',
+                line=dict(color='#2E86AB', width=2)
+            ))
+            
+            fig.update_layout(
+                title=title,
+                xaxis_title='Time',
+                yaxis_title='Capital ($)',
+                template='plotly_white',
+                hovermode='x unified'
+            )
+            
+            if output_file:
+                fig.write_html(output_file)
+                logging.info(f"✓ Equity curve saved to: {output_file}")
+                return output_file
+            else:
+                fig.show()
+                return None
+                
+        except ImportError:
+            logging.warning("Plotly not available, falling back to Matplotlib")
+            use_plotly = False
+    
+    if not use_plotly:
+        try:
+            import matplotlib.pyplot as plt
+            import matplotlib
+            matplotlib.use('Agg')  # Non-interactive backend
+            
+            plt.figure(figsize=(12, 6))
+            plt.plot(timestamps, capitals, linewidth=2, color='#2E86AB')
+            plt.title(title, fontsize=14, fontweight='bold')
+            plt.xlabel('Time', fontsize=12)
+            plt.ylabel('Capital ($)', fontsize=12)
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            
+            if output_file:
+                plt.savefig(output_file, dpi=150, bbox_inches='tight')
+                plt.close()
+                logging.info(f"✓ Equity curve saved to: {output_file}")
+                return output_file
+            else:
+                plt.show()
+                plt.close()
+                return None
+                
+        except ImportError:
+            logging.error("Neither Plotly nor Matplotlib available")
+            return None
+
+
+def generate_drawdown_chart(equity_curve: list, output_file: str = None,
+                            use_plotly: bool = False, title: str = "Drawdown"):
+    """
+    Generate drawdown visualization
+    
+    Args:
+        equity_curve: List of dict with 'timestamp' and 'capital' keys, or list of capital values
+        output_file: Path to save chart (optional)
+        use_plotly: Use Plotly instead of Matplotlib
+        title: Chart title
+    
+    Returns:
+        Path to saved file if output_file provided, else None
+    """
+    import numpy as np
+    
+    # Handle different equity_curve formats
+    if not equity_curve:
+        logging.warning("Empty equity curve")
+        return None
+    
+    if isinstance(equity_curve[0], dict):
+        timestamps = [e.get('timestamp', i) for i, e in enumerate(equity_curve)]
+        capitals = np.array([e['capital'] for e in equity_curve])
+    else:
+        timestamps = list(range(len(equity_curve)))
+        capitals = np.array(equity_curve)
+    
+    # Calculate drawdown
+    running_max = np.maximum.accumulate(capitals)
+    drawdown = (capitals - running_max) / running_max * 100
+    
+    if use_plotly:
+        try:
+            import plotly.graph_objects as go
+            
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=timestamps,
+                y=drawdown,
+                mode='lines',
+                name='Drawdown',
+                fill='tozeroy',
+                line=dict(color='#A23B72', width=2),
+                fillcolor='rgba(162, 59, 114, 0.3)'
+            ))
+            
+            fig.update_layout(
+                title=title,
+                xaxis_title='Time',
+                yaxis_title='Drawdown (%)',
+                template='plotly_white',
+                hovermode='x unified'
+            )
+            
+            if output_file:
+                fig.write_html(output_file)
+                logging.info(f"✓ Drawdown chart saved to: {output_file}")
+                return output_file
+            else:
+                fig.show()
+                return None
+                
+        except ImportError:
+            logging.warning("Plotly not available, falling back to Matplotlib")
+            use_plotly = False
+    
+    if not use_plotly:
+        try:
+            import matplotlib.pyplot as plt
+            import matplotlib
+            matplotlib.use('Agg')
+            
+            plt.figure(figsize=(12, 6))
+            plt.fill_between(range(len(drawdown)), drawdown, 0, 
+                           color='#A23B72', alpha=0.3)
+            plt.plot(drawdown, linewidth=2, color='#A23B72')
+            plt.title(title, fontsize=14, fontweight='bold')
+            plt.xlabel('Time', fontsize=12)
+            plt.ylabel('Drawdown (%)', fontsize=12)
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            
+            if output_file:
+                plt.savefig(output_file, dpi=150, bbox_inches='tight')
+                plt.close()
+                logging.info(f"✓ Drawdown chart saved to: {output_file}")
+                return output_file
+            else:
+                plt.show()
+                plt.close()
+                return None
+                
+        except ImportError:
+            logging.error("Neither Plotly nor Matplotlib available")
+            return None
+
+
+def generate_pnl_distribution_chart(trades: list, output_file: str = None,
+                                   use_plotly: bool = False, title: str = "P&L Distribution"):
+    """
+    Generate P&L distribution histogram
+    
+    Args:
+        trades: List of trade dictionaries with 'pnl' key
+        output_file: Path to save chart (optional)
+        use_plotly: Use Plotly instead of Matplotlib
+        title: Chart title
+    
+    Returns:
+        Path to saved file if output_file provided, else None
+    """
+    import numpy as np
+    
+    # Extract PnL values
+    pnls = []
+    for trade in trades:
+        if 'pnl' in trade and trade['pnl'] != 0:
+            pnl_val = trade['pnl']
+            # Handle string PnL values
+            if isinstance(pnl_val, str):
+                try:
+                    pnl_val = float(pnl_val)
+                except:
+                    continue
+            pnls.append(pnl_val)
+    
+    if not pnls:
+        logging.warning("No P&L data to visualize")
+        return None
+    
+    if use_plotly:
+        try:
+            import plotly.graph_objects as go
+            
+            fig = go.Figure()
+            fig.add_trace(go.Histogram(
+                x=pnls,
+                nbinsx=30,
+                marker_color='#18A558',
+                opacity=0.7,
+                name='P&L'
+            ))
+            
+            # Add vertical line at zero
+            fig.add_vline(x=0, line_dash="dash", line_color="red", opacity=0.5)
+            
+            fig.update_layout(
+                title=title,
+                xaxis_title='P&L ($)',
+                yaxis_title='Frequency',
+                template='plotly_white',
+                showlegend=False
+            )
+            
+            if output_file:
+                fig.write_html(output_file)
+                logging.info(f"✓ P&L distribution saved to: {output_file}")
+                return output_file
+            else:
+                fig.show()
+                return None
+                
+        except ImportError:
+            logging.warning("Plotly not available, falling back to Matplotlib")
+            use_plotly = False
+    
+    if not use_plotly:
+        try:
+            import matplotlib.pyplot as plt
+            import matplotlib
+            matplotlib.use('Agg')
+            
+            plt.figure(figsize=(12, 6))
+            
+            # Separate wins and losses
+            wins = [p for p in pnls if p > 0]
+            losses = [p for p in pnls if p < 0]
+            
+            # Plot histogram
+            if wins:
+                plt.hist(wins, bins=20, color='#18A558', alpha=0.7, label='Wins')
+            if losses:
+                plt.hist(losses, bins=20, color='#D32F2F', alpha=0.7, label='Losses')
+            
+            plt.axvline(x=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+            plt.title(title, fontsize=14, fontweight='bold')
+            plt.xlabel('P&L ($)', fontsize=12)
+            plt.ylabel('Frequency', fontsize=12)
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            
+            if output_file:
+                plt.savefig(output_file, dpi=150, bbox_inches='tight')
+                plt.close()
+                logging.info(f"✓ P&L distribution saved to: {output_file}")
+                return output_file
+            else:
+                plt.show()
+                plt.close()
+                return None
+                
+        except ImportError:
+            logging.error("Neither Plotly nor Matplotlib available")
+            return None

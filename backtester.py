@@ -13,7 +13,9 @@ from strategy import TradingStrategy
 from utils import (
     setup_logging, TradeLogger, generate_sample_data,
     validate_ohlcv_data, calculate_performance_metrics,
-    format_currency, format_percentage
+    format_currency, format_percentage,
+    generate_equity_curve_chart, generate_drawdown_chart,
+    generate_pnl_distribution_chart
 )
 
 logger = None
@@ -266,6 +268,68 @@ class Backtester:
         df = pd.DataFrame(self.trades)
         df.to_csv(filepath, index=False, encoding='utf-8')
         logger.info(f"✓ Backtest-Ergebnisse gespeichert: {filepath}")
+    
+    def visualize_results(self, output_dir: str = "data", use_plotly: bool = False):
+        """
+        Generate visualizations of backtest results
+        
+        Args:
+            output_dir: Directory to save visualizations
+            use_plotly: Use Plotly instead of Matplotlib
+        
+        Returns:
+            Dictionary with paths to generated charts
+        """
+        import os
+        os.makedirs(output_dir, exist_ok=True)
+        
+        logger.info("\n" + "=" * 70)
+        logger.info("📊 GENERATING VISUALIZATIONS")
+        logger.info("=" * 70)
+        
+        charts = {}
+        ext = '.html' if use_plotly else '.png'
+        
+        # 1. Equity Curve
+        if self.equity_curve:
+            equity_file = os.path.join(output_dir, f"equity_curve{ext}")
+            result = generate_equity_curve_chart(
+                self.equity_curve, 
+                equity_file, 
+                use_plotly=use_plotly,
+                title="Equity Curve - Backtest Results"
+            )
+            if result:
+                charts['equity_curve'] = result
+        
+        # 2. Drawdown Chart
+        if self.equity_curve:
+            drawdown_file = os.path.join(output_dir, f"drawdown{ext}")
+            result = generate_drawdown_chart(
+                self.equity_curve,
+                drawdown_file,
+                use_plotly=use_plotly,
+                title="Drawdown - Backtest Results"
+            )
+            if result:
+                charts['drawdown'] = result
+        
+        # 3. P&L Distribution
+        if self.trades:
+            pnl_file = os.path.join(output_dir, f"pnl_distribution{ext}")
+            result = generate_pnl_distribution_chart(
+                self.trades,
+                pnl_file,
+                use_plotly=use_plotly,
+                title="P&L Distribution - Per Trade"
+            )
+            if result:
+                charts['pnl_distribution'] = result
+        
+        logger.info(f"✓ Generated {len(charts)} visualization(s)")
+        logger.info("=" * 70 + "\n")
+        
+        return charts
 
 
 def main():
