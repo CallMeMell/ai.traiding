@@ -60,6 +60,14 @@ MASTER_VERSION/
 - Unterstützung für Umgebungsvariablen (.env)
 - JSON Import/Export für Konfigurationen
 
+### ✅ Visual Dashboard
+- **Interaktive Benutzeroberfläche** zur Performance-Überwachung
+- **Echtzeit-Statistiken**: P&L, ROI, Win Rate, Anzahl Trades
+- **Interaktive Diagramme**: Gewinn/Verlust und Kapitalentwicklung
+- **Trade-History**: Übersicht der letzten Trades
+- **Keine externen Abhängigkeiten**: Pure HTML/CSS/JavaScript
+- Siehe [DASHBOARD_README.md](DASHBOARD_README.md) für Details
+
 ---
 
 ## 🚀 Installation
@@ -190,6 +198,26 @@ python main.py
 - Gibt BUY/SELL Signale basierend auf Cooperation Logic
 - Protokolliert alle Trades in `data/trades.csv`
 - Zeigt Live-Updates im Terminal und Log-Datei
+
+### 📊 Dashboard öffnen
+
+Überwache die Bot-Performance in Echtzeit mit dem visuellen Dashboard:
+
+```bash
+# Öffne dashboard.html in deinem Browser
+# Oder starte einen lokalen Server:
+python -m http.server 8000
+# Dann öffne: http://localhost:8000/dashboard.html
+```
+
+**Dashboard Features:**
+- 📈 Gewinn/Verlust Visualisierung
+- 💰 Kapitalentwicklung über Zeit
+- 🎯 Trading-Statistiken (ROI, Win Rate, etc.)
+- 📜 Liste der letzten Trades
+- 🔄 Auto-Refresh alle 10 Sekunden
+
+Siehe [DASHBOARD_README.md](DASHBOARD_README.md) für Details.
 
 **Beenden:** Drücke `Ctrl+C` für sauberes Shutdown
 
