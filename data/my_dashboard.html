@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading Bot Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 5px;
+        }
+        .charts {
+            margin-top: 30px;
+        }
+        .timestamp {
+            text-align: right;
+            color: #999;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>📊 Trading Bot Dashboard</h1>
+        
+        <div class="metrics">
+
+            <div class="metric-card">
+                <div class="metric-label">Total Trades</div>
+                <div class="metric-value">$6.00</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Total Pnl</div>
+                <div class="metric-value">$900.00</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Win Rate</div>
+                <div class="metric-value">33.33%</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Best Trade</div>
+                <div class="metric-value">$600.00</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Worst Trade</div>
+                <div class="metric-value">$-200.00</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Avg Pnl</div>
+                <div class="metric-value">$150.00</div>
+            </div>
+
+        </div>
+        
+        <div class="charts">
+            <h2>Charts</h2>
+            <p><em>Charts can be generated using generate_all_charts() method</em></p>
+        </div>
+        
+        <div class="timestamp">
+            Generated: 2025-10-09 01:36:25
+        </div>
+    </div>
+</body>
+</html>

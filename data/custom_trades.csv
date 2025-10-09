@@ -1,0 +1,3 @@
+timestamp,symbol,order_type,price,quantity,triggering_strategies,capital,pnl
+2024-01-01T09:00:00,ETH/USDT,BUY,2000.00,50,"macd, rsi",5000.00,0.00
+2024-01-01T10:00:00,ETH/USDT,SELL,2100.00,50,"macd, rsi",5500.00,500.00
