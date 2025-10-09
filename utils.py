@@ -195,6 +195,127 @@ def calculate_max_drawdown(equity_curve: list) -> tuple:
     return max_dd_percent, max_dd_value, peak_value, trough_value
 
 
+def calculate_calmar_ratio(total_return: float, max_drawdown_percent: float) -> float:
+    """
+    Berechne Calmar Ratio (Return / Max Drawdown)
+    
+    Args:
+        total_return: Gesamtrendite in Prozent
+        max_drawdown_percent: Maximum Drawdown in Prozent (negative Zahl)
+    
+    Returns:
+        Calmar Ratio
+    """
+    if max_drawdown_percent == 0 or max_drawdown_percent >= 0:
+        return 0.0
+    
+    # Calmar Ratio = Annualized Return / Absolute Max Drawdown
+    calmar = total_return / abs(max_drawdown_percent)
+    
+    return calmar
+
+
+def calculate_volatility(equity_curve: list) -> float:
+    """
+    Berechne Volatilität (Standardabweichung der Renditen)
+    
+    Args:
+        equity_curve: Liste von Kapitalwerten
+    
+    Returns:
+        Volatilität (annualisiert)
+    """
+    import numpy as np
+    
+    if not equity_curve or len(equity_curve) < 2:
+        return 0.0
+    
+    equity_array = np.array(equity_curve)
+    
+    # Berechne Renditen
+    returns = np.diff(equity_array) / equity_array[:-1]
+    
+    # Berechne Standardabweichung
+    volatility = np.std(returns)
+    
+    # Annualisiere (angenommen täglich, 252 Handelstage)
+    volatility_annualized = volatility * np.sqrt(252)
+    
+    return volatility_annualized
+
+
+def calculate_avg_trade_duration(trades: list) -> float:
+    """
+    Berechne durchschnittliche Trade-Dauer
+    
+    Args:
+        trades: Liste von Trade-Dictionaries mit Zeitstempeln
+    
+    Returns:
+        Durchschnittliche Dauer in Sekunden (0 wenn nicht berechenbar)
+    """
+    from datetime import datetime
+    
+    if not trades or len(trades) < 2:
+        return 0.0
+    
+    durations = []
+    entry_time = None
+    
+    for trade in trades:
+        # Parse timestamp
+        timestamp_str = trade.get('timestamp', '')
+        if not timestamp_str:
+            continue
+            
+        try:
+            timestamp = datetime.fromisoformat(timestamp_str)
+        except:
+            continue
+        
+        trade_type = trade.get('type', trade.get('order_type', ''))
+        
+        # BUY = Entry, SELL = Exit
+        if trade_type in ['BUY', 'LONG']:
+            entry_time = timestamp
+        elif trade_type in ['SELL', 'SHORT'] and entry_time:
+            duration = (timestamp - entry_time).total_seconds()
+            durations.append(duration)
+            entry_time = None
+    
+    if not durations:
+        return 0.0
+    
+    return sum(durations) / len(durations)
+
+
+def calculate_profit_factor(trades: list) -> float:
+    """
+    Berechne Profit Factor (Gross Profit / Gross Loss)
+    
+    Args:
+        trades: Liste von Trade-Dictionaries mit PnL
+    
+    Returns:
+        Profit Factor
+    """
+    if not trades:
+        return 0.0
+    
+    pnls = [float(t.get('pnl', 0)) for t in trades if t.get('pnl', '0') != '0.00']
+    
+    if not pnls:
+        return 0.0
+    
+    gross_profit = sum(p for p in pnls if p > 0)
+    gross_loss = abs(sum(p for p in pnls if p < 0))
+    
+    if gross_loss == 0:
+        return float('inf') if gross_profit > 0 else 0.0
+    
+    return gross_profit / gross_loss
+
+
 def calculate_performance_metrics(trades: list, equity_curve: list = None, initial_capital: float = 10000.0) -> dict:
     """
     Berechne Performance-Metriken aus Trade-Liste
@@ -217,7 +338,11 @@ def calculate_performance_metrics(trades: list, equity_curve: list = None, initi
             'avg_pnl': 0.0,
             'sharpe_ratio': 0.0,
             'max_drawdown': 0.0,
-            'max_drawdown_value': 0.0
+            'max_drawdown_value': 0.0,
+            'calmar_ratio': 0.0,
+            'volatility': 0.0,
+            'avg_trade_duration': 0.0,
+            'profit_factor': 0.0
         }
     
     pnls = [float(t.get('pnl', 0)) for t in trades if t.get('pnl', '0') != '0.00']
@@ -245,6 +370,23 @@ def calculate_performance_metrics(trades: list, equity_curve: list = None, initi
         max_drawdown = max_dd_percent
         max_drawdown_value = max_dd_value
     
+    # Berechne Calmar Ratio
+    calmar_ratio = 0.0
+    if equity_curve and len(equity_curve) >= 2:
+        total_return = ((equity_curve[-1] - equity_curve[0]) / equity_curve[0]) * 100
+        calmar_ratio = calculate_calmar_ratio(total_return, max_drawdown)
+    
+    # Berechne Volatilität
+    volatility = 0.0
+    if equity_curve and len(equity_curve) >= 2:
+        volatility = calculate_volatility(equity_curve)
+    
+    # Berechne durchschnittliche Trade-Dauer
+    avg_trade_duration = calculate_avg_trade_duration(trades)
+    
+    # Berechne Profit Factor
+    profit_factor = calculate_profit_factor(trades)
+    
     return {
         'total_trades': total_trades,
         'total_pnl': total_pnl,
@@ -254,7 +396,11 @@ def calculate_performance_metrics(trades: list, equity_curve: list = None, initi
         'avg_pnl': avg_pnl,
         'sharpe_ratio': sharpe_ratio,
         'max_drawdown': max_drawdown,
-        'max_drawdown_value': max_drawdown_value
+        'max_drawdown_value': max_drawdown_value,
+        'calmar_ratio': calmar_ratio,
+        'volatility': volatility,
+        'avg_trade_duration': avg_trade_duration,
+        'profit_factor': profit_factor
     }
 
 

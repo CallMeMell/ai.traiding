@@ -206,34 +206,40 @@ class Backtester:
         logger.info(f"  Total P&L:        {format_currency(total_pnl)}")
         logger.info(f"  ROI:              {format_percentage(roi)}")
         
-        # Trade-Statistiken
+        # Trade-Statistiken mit erweiterten Metriken
         if self.trades:
             sell_trades = [t for t in self.trades if t['type'] == 'SELL']
             
             if sell_trades:
-                pnls = [t['pnl'] for t in sell_trades]
-                wins = [p for p in pnls if p > 0]
-                losses = [p for p in pnls if p < 0]
+                # Erstelle Equity Curve für Metriken
+                equity_values = [eq['capital'] for eq in self.equity_curve] if self.equity_curve else None
                 
-                win_rate = (len(wins) / len(pnls)) * 100 if pnls else 0
-                avg_win = sum(wins) / len(wins) if wins else 0
-                avg_loss = sum(losses) / len(losses) if losses else 0
-                best_trade = max(pnls)
-                worst_trade = min(pnls)
+                # Berechne alle Metriken mit neuer Funktion
+                metrics = calculate_performance_metrics(
+                    sell_trades,
+                    equity_curve=equity_values,
+                    initial_capital=self.initial_capital
+                )
                 
                 logger.info(f"\n📈 TRADES:")
-                logger.info(f"  Total Trades:     {len(sell_trades)}")
-                logger.info(f"  Winning Trades:   {len(wins)}")
-                logger.info(f"  Losing Trades:    {len(losses)}")
-                logger.info(f"  Win Rate:         {format_percentage(win_rate)}")
-                logger.info(f"  Average Win:      {format_currency(avg_win)}")
-                logger.info(f"  Average Loss:     {format_currency(avg_loss)}")
-                logger.info(f"  Best Trade:       {format_currency(best_trade)}")
-                logger.info(f"  Worst Trade:      {format_currency(worst_trade)}")
+                logger.info(f"  Total Trades:     {metrics['total_trades']}")
+                logger.info(f"  Win Rate:         {format_percentage(metrics['win_rate'])}")
+                logger.info(f"  Best Trade:       {format_currency(metrics['best_trade'])}")
+                logger.info(f"  Worst Trade:      {format_currency(metrics['worst_trade'])}")
+                logger.info(f"  Average P&L:      {format_currency(metrics['avg_pnl'])}")
+                logger.info(f"  Profit Factor:    {metrics['profit_factor']:.2f}")
                 
-                if avg_loss != 0:
-                    profit_factor = abs(sum(wins) / sum(losses)) if losses else float('inf')
-                    logger.info(f"  Profit Factor:    {profit_factor:.2f}")
+                # Erweiterte Metriken
+                logger.info(f"\n📊 ERWEITERTE METRIKEN:")
+                logger.info(f"  Sharpe Ratio:     {metrics['sharpe_ratio']:.2f}")
+                logger.info(f"  Max Drawdown:     {format_percentage(metrics['max_drawdown'])}")
+                logger.info(f"  Calmar Ratio:     {metrics['calmar_ratio']:.2f}")
+                logger.info(f"  Volatility:       {format_percentage(metrics['volatility'] * 100)}")
+                
+                if metrics['avg_trade_duration'] > 0:
+                    # Convert seconds to hours
+                    avg_hours = metrics['avg_trade_duration'] / 3600
+                    logger.info(f"  Avg Trade Duration: {avg_hours:.2f} hours")
         
         # Strategie-Breakdown
         strategy_counts = {}

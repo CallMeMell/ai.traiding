@@ -12,7 +12,7 @@ from typing import Optional
 from strategy_core import ReversalTrailingStopStrategy
 from utils import (
     setup_logging, generate_sample_data, validate_ohlcv_data,
-    calculate_sharpe_ratio, calculate_max_drawdown,
+    calculate_sharpe_ratio, calculate_max_drawdown, calculate_performance_metrics,
     format_currency, format_percentage
 )
 
@@ -203,24 +203,28 @@ class ReversalBacktester:
                 profit_factor = total_wins / total_losses if total_losses > 0 else float('inf')
                 logger.info(f"  Profit Factor:    {profit_factor:.2f}")
         
-        # Advanced metrics
+        # Advanced metrics using calculate_performance_metrics
         logger.info(f"\n📊 ADVANCED METRICS:")
         
-        # Sharpe Ratio
-        if self.returns and len(self.returns) >= 2:
-            sharpe = calculate_sharpe_ratio(self.returns)
-            logger.info(f"  Sharpe Ratio:     {sharpe:.3f}")
+        # Calculate comprehensive metrics
+        if self.strategy.trades:
+            metrics = calculate_performance_metrics(
+                self.strategy.trades,
+                equity_curve=self.equity_curve,
+                initial_capital=stats['initial_capital']
+            )
+            
+            logger.info(f"  Sharpe Ratio:     {metrics['sharpe_ratio']:.3f}")
+            logger.info(f"  Max Drawdown:     {format_percentage(metrics['max_drawdown'])}")
+            logger.info(f"  Calmar Ratio:     {metrics['calmar_ratio']:.3f}")
+            logger.info(f"  Volatility:       {format_percentage(metrics['volatility'] * 100)}")
+            logger.info(f"  Profit Factor:    {metrics['profit_factor']:.2f}")
+            
+            if metrics['avg_trade_duration'] > 0:
+                avg_hours = metrics['avg_trade_duration'] / 3600
+                logger.info(f"  Avg Trade Duration: {avg_hours:.2f} hours")
         else:
-            logger.info(f"  Sharpe Ratio:     N/A (insufficient data)")
-        
-        # Maximum Drawdown
-        if self.equity_curve and len(self.equity_curve) >= 2:
-            max_dd_percent, max_dd_value, peak, trough = calculate_max_drawdown(self.equity_curve)
-            logger.info(f"  Max Drawdown:     {format_percentage(max_dd_percent)} ({format_currency(max_dd_value)})")
-            logger.info(f"    Peak:           {format_currency(peak)}")
-            logger.info(f"    Trough:         {format_currency(trough)}")
-        else:
-            logger.info(f"  Max Drawdown:     N/A (insufficient data)")
+            logger.info(f"  No trades available for advanced metrics")
         
         # Summary interpretation
         logger.info(f"\n💡 PERFORMANCE SUMMARY:")
