@@ -30,6 +30,13 @@ try:
 except ImportError:
     ALPACA_AVAILABLE = False
 
+# Try to import unified Broker API (New unified interface)
+try:
+    from broker_api import BrokerFactory, BrokerInterface
+    BROKER_API_AVAILABLE = True
+except ImportError:
+    BROKER_API_AVAILABLE = False
+
 # Globale Variablen
 logger = None
 is_running = False
@@ -142,6 +149,12 @@ class LiveTradingBot:
         logger.info(f"Cooperation Logic: {config.cooperation_logic}")
         logger.info(f"Mode: {'LIVE (Binance)' if self.use_live_data else 'SIMULATION'}")
         logger.info(f"Trading Type: {'PAPER (Testnet)' if paper_trading else 'LIVE'}")
+        
+        # Log broker API availability
+        if BROKER_API_AVAILABLE:
+            logger.info("✓ Unified Broker API available")
+            logger.info("  Use broker_api.py for advanced trading features")
+        
         logger.info("=" * 70)
     
     def initialize_data(self):
