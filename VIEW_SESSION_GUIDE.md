@@ -16,9 +16,11 @@ The **View Session** feature provides a comprehensive interface for viewing, ana
   - Total number of trades
   - Win rate percentage
 
-- **Search and Filter**:
+- **Advanced Search and Filter**:
   - Real-time search by session ID or timestamp
   - Filter sessions by performance (All, Profitable Only, Loss Only)
+  - **NEW**: Date range filter (From Date / To Date)
+  - **NEW**: Clear Filters button to reset all filters
   - Automatic refresh when filters change
 
 ### 📈 Session Detail View
@@ -30,17 +32,25 @@ Click "View Details" on any session to see:
   - Final Equity
   - Total P&L
   - Total Trades
-  - Win Rate
-  - Sharpe Ratio
 
-- **Interactive Charts**:
-  - Trades Timeline: Visualizes execution prices over time
-  - Built with Chart.js for smooth, responsive charts
+- **Interactive Trade Filters** (NEW):
+  - Filter by Trade Type (All, Buy Orders, Sell Orders)
+  - Filter by Status (All, Filled, Partial, Cancelled)
+  - Filter by Symbol (All, or specific trading pairs)
+  - Real-time filtering of execution history table
+
+- **Enhanced Interactive Charts** (NEW):
+  - **Cumulative P&L Over Time**: Line chart showing profit/loss progression
+  - **Win/Loss Distribution**: Bar chart showing winning vs losing trades
+  - **Trade Types Distribution**: Doughnut chart showing BUY/SELL ratio
+  - **Execution Prices Timeline**: Line chart visualizing execution prices
+  - All charts built with Chart.js for smooth, responsive interaction
 
 - **Execution History Table**:
   - Complete list of all orders executed in the session
   - Order details: ID, Symbol, Side (BUY/SELL), Quantity, Price, Status
   - Color-coded buy/sell indicators
+  - Dynamic filtering based on selected filters
 
 ### 💾 Export Functionality
 
@@ -67,7 +77,19 @@ Click "View Details" on any session to see:
 
 - **Search**: Type in the search box to filter by session ID or timestamp
 - **Performance Filter**: Use the dropdown to show only profitable or loss-making sessions
+- **Date Range Filter** (NEW): Select start and end dates to filter sessions by time period
+- **Clear Filters** (NEW): Click to reset all filters and show all sessions
 - **Refresh**: Click the refresh button to reload the session list
+
+### Filtering Trades in Session Details (NEW)
+
+Once you've opened a session detail view, you can filter the execution history:
+
+1. **Filter by Trade Type**: Select "Buy Orders" or "Sell Orders" to show only specific order types
+2. **Filter by Status**: Choose "Filled", "Partial", or "Cancelled" to view orders by execution status
+3. **Filter by Symbol**: Select a specific trading pair (e.g., BTCUSDT, ADAUSDT) to view only trades for that symbol
+4. Filters can be combined for more specific results
+5. The table updates instantly as you change filters
 
 ### Exporting Session Data
 

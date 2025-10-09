@@ -388,8 +388,13 @@ const Features = {
                             <option value="profitable">Profitable Only</option>
                             <option value="loss">Loss Only</option>
                         </select>
+                        <input type="date" id="sessionDateFrom" class="form-control" placeholder="From Date" onchange="Features.loadSessions()">
+                        <input type="date" id="sessionDateTo" class="form-control" placeholder="To Date" onchange="Features.loadSessions()">
                         <button class="btn btn-secondary" onclick="Features.loadSessions()">
                             <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-outline" onclick="Features.clearFilters()">
+                            <i class="fas fa-times"></i> Clear Filters
                         </button>
                     </div>
                 </div>
@@ -411,6 +416,39 @@ const Features = {
                 </div>
             </div>
         `;
+    },
+    
+    // Clear all filters
+    clearFilters() {
+        const searchEl = document.getElementById('sessionSearch');
+        const filterEl = document.getElementById('sessionFilter');
+        const dateFromEl = document.getElementById('sessionDateFrom');
+        const dateToEl = document.getElementById('sessionDateTo');
+        
+        if (searchEl) searchEl.value = '';
+        if (filterEl) filterEl.value = 'all';
+        if (dateFromEl) dateFromEl.value = '';
+        if (dateToEl) dateToEl.value = '';
+        
+        this.loadSessions();
+    },
+    
+    // Parse session date from session ID
+    parseSessionDate(sessionId) {
+        try {
+            // Session ID format: YYYYMMDD_HHMMSS
+            const parts = sessionId.split('_');
+            if (parts.length >= 1) {
+                const dateStr = parts[0];
+                const year = dateStr.substring(0, 4);
+                const month = dateStr.substring(4, 6);
+                const day = dateStr.substring(6, 8);
+                return new Date(`${year}-${month}-${day}`);
+            }
+        } catch (e) {
+            console.error('Error parsing session date:', e);
+        }
+        return null;
     },
     
     // Load sessions from API
@@ -439,6 +477,8 @@ const Features = {
             // Apply filters
             const searchTerm = document.getElementById('sessionSearch')?.value.toLowerCase() || '';
             const filter = document.getElementById('sessionFilter')?.value || 'all';
+            const dateFrom = document.getElementById('sessionDateFrom')?.value || '';
+            const dateTo = document.getElementById('sessionDateTo')?.value || '';
             
             const filteredSessions = sessions.filter(session => {
                 // Search filter
@@ -454,7 +494,25 @@ const Features = {
                     matchesFilter = session.total_pnl < 0;
                 }
                 
-                return matchesSearch && matchesFilter;
+                // Date range filter
+                let matchesDateRange = true;
+                if (dateFrom || dateTo) {
+                    // Extract date from session ID (format: YYYYMMDD_HHMMSS)
+                    const sessionDate = this.parseSessionDate(session.id);
+                    if (sessionDate) {
+                        if (dateFrom) {
+                            const fromDate = new Date(dateFrom);
+                            if (sessionDate < fromDate) matchesDateRange = false;
+                        }
+                        if (dateTo) {
+                            const toDate = new Date(dateTo);
+                            toDate.setHours(23, 59, 59); // Include full day
+                            if (sessionDate > toDate) matchesDateRange = false;
+                        }
+                    }
+                }
+                
+                return matchesSearch && matchesFilter && matchesDateRange;
             });
             
             if (filteredSessions.length === 0) {
@@ -570,17 +628,56 @@ const Features = {
                     </div>
                 </div>
                 
+                <div class="detail-filters">
+                    <h4><i class="fas fa-filter"></i> Filter Trades</h4>
+                    <div class="filter-controls">
+                        <select id="tradeTypeFilter" class="form-control" onchange="Features.filterTrades()">
+                            <option value="all">All Trade Types</option>
+                            <option value="BUY">Buy Orders</option>
+                            <option value="SELL">Sell Orders</option>
+                        </select>
+                        <select id="tradeStatusFilter" class="form-control" onchange="Features.filterTrades()">
+                            <option value="all">All Status</option>
+                            <option value="FILLED">Filled</option>
+                            <option value="PARTIAL">Partial</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                        <select id="symbolFilter" class="form-control" onchange="Features.filterTrades()">
+                            <option value="all">All Symbols</option>
+                            ${this.getUniqueSymbols(sessionData.trades).map(symbol => 
+                                `<option value="${symbol}">${symbol}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                </div>
+                
                 <div class="detail-charts">
-                    <div class="chart-box">
-                        <h4>Trades Timeline</h4>
-                        <canvas id="sessionTradesChart"></canvas>
+                    <div class="charts-grid">
+                        <div class="chart-box">
+                            <h4>Cumulative P&L Over Time</h4>
+                            <canvas id="sessionPnLChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Win/Loss Distribution</h4>
+                            <canvas id="sessionWinLossChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-box">
+                            <h4>Trade Types Distribution</h4>
+                            <canvas id="sessionTradeTypesChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Execution Prices Timeline</h4>
+                            <canvas id="sessionTradesChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="detail-trades">
                     <h4><i class="fas fa-list"></i> Execution History</h4>
                     <div class="trades-table-container">
-                        <table class="trades-table">
+                        <table class="trades-table" id="tradesTable">
                             <thead>
                                 <tr>
                                     <th>Order ID</th>
@@ -591,9 +688,9 @@ const Features = {
                                     <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="tradesTableBody">
                                 ${sessionData.trades.map(trade => `
-                                    <tr>
+                                    <tr data-side="${trade.side}" data-status="${trade.status}" data-symbol="${trade.symbol}">
                                         <td>${trade.order_id || 'N/A'}</td>
                                         <td>${trade.symbol || 'N/A'}</td>
                                         <td class="${(trade.side === 'BUY') ? 'trade-type-buy' : 'trade-type-sell'}">
@@ -612,44 +709,208 @@ const Features = {
         `;
     },
     
-    // Render session charts
-    renderSessionCharts(sessionData) {
-        const ctx = document.getElementById('sessionTradesChart');
-        if (!ctx) return;
-        
-        // Prepare data for trades timeline
-        const trades = sessionData.trades || [];
-        const labels = trades.map((t, i) => `Trade ${i + 1}`);
-        const prices = trades.map(t => parseFloat(t.execution_price) || 0);
-        
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Execution Price',
-                    data: prices,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false
-                    }
-                }
+    // Get unique symbols from trades
+    getUniqueSymbols(trades) {
+        const symbols = new Set();
+        trades.forEach(trade => {
+            if (trade.symbol) {
+                symbols.add(trade.symbol);
             }
         });
+        return Array.from(symbols).sort();
+    },
+    
+    // Filter trades based on selected filters
+    filterTrades() {
+        const typeFilter = document.getElementById('tradeTypeFilter')?.value || 'all';
+        const statusFilter = document.getElementById('tradeStatusFilter')?.value || 'all';
+        const symbolFilter = document.getElementById('symbolFilter')?.value || 'all';
+        
+        const rows = document.querySelectorAll('#tradesTableBody tr');
+        rows.forEach(row => {
+            const side = row.getAttribute('data-side');
+            const status = row.getAttribute('data-status');
+            const symbol = row.getAttribute('data-symbol');
+            
+            let show = true;
+            if (typeFilter !== 'all' && side !== typeFilter) show = false;
+            if (statusFilter !== 'all' && status !== statusFilter) show = false;
+            if (symbolFilter !== 'all' && symbol !== symbolFilter) show = false;
+            
+            row.style.display = show ? '' : 'none';
+        });
+    },
+    
+    // Render session charts
+    renderSessionCharts(sessionData) {
+        // 1. Cumulative P&L Over Time (Line Chart)
+        const pnlCtx = document.getElementById('sessionPnLChart');
+        if (pnlCtx && sessionData.chart_data && sessionData.chart_data.pnl_over_time) {
+            const pnlData = sessionData.chart_data.pnl_over_time;
+            new Chart(pnlCtx, {
+                type: 'line',
+                data: {
+                    labels: pnlData.map(d => `Trade ${d.trade_number}`),
+                    datasets: [{
+                        label: 'Cumulative P&L ($)',
+                        data: pnlData.map(d => d.cumulative_pnl),
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 2. Win/Loss Distribution (Bar Chart)
+        const winLossCtx = document.getElementById('sessionWinLossChart');
+        if (winLossCtx && sessionData.chart_data && sessionData.chart_data.win_loss_distribution) {
+            const winLossData = sessionData.chart_data.win_loss_distribution;
+            new Chart(winLossCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Wins', 'Losses'],
+                    datasets: [{
+                        label: 'Number of Trades',
+                        data: [winLossData.wins, winLossData.losses],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(255, 99, 132, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(75, 192, 192)',
+                            'rgb(255, 99, 132)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 3. Trade Types Distribution (Doughnut Chart)
+        const tradeTypesCtx = document.getElementById('sessionTradeTypesChart');
+        if (tradeTypesCtx && sessionData.chart_data && sessionData.chart_data.trade_types) {
+            const tradeTypes = sessionData.chart_data.trade_types;
+            new Chart(tradeTypesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Buy Orders', 'Sell Orders'],
+                    datasets: [{
+                        data: [tradeTypes.BUY || 0, tradeTypes.SELL || 0],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(102, 126, 234)',
+                            'rgb(118, 75, 162)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 4. Execution Prices Timeline (Line Chart)
+        const tradesCtx = document.getElementById('sessionTradesChart');
+        if (tradesCtx) {
+            const trades = sessionData.trades || [];
+            const labels = trades.map((t, i) => `Trade ${i + 1}`);
+            const prices = trades.map(t => {
+                const priceStr = (t.execution_price || '0').replace('$', '').replace(',', '');
+                return parseFloat(priceStr) || 0;
+            });
+            
+            new Chart(tradesCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Execution Price ($)',
+                        data: prices,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     },
     
     // Export session
