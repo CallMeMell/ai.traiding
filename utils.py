@@ -128,12 +128,81 @@ def format_percentage(value: float) -> str:
     return f"{value:.2f}%"
 
 
-def calculate_performance_metrics(trades: list) -> dict:
+def calculate_sharpe_ratio(returns: list, risk_free_rate: float = 0.0) -> float:
+    """
+    Berechne Sharpe Ratio
+    
+    Args:
+        returns: Liste von Renditen (als Dezimalzahlen, z.B. 0.02 für 2%)
+        risk_free_rate: Risikofreier Zinssatz (annualisiert)
+    
+    Returns:
+        Sharpe Ratio
+    """
+    import numpy as np
+    
+    if not returns or len(returns) < 2:
+        return 0.0
+    
+    returns_array = np.array(returns)
+    excess_returns = returns_array - risk_free_rate
+    
+    if np.std(excess_returns) == 0:
+        return 0.0
+    
+    sharpe = np.mean(excess_returns) / np.std(excess_returns)
+    
+    # Annualisiere (angenommen täglich, 252 Handelstage)
+    # Für andere Zeiträume müsste man anpassen
+    sharpe_annualized = sharpe * np.sqrt(252)
+    
+    return sharpe_annualized
+
+
+def calculate_max_drawdown(equity_curve: list) -> tuple:
+    """
+    Berechne Maximum Drawdown
+    
+    Args:
+        equity_curve: Liste von Kapitalwerten
+    
+    Returns:
+        Tuple (max_drawdown_percent, max_drawdown_value, peak_value, trough_value)
+    """
+    import numpy as np
+    
+    if not equity_curve or len(equity_curve) < 2:
+        return 0.0, 0.0, 0.0, 0.0
+    
+    equity_array = np.array(equity_curve)
+    
+    # Berechne running maximum
+    running_max = np.maximum.accumulate(equity_array)
+    
+    # Berechne Drawdown
+    drawdown = (equity_array - running_max) / running_max
+    
+    # Finde Maximum Drawdown
+    max_dd_idx = np.argmin(drawdown)
+    max_dd_percent = drawdown[max_dd_idx] * 100
+    
+    # Finde Peak und Trough
+    peak_idx = np.argmax(running_max[:max_dd_idx + 1])
+    peak_value = equity_array[peak_idx]
+    trough_value = equity_array[max_dd_idx]
+    max_dd_value = trough_value - peak_value
+    
+    return max_dd_percent, max_dd_value, peak_value, trough_value
+
+
+def calculate_performance_metrics(trades: list, equity_curve: list = None, initial_capital: float = 10000.0) -> dict:
     """
     Berechne Performance-Metriken aus Trade-Liste
     
     Args:
         trades: Liste von Trade-Dictionaries
+        equity_curve: Optional Liste von Kapitalwerten für erweiterte Metriken
+        initial_capital: Startkapital für Berechnungen
     
     Returns:
         Dictionary mit Performance-Metriken
@@ -145,7 +214,10 @@ def calculate_performance_metrics(trades: list) -> dict:
             'win_rate': 0.0,
             'best_trade': 0.0,
             'worst_trade': 0.0,
-            'avg_pnl': 0.0
+            'avg_pnl': 0.0,
+            'sharpe_ratio': 0.0,
+            'max_drawdown': 0.0,
+            'max_drawdown_value': 0.0
         }
     
     pnls = [float(t.get('pnl', 0)) for t in trades if t.get('pnl', '0') != '0.00']
@@ -158,13 +230,31 @@ def calculate_performance_metrics(trades: list) -> dict:
     worst_trade = min(pnls) if pnls else 0
     avg_pnl = total_pnl / len(pnls) if pnls else 0
     
+    # Berechne Sharpe Ratio wenn möglich
+    sharpe_ratio = 0.0
+    if pnls and len(pnls) >= 2:
+        # Konvertiere PnL zu Returns
+        returns = [pnl / initial_capital for pnl in pnls]
+        sharpe_ratio = calculate_sharpe_ratio(returns)
+    
+    # Berechne Maximum Drawdown wenn equity curve vorhanden
+    max_drawdown = 0.0
+    max_drawdown_value = 0.0
+    if equity_curve and len(equity_curve) >= 2:
+        max_dd_percent, max_dd_value, _, _ = calculate_max_drawdown(equity_curve)
+        max_drawdown = max_dd_percent
+        max_drawdown_value = max_dd_value
+    
     return {
         'total_trades': total_trades,
         'total_pnl': total_pnl,
         'win_rate': win_rate,
         'best_trade': best_trade,
         'worst_trade': worst_trade,
-        'avg_pnl': avg_pnl
+        'avg_pnl': avg_pnl,
+        'sharpe_ratio': sharpe_ratio,
+        'max_drawdown': max_drawdown,
+        'max_drawdown_value': max_drawdown_value
     }
 
 
