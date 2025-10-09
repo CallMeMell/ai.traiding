@@ -3,6 +3,9 @@ pandas>=2.0.0
 numpy>=1.24.0
 python-dotenv>=1.0.0
 
+# Alpaca API Integration (Primary Trading API)
+alpaca-py>=0.8.0
+
 # Web Dashboard (Flask-based interactive web interface)
 Flask>=3.0.0
 
@@ -10,10 +13,6 @@ Flask>=3.0.0
 matplotlib>=3.7.0
 plotly>=5.18.0
 
-# Optional: Für echte API-Integration (nicht in dieser Version verwendet)
-# alpaca-py>=0.8.0
-# ccxt>=4.0.0  # Für Krypto-Börsen wie Binance
-
-# Optional: Für erweiterte Features
-# seaborn>=0.12.0    # Für Visualisierungen
-# scipy>=1.10.0      # Für statistische Analysen
+# Optional: For extended features
+# seaborn>=0.12.0    # For visualizations
+# scipy>=1.10.0      # For statistical analysis

@@ -10,6 +10,14 @@ import pandas as pd
 import numpy as np
 import logging
 
+# Import LSOB strategy
+try:
+    from lsob_strategy import LSOBStrategy
+    LSOB_AVAILABLE = True
+except ImportError:
+    LSOB_AVAILABLE = False
+    logging.warning("LSOB strategy not available")
+
 logger = logging.getLogger(__name__)
 
 
@@ -275,6 +283,10 @@ class StrategyManager:
         'bollinger_bands': BollingerBandsStrategy,
         'ema_crossover': EMACrossoverStrategy
     }
+    
+    # Add LSOB strategy if available
+    if LSOB_AVAILABLE:
+        STRATEGY_MAP['lsob'] = LSOBStrategy
     
     def __init__(self, config: Dict[str, Any]):
         """

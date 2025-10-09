@@ -10,7 +10,9 @@ from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 import json
 
-# Lade .env Datei falls vorhanden
+# Lade .env Dateien falls vorhanden
+# Priorität: keys.env > .env
+load_dotenv('keys.env')
 load_dotenv()
 
 
@@ -71,6 +73,16 @@ class TradingConfig:
         "ema_crossover": {
             "short_window": 9,
             "long_window": 21
+        },
+        "lsob": {
+            "bb_window": 20,
+            "bb_std": 2.0,
+            "atr_window": 14,
+            "volume_threshold": 1.2,
+            "breakout_threshold": 0.005,
+            "stop_loss_atr_mult": 2.0,
+            "take_profit_atr_mult": 3.0,
+            "max_volatility": 0.05
         }
     })
     
