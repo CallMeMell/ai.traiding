@@ -46,6 +46,9 @@ const Features = {
             case 'Trade History':
                 this.showTradeHistory();
                 break;
+            case 'View Sessions':
+                this.showViewSessions();
+                break;
             case 'Settings':
                 this.showSettings();
                 break;
@@ -84,6 +87,15 @@ const Features = {
         this.hideAllViews();
         const modal = this.createModal('Settings', this.getSettingsContent());
         document.body.appendChild(modal);
+    },
+    
+    // Show view sessions view
+    showViewSessions() {
+        this.hideAllViews();
+        const modal = this.createModal('View Sessions', this.getViewSessionsContent());
+        document.body.appendChild(modal);
+        // Load sessions data
+        this.loadSessions();
     },
     
     // Show broker connection view
@@ -362,6 +374,323 @@ const Features = {
                 </div>
             </div>
         `;
+    },
+    
+    // Get view sessions content
+    getViewSessionsContent() {
+        return `
+            <div class="sessions-panel">
+                <div class="panel-header">
+                    <div class="filter-controls">
+                        <input type="text" id="sessionSearch" class="form-control" placeholder="Search sessions..." oninput="Features.loadSessions()">
+                        <select id="sessionFilter" class="form-control" onchange="Features.loadSessions()">
+                            <option value="all">All Sessions</option>
+                            <option value="profitable">Profitable Only</option>
+                            <option value="loss">Loss Only</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="Features.loadSessions()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="panel-body">
+                    <div id="sessionsLoading" class="loading-indicator" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading sessions...
+                    </div>
+                    
+                    <div id="sessionsList" class="sessions-list">
+                        <!-- Sessions will be loaded here -->
+                    </div>
+                    
+                    <div id="sessionsEmpty" class="empty-state" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <p>No trading sessions found</p>
+                        <small>Sessions will appear here after running simulated trading</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+    
+    // Load sessions from API
+    async loadSessions() {
+        const loadingEl = document.getElementById('sessionsLoading');
+        const listEl = document.getElementById('sessionsList');
+        const emptyEl = document.getElementById('sessionsEmpty');
+        
+        if (!listEl) return;
+        
+        try {
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (listEl) listEl.innerHTML = '';
+            if (emptyEl) emptyEl.style.display = 'none';
+            
+            const response = await fetch('/api/sessions');
+            const sessions = await response.json();
+            
+            if (loadingEl) loadingEl.style.display = 'none';
+            
+            if (!sessions || sessions.length === 0) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+            
+            // Apply filters
+            const searchTerm = document.getElementById('sessionSearch')?.value.toLowerCase() || '';
+            const filter = document.getElementById('sessionFilter')?.value || 'all';
+            
+            const filteredSessions = sessions.filter(session => {
+                // Search filter
+                const matchesSearch = !searchTerm || 
+                    session.id.toLowerCase().includes(searchTerm) ||
+                    session.timestamp.toLowerCase().includes(searchTerm);
+                
+                // Performance filter
+                let matchesFilter = true;
+                if (filter === 'profitable') {
+                    matchesFilter = session.total_pnl > 0;
+                } else if (filter === 'loss') {
+                    matchesFilter = session.total_pnl < 0;
+                }
+                
+                return matchesSearch && matchesFilter;
+            });
+            
+            if (filteredSessions.length === 0) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+            
+            // Render sessions
+            filteredSessions.forEach(session => {
+                const sessionCard = this.createSessionCard(session);
+                listEl.appendChild(sessionCard);
+            });
+            
+        } catch (error) {
+            console.error('Error loading sessions:', error);
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (listEl) listEl.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle"></i> Error loading sessions</div>';
+        }
+    },
+    
+    // Create session card element
+    createSessionCard(session) {
+        const card = document.createElement('div');
+        card.className = 'session-card';
+        
+        const pnlClass = session.total_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+        const pnlIcon = session.total_pnl >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+        
+        card.innerHTML = `
+            <div class="session-header">
+                <div class="session-id">
+                    <i class="fas fa-calendar-alt"></i>
+                    <strong>Session ${session.id}</strong>
+                </div>
+                <div class="session-pnl ${pnlClass}">
+                    <i class="fas ${pnlIcon}"></i>
+                    $${session.total_pnl.toFixed(2)}
+                </div>
+            </div>
+            <div class="session-info">
+                <div class="info-row">
+                    <span><i class="fas fa-clock"></i> ${session.timestamp || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span><i class="fas fa-wallet"></i> Capital: $${session.initial_capital.toFixed(2)} → $${session.final_equity.toFixed(2)}</span>
+                </div>
+                <div class="info-row">
+                    <span><i class="fas fa-exchange-alt"></i> Trades: ${session.total_trades || 0}</span>
+                    <span><i class="fas fa-percentage"></i> Win Rate: ${(session.win_rate || 0).toFixed(1)}%</span>
+                </div>
+            </div>
+            <div class="session-actions">
+                <button class="btn btn-primary btn-sm" onclick="Features.viewSessionDetails('${session.id}')">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="Features.exportSession('${session.id}')">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        `;
+        
+        return card;
+    },
+    
+    // View session details
+    async viewSessionDetails(sessionId) {
+        try {
+            const response = await fetch(`/api/sessions/${sessionId}`);
+            const sessionData = await response.json();
+            
+            if (sessionData.error) {
+                alert('Session not found or error loading details');
+                return;
+            }
+            
+            // Create detail modal
+            const detailModal = this.createModal(`Session Details - ${sessionId}`, this.getSessionDetailContent(sessionData));
+            document.body.appendChild(detailModal);
+            
+            // Render charts
+            setTimeout(() => {
+                this.renderSessionCharts(sessionData);
+            }, 100);
+            
+        } catch (error) {
+            console.error('Error loading session details:', error);
+            alert('Error loading session details');
+        }
+    },
+    
+    // Get session detail content
+    getSessionDetailContent(sessionData) {
+        return `
+            <div class="session-detail">
+                <div class="detail-metrics">
+                    <div class="metric-box">
+                        <span class="metric-label">Initial Capital</span>
+                        <span class="metric-value">$${(sessionData.metrics.initial_capital || 0)}</span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label">Final Equity</span>
+                        <span class="metric-value">$${(sessionData.metrics.final_equity || 0)}</span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label">Total P&L</span>
+                        <span class="metric-value ${(sessionData.metrics.total_pnl >= 0) ? 'success' : 'danger'}">
+                            $${(sessionData.metrics.total_pnl || 0)}
+                        </span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label">Total Trades</span>
+                        <span class="metric-value">${sessionData.metrics.total_orders || 0}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-charts">
+                    <div class="chart-box">
+                        <h4>Trades Timeline</h4>
+                        <canvas id="sessionTradesChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="detail-trades">
+                    <h4><i class="fas fa-list"></i> Execution History</h4>
+                    <div class="trades-table-container">
+                        <table class="trades-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Symbol</th>
+                                    <th>Side</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sessionData.trades.map(trade => `
+                                    <tr>
+                                        <td>${trade.order_id || 'N/A'}</td>
+                                        <td>${trade.symbol || 'N/A'}</td>
+                                        <td class="${(trade.side === 'BUY') ? 'trade-type-buy' : 'trade-type-sell'}">
+                                            ${trade.side || 'N/A'}
+                                        </td>
+                                        <td>${trade.quantity || trade.filled_quantity || 'N/A'}</td>
+                                        <td>$${trade.execution_price || 'N/A'}</td>
+                                        <td>${trade.status || 'N/A'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+    
+    // Render session charts
+    renderSessionCharts(sessionData) {
+        const ctx = document.getElementById('sessionTradesChart');
+        if (!ctx) return;
+        
+        // Prepare data for trades timeline
+        const trades = sessionData.trades || [];
+        const labels = trades.map((t, i) => `Trade ${i + 1}`);
+        const prices = trades.map(t => parseFloat(t.execution_price) || 0);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Execution Price',
+                    data: prices,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    },
+    
+    // Export session
+    async exportSession(sessionId) {
+        try {
+            const response = await fetch(`/api/sessions/${sessionId}`);
+            const sessionData = await response.json();
+            
+            if (sessionData.error) {
+                alert('Session not found');
+                return;
+            }
+            
+            // Convert to CSV
+            const csv = this.convertSessionToCSV(sessionData);
+            
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `session_${sessionId}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+        } catch (error) {
+            console.error('Error exporting session:', error);
+            alert('Error exporting session');
+        }
+    },
+    
+    // Convert session to CSV
+    convertSessionToCSV(sessionData) {
+        const trades = sessionData.trades || [];
+        let csv = 'Order ID,Symbol,Side,Quantity,Execution Price,Status\n';
+        
+        trades.forEach(trade => {
+            csv += `${trade.order_id || ''},${trade.symbol || ''},${trade.side || ''},${trade.quantity || trade.filled_quantity || ''},${trade.execution_price || ''},${trade.status || ''}\n`;
+        });
+        
+        return csv;
     },
     
     // Get broker connection content
