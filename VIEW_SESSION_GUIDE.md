@@ -4,6 +4,16 @@
 
 The **View Session** feature provides a comprehensive interface for viewing, analyzing, and managing trading sessions. It allows users to review past trading activity, analyze performance metrics, and export session data for further analysis.
 
+## ✨ Universal Accessibility (NEW)
+
+The View Session feature is now universally accessible from anywhere in the application:
+
+- **Global Header Button**: A prominent "View Sessions" button is always visible in the header, regardless of which view or modal is currently open
+- **Quick Access in Modals**: Every modal (Strategies, Trade History, Settings, Broker Connection) includes a "View Sessions" quick access button in its header
+- **Seamless Navigation**: Switch to View Sessions from any view without having to close modals or navigate back to the dashboard
+
+This ensures that you can always access your trading session history with a single click, no matter where you are in the application.
+
 ## Features
 
 ### 📋 Session List View
