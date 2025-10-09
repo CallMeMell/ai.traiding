@@ -11,7 +11,18 @@ const Features = {
     init() {
         this.setupNavigation();
         this.setupModals();
+        this.setupQuickAccess();
         console.log('Feature modules initialized');
+    },
+    
+    // Setup quick access button
+    setupQuickAccess() {
+        const quickAccessBtn = document.getElementById('quickViewSessions');
+        if (quickAccessBtn) {
+            quickAccessBtn.addEventListener('click', () => {
+                this.showViewSessions();
+            });
+        }
     },
     
     // Setup navigation between views
@@ -127,14 +138,25 @@ const Features = {
     createModal(title, content) {
         const modal = document.createElement('div');
         modal.className = 'feature-modal';
+        
+        // Add quick access to View Sessions unless we're already in View Sessions
+        const quickAccessLink = title !== 'View Sessions' ? `
+            <button class="modal-quick-access" onclick="Features.showViewSessions()" title="Quick Access to View Sessions">
+                <i class="fas fa-folder-open"></i> View Sessions
+            </button>
+        ` : '';
+        
         modal.innerHTML = `
             <div class="modal-overlay"></div>
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>${title}</h2>
-                    <button class="modal-close" aria-label="Close">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <div class="modal-header-actions">
+                        ${quickAccessLink}
+                        <button class="modal-close" aria-label="Close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     ${content}
