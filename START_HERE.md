@@ -166,7 +166,24 @@ python backtester.py
 # 4. Vergleiche Ergebnisse
 ```
 
-### Workflow 3: Eigene CSV-Daten testen
+### Workflow 3: Automatische Parameter-Optimierung (NEU! 🔬)
+
+```bash
+# Automatisch beste Parameter finden
+python demo_parameter_optimization.py
+
+# Wähle Optimierungs-Methode:
+# [1] Grid Search - Systematisch alle Kombinationen
+# [2] Random Search - Schnell, effizient
+# [3] Genetic Algorithm - Evolutionär, intelligent
+# [4] Alle Methoden vergleichen
+
+# Ergebnis: Optimale Parameter + Report
+```
+
+**Siehe:** `PARAMETER_OPTIMIZATION_GUIDE.md` für Details
+
+### Workflow 4: Eigene CSV-Daten testen
 
 ```bash
 # 1. CSV vorbereiten (Format siehe README.md)
