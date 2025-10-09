@@ -535,6 +535,11 @@ body.dark-mode {
         width: 100%;
     }
     
+    .quick-access-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
     .metrics-grid {
         grid-template-columns: 1fr;
         gap: 15px;

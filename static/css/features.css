@@ -559,10 +559,21 @@
     
     .modal-header {
         padding: 20px;
+        flex-direction: column;
+        gap: 10px;
     }
     
     .modal-header h2 {
         font-size: 20px;
+    }
+    
+    .modal-header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .modal-quick-access {
+        flex: 1;
     }
     
     .modal-body {
