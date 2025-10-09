@@ -1,8 +1,10 @@
-```
 # Core Dependencies
 pandas>=2.0.0
 numpy>=1.24.0
 python-dotenv>=1.0.0
+
+# Web Dashboard
+Flask>=3.0.0
 
 # Optional: Für echte API-Integration (nicht in dieser Version verwendet)
 # alpaca-py>=0.8.0

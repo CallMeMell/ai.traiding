@@ -43,3 +43,6 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Git Installation (should never be in repo)
+Git/
