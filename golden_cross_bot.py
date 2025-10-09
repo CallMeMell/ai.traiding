@@ -4,20 +4,20 @@ golden_cross_bot.py - Vollständiger Golden Cross Trading Bot
 
 Kombiniert:
 - Golden Cross Strategie
-- Binance Integration
+- Alpaca Integration (Primary) / Binance Integration (Legacy)
 - Risikomanagement
 - Paper-Trading
 - Live-Monitoring
 
 VERWENDUNG:
-    # Paper-Trading (simuliert):
-    python golden_cross_bot.py --mode paper --symbol BTCUSDT
+    # Paper-Trading (simuliert) with Alpaca:
+    python golden_cross_bot.py --mode paper --symbol AAPL
     
-    # Testnet:
-    python golden_cross_bot.py --mode testnet --symbol BTCUSDT
+    # Paper-Trading with crypto:
+    python golden_cross_bot.py --mode paper --symbol BTCUSD
     
-    # Production (VORSICHT!):
-    python golden_cross_bot.py --mode live --symbol BTCUSDT
+    # Live Trading (VORSICHT!):
+    python golden_cross_bot.py --mode live --symbol AAPL
 """
 
 import sys
@@ -29,8 +29,23 @@ from datetime import datetime, timedelta
 import logging
 
 from golden_cross_strategy import GoldenCrossStrategy
-from binance_integration import BinanceDataProvider, PaperTradingExecutor
 from utils import setup_logging, TradeLogger
+
+# Try to import Alpaca (primary)
+try:
+    from alpaca_integration import AlpacaDataProvider, AlpacaOrderExecutor
+    ALPACA_AVAILABLE = True
+except ImportError:
+    ALPACA_AVAILABLE = False
+    logging.warning("Alpaca integration not available")
+
+# Try to import Binance (legacy support)
+try:
+    from binance_integration import BinanceDataProvider, PaperTradingExecutor
+    BINANCE_AVAILABLE = True
+except ImportError:
+    BINANCE_AVAILABLE = False
+    logging.warning("Binance integration not available")
 
 logger = None
 is_running = False
@@ -86,9 +101,9 @@ class GoldenCrossBot:
         self.total_pnl = 0.0
     
     def _init_components(self):
-        """Initialisiere alle Komponenten"""
+        """Initialize all components"""
         
-        # 1. Golden Cross Strategie
+        # 1. Golden Cross Strategy
         strategy_params = {
             'short_window': 50,
             'long_window': 200,
@@ -100,16 +115,55 @@ class GoldenCrossBot:
             'max_volatility': 0.05
         }
         self.strategy = GoldenCrossStrategy(strategy_params)
-        logger.info("✓ Golden Cross Strategie initialisiert")
+        logger.info("✓ Golden Cross Strategy initialized")
         
-        # 2. Binance Data Provider
+        # 2. Data Provider - Try Alpaca first, then Binance
         if self.mode == 'paper':
-            # Paper-Trading: Keine echte Binance-Verbindung nötig
+            # Paper-Trading: Try Alpaca first
+            if ALPACA_AVAILABLE:
+                try:
+                    self.data_provider = AlpacaDataProvider(paper=True)
+                    if self.data_provider.test_connection():
+                        logger.info("✓ Alpaca Data Provider initialized (Paper Trading)")
+                        self.api_type = 'alpaca'
+                        return
+                except Exception as e:
+                    logger.warning(f"Alpaca initialization failed: {e}")
+            
+            # Fallback to Binance if available
+            if BINANCE_AVAILABLE:
+                try:
+                    self.data_provider = BinanceDataProvider(testnet=True)
+                    logger.info("✓ Binance Data Provider initialized (Paper Trading)")
+                    self.api_type = 'binance'
+                    return
+                except Exception as e:
+                    logger.warning(f"Binance initialization failed: {e}")
+            
+            # No API available
             self.data_provider = None
-            logger.info("✓ Paper-Trading Mode: Keine Binance-Verbindung")
+            self.api_type = 'simulation'
+            logger.info("✓ Paper-Trading Mode: No API connection, using simulation")
         else:
-            testnet = (self.mode == 'testnet')
-            self.data_provider = BinanceDataProvider(testnet=testnet)
+            # Live/Testnet mode: Try Alpaca first
+            paper_mode = (self.mode != 'live')
+            
+            if ALPACA_AVAILABLE:
+                try:
+                    self.data_provider = AlpacaDataProvider(paper=paper_mode)
+                    if self.data_provider.test_connection():
+                        logger.info(f"✓ Alpaca Data Provider initialized ({'Paper' if paper_mode else 'Live'} Trading)")
+                        self.api_type = 'alpaca'
+                        return
+                except Exception as e:
+                    logger.warning(f"Alpaca initialization failed: {e}")
+            
+            # Fallback to Binance
+            if BINANCE_AVAILABLE:
+                testnet = (self.mode == 'testnet')
+                self.data_provider = BinanceDataProvider(testnet=testnet)
+                self.api_type = 'binance'
+                logger.info(f"✓ Binance Data Provider initialized ({'Testnet' if testnet else 'Live'})")
             
             if not self.data_provider.test_connection():
                 raise ConnectionError("Binance-Verbindung fehlgeschlagen!")

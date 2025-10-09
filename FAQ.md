@@ -12,11 +12,11 @@ Die Master-Version ist architektonisch produktionsreif, simuliert aber derzeit d
 **WARNUNG:** Trading birgt erhebliche Risiken. Dieser Bot ist primär zu Bildungszwecken gedacht. Teste ausgiebig mit Paper-Trading bevor du echtes Kapital riskierst. Keine Garantie für Profite.
 
 ### Welche Börsen werden unterstützt?
-Aktuell: Keine echte Börse (nur Simulation). Die Architektur ist aber vorbereitet für:
-- Alpaca (Aktien/ETFs)
-- Binance (Krypto)
-- Interactive Brokers
-- Andere via CCXT
+**PRIMARY**: Alpaca API (Aktien/ETFs/Krypto) - vollständig integriert
+**LEGACY**: Binance (Krypto) - für Abwärtskompatibilität
+**ZUKUNFT**: Interactive Brokers, andere via CCXT
+
+Der Bot nutzt primär Alpaca für Live-Trading. Binance-Integration ist weiterhin verfügbar für Legacy-Support.
 
 ---
 
@@ -32,15 +32,29 @@ pip3 install -r requirements.txt
 ```
 
 ### Muss ich API-Keys haben?
-**Nein**, für Backtests und simuliertes Live-Trading sind keine API-Keys nötig. Die `.env` Datei ist optional.
+**Nein**, für Backtests und simuliertes Live-Trading sind keine API-Keys nötig. Der Bot läuft im Simulationsmodus ohne Keys.
+
+**Ja**, für echtes Live-Trading mit Alpaca brauchst du API Keys.
 
 ### Wo speichere ich meine API-Keys?
-Erstelle eine `.env` Datei (Kopie von `.env.example`) im Hauptverzeichnis:
+**NEU**: Erstelle eine `keys.env` Datei im Hauptverzeichnis:
+```env
+# keys.env
+ALPACA_API_KEY=dein_key_hier
+ALPACA_SECRET_KEY=dein_secret_hier
+ALPACA_BASE_URL=https://paper-api.alpaca.markets
+```
+
+**Alternativ**: Nutze `.env` Datei (Kopie von `.env.example`):
 ```env
 ALPACA_API_KEY=dein_key_hier
 ALPACA_SECRET_KEY=dein_secret_hier
 ```
-**Wichtig:** Füge `.env` zu `.gitignore` hinzu (bereits gemacht)!
+
+**Wichtig:** 
+- `keys.env` und `.env` sind bereits in `.gitignore`
+- Niemals API Keys in Git committen!
+- Für Production: Nutze Umgebungsvariablen des Systems
 
 ### Welche Python-Version brauche ich?
 - **Minimum:** Python 3.8
@@ -98,6 +112,17 @@ cooperation_logic: str = "OR"  # oder "AND"
    - Volatility Breakout
    - Best für: Hohe Volatilität
    - Parameter: `window`, `std_dev`
+
+4. **EMA Crossover**
+   - Fast Trend-Following
+   - Best für: Daytrading
+   - Parameter: `short_window`, `long_window`
+
+5. **LSOB (Long-Short On Breakout)** 🆕
+   - Breakout Strategy mit Risk Management
+   - Best für: Intraday bis mittelfristig
+   - Features: ATR-basierte Stops, Volume-Bestätigung, Volatility-Filter
+   - Parameter: `bb_window`, `atr_window`, `stop_loss_atr_mult`, `take_profit_atr_mult`
 
 4. **EMA Crossover** (Exponential Moving Average)
    - Schnelle Trends
@@ -316,20 +341,31 @@ if current_price <= stop_loss_price:
     # SELL ausführen
 ```
 
-### Wie integriere ich echte APIs?
-1. **Alpaca (Aktien):**
-```python
-from alpaca_py import BrokerClient
-client = BrokerClient(api_key, secret_key)
-```
+### Wie integriere ich Alpaca API?
+**NEU**: Alpaca ist bereits vollständig integriert!
 
-2. **Binance (Krypto):**
-```python
-import ccxt
-exchange = ccxt.binance({'apiKey': key, 'secret': secret})
-```
+1. **API Keys holen:**
+   - Registriere dich bei https://alpaca.markets/
+   - Erstelle API Keys im Dashboard
+   - Für Paper Trading: https://paper-api.alpaca.markets
 
-3. Ersetze `generate_sample_data()` durch echte API-Calls
+2. **Keys konfigurieren:**
+   ```bash
+   # Erstelle keys.env Datei
+   cp keys.env keys.env.local
+   
+   # Füge deine Keys ein:
+   ALPACA_API_KEY=dein_api_key
+   ALPACA_SECRET_KEY=dein_secret_key
+   ALPACA_BASE_URL=https://paper-api.alpaca.markets
+   ```
+
+3. **Bot starten:**
+   ```bash
+   python3 main.py
+   ```
+   
+Der Bot erkennt automatisch die API Keys und nutzt Alpaca!
 
 ### Wie erstelle ich eine Web-GUI?
 Nutze FastAPI + React:
