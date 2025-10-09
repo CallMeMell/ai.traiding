@@ -366,10 +366,113 @@ def signal_handler(sig, frame):
     is_running = False
 
 
+def run_live_monitoring_mode():
+    """
+    Run in live monitoring mode
+    
+    Uses the LiveMarketMonitor for continuous market monitoring
+    with strategy integration and alerts.
+    """
+    global logger
+    logger = setup_logging(
+        log_level=config.log_level,
+        log_file=config.log_file,
+        max_bytes=config.log_max_bytes,
+        backup_count=config.log_backup_count
+    )
+    
+    try:
+        from live_market_monitor import LiveMarketMonitor
+    except ImportError:
+        logger.error("Live Market Monitor not available. Please ensure live_market_monitor.py exists.")
+        return
+    
+    logger.info("=" * 70)
+    logger.info("🔍 LIVE MARKET MONITORING MODE")
+    logger.info("=" * 70)
+    
+    # Convert symbol format for Binance (BTC/USDT -> BTCUSDT)
+    symbols = [s.replace('/', '') for s in config.monitor_symbols]
+    
+    logger.info(f"Monitoring symbols: {', '.join(symbols)}")
+    logger.info(f"Interval: {config.monitor_interval}")
+    logger.info(f"Update frequency: {config.monitor_update_interval}s")
+    logger.info(f"Price alert threshold: {config.price_alert_threshold}%")
+    
+    # Determine API keys
+    if config.BINANCE_TESTNET_API_KEY and config.BINANCE_TESTNET_SECRET_KEY:
+        api_key = config.BINANCE_TESTNET_API_KEY
+        api_secret = config.BINANCE_TESTNET_SECRET_KEY
+        testnet = True
+        logger.info("Using Binance TESTNET")
+    elif config.BINANCE_API_KEY and config.BINANCE_SECRET_KEY:
+        api_key = config.BINANCE_API_KEY
+        api_secret = config.BINANCE_SECRET_KEY
+        testnet = False
+        logger.warning("⚠️ Using Binance PRODUCTION")
+    else:
+        api_key = None
+        api_secret = None
+        testnet = True
+        logger.info("No API keys - using public data only")
+    
+    # Initialize monitor
+    monitor = LiveMarketMonitor(
+        symbols=symbols,
+        interval=config.monitor_interval,
+        update_interval=config.monitor_update_interval,
+        exchange='binance',
+        api_key=api_key,
+        api_secret=api_secret,
+        testnet=testnet,
+        price_alert_threshold=config.price_alert_threshold
+    )
+    
+    # Test connection
+    logger.info("\nTesting connection...")
+    if not monitor.test_connection():
+        logger.error("❌ Connection failed. Check your API keys and network.")
+        return
+    logger.info("✓ Connection successful")
+    
+    # Integrate strategy if enabled
+    if config.enable_strategy_alerts:
+        logger.info("\nIntegrating trading strategies...")
+        strategy = TradingStrategy(config.to_dict())
+        monitor.integrate_strategy(strategy)
+        logger.info(f"✓ Strategy integrated ({len(config.active_strategies)} strategies active)")
+    
+    logger.info("=" * 70)
+    
+    # Start monitoring
+    try:
+        monitor.start_monitoring()
+    except KeyboardInterrupt:
+        logger.info("\n⏹️ Monitoring stopped by user")
+    except Exception as e:
+        logger.error(f"❌ Monitoring error: {e}", exc_info=True)
+
+
 def main():
     """Hauptfunktion"""
     # Registriere Signal-Handler
     signal.signal(signal.SIGINT, signal_handler)
+    
+    # Check if live monitoring mode is requested
+    if len(sys.argv) > 1 and sys.argv[1] == '--monitor':
+        run_live_monitoring_mode()
+        return
+    
+    # Check if live monitoring is enabled in config
+    if config.enable_live_monitoring:
+        logger_temp = setup_logging(
+            log_level=config.log_level,
+            log_file=config.log_file,
+            max_bytes=config.log_max_bytes,
+            backup_count=config.log_backup_count
+        )
+        logger_temp.info("Live monitoring enabled in config. Use --monitor flag or disable in config.")
+        logger_temp.info("Starting regular trading bot mode...")
     
     try:
         bot = LiveTradingBot()

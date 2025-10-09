@@ -93,6 +93,16 @@ MASTER_VERSION/
 - **Export-Funktionen**: HTML, PNG (Matplotlib), HTML (Plotly)
 - **Persistente Konfiguration**: Browser-Cache/Database Storage
 
+### ✅ Live Market Monitoring 🆕
+- **Real-time Monitoring**: Track multiple trading pairs simultaneously
+- **Strategy Integration**: Automated signal detection with existing strategies
+- **Smart Alerts**: Price changes, volume spikes, and trade signals
+- **Multi-Exchange Support**: Primary support for Binance, extensible for others
+- **Customizable**: Configure thresholds, intervals, and alert priorities
+- **Alert Callbacks**: Integrate with Telegram, Slack, email, or custom notifications
+
+📖 **[Read the Live Market Monitor Guide](LIVE_MARKET_MONITOR_GUIDE.md)** for complete documentation.
+
 ---
 
 ## 🚀 Installation
@@ -245,6 +255,57 @@ Drücke Ctrl+C zum Beenden
 ...
 💰 SELL @ $30,580.00 | P&L: $33.00 | Capital: $10,033.00 | Strategien: ['rsi']
 ```
+
+### 🔍 Live Market Monitoring 🆕
+
+Monitor real-time market data with automated alerts:
+
+```bash
+# Start live market monitoring
+python main.py --monitor
+
+# Or run interactive demo
+python demo_live_monitor.py
+```
+
+**Features:**
+- Monitor multiple trading pairs simultaneously (BTC, ETH, etc.)
+- Real-time price tracking with percentage change calculations
+- Automated strategy signal detection
+- Configurable alerts for price changes and volume spikes
+- Custom alert callbacks for notifications
+
+**Quick Example:**
+```python
+from live_market_monitor import LiveMarketMonitor
+from strategy import TradingStrategy
+from config import config
+
+# Initialize monitor
+monitor = LiveMarketMonitor(
+    symbols=['BTCUSDT', 'ETHUSDT'],
+    interval='15m',
+    update_interval=60,
+    testnet=True,
+    price_alert_threshold=2.0  # Alert on 2% change
+)
+
+# Integrate strategy
+strategy = TradingStrategy(config.to_dict())
+monitor.integrate_strategy(strategy)
+
+# Start monitoring
+monitor.start_monitoring()
+```
+
+**Alert Examples:**
+```
+📢 [PRICE_CHANGE] BTCUSDT: Price UP 2.34% ($50,234.50)
+⚠️ [STRATEGY_SIGNAL] ETHUSDT: BUY signal from 2 strategies: RSI, EMA_Crossover at $3,124.67
+📢 [VOLUME_SPIKE] BTCUSDT: Volume spike detected: 2.8x average
+```
+
+📖 **See [LIVE_MARKET_MONITOR_GUIDE.md](LIVE_MARKET_MONITOR_GUIDE.md) for detailed setup and usage.**
 
 ---
 

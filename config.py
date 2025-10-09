@@ -113,6 +113,15 @@ class TradingConfig:
     backtest_data_file: str = "data/historical_data.csv"
     backtest_initial_capital: float = 10000.0
     
+    # ========== LIVE MARKET MONITORING ==========
+    enable_live_monitoring: bool = False
+    monitor_symbols: list = field(default_factory=lambda: ["BTC/USDT", "ETH/USDT"])
+    monitor_interval: str = "15m"  # Timeframe for monitoring data
+    monitor_update_interval: int = 60  # Update frequency in seconds
+    price_alert_threshold: float = 2.0  # Percentage change threshold for price alerts
+    volume_spike_multiplier: float = 2.0  # Volume multiplier for spike detection
+    enable_strategy_alerts: bool = True  # Enable alerts for strategy signals
+    
     def validate(self) -> tuple[bool, Optional[str]]:
         """
         Validiere Konfiguration
@@ -154,6 +163,13 @@ class TradingConfig:
             "trade_size": self.trade_size,
             "initial_capital": self.initial_capital,
             "update_interval": self.update_interval,
+            "enable_live_monitoring": self.enable_live_monitoring,
+            "monitor_symbols": self.monitor_symbols,
+            "monitor_interval": self.monitor_interval,
+            "monitor_update_interval": self.monitor_update_interval,
+            "price_alert_threshold": self.price_alert_threshold,
+            "volume_spike_multiplier": self.volume_spike_multiplier,
+            "enable_strategy_alerts": self.enable_strategy_alerts,
         }
     
     def save_to_file(self, filepath: str = "config/trading_config.json"):
