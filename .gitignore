@@ -24,6 +24,7 @@ data/charts/
 # Environment
 .env
 .env.local
+keys.env
 
 # IDE
 .vscode/

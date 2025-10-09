@@ -1,7 +1,7 @@
 """
 main.py - Haupt-Anwendung für Live-Trading
 ==========================================
-Startet den Trading-Bot im Live-Modus
+Startet den Trading-Bot im Live-Modus mit Alpaca API Integration
 """
 import sys
 import time
@@ -16,6 +16,13 @@ from config import config
 from strategy import TradingStrategy
 from utils import setup_logging, TradeLogger, generate_sample_data, validate_ohlcv_data
 
+# Try to import Alpaca integration
+try:
+    from alpaca_integration import AlpacaDataProvider, AlpacaOrderExecutor
+    ALPACA_AVAILABLE = True
+except ImportError:
+    ALPACA_AVAILABLE = False
+
 # Globale Variablen
 logger = None
 is_running = False
@@ -23,14 +30,20 @@ is_running = False
 
 class LiveTradingBot:
     """
-    Live Trading Bot
+    Live Trading Bot with Alpaca API Integration
     
-    Simuliert Live-Trading mit fortlaufenden Marktdaten.
-    In Production würde dies echte API-Calls zu Alpaca/Binance machen.
+    Supports both live trading with Alpaca API and simulated trading.
+    Mode is determined by API key availability.
     """
     
-    def __init__(self):
-        """Initialisiere Trading Bot"""
+    def __init__(self, use_live_data: bool = True, paper_trading: bool = True):
+        """
+        Initialize Trading Bot
+        
+        Args:
+            use_live_data: True to use Alpaca API, False for simulation
+            paper_trading: True for paper trading, False for live trading
+        """
         global logger
         logger = setup_logging(
             log_level=config.log_level,
@@ -43,7 +56,43 @@ class LiveTradingBot:
         logger.info("🚀 LIVE TRADING BOT GESTARTET")
         logger.info("=" * 70)
         
-        # Initialisiere Komponenten
+        # Initialize Alpaca integration if available and requested
+        self.use_live_data = use_live_data and ALPACA_AVAILABLE
+        self.paper_trading = paper_trading
+        self.alpaca_data_provider = None
+        self.alpaca_order_executor = None
+        
+        if self.use_live_data:
+            try:
+                # Check if API keys are available
+                if config.ALPACA_API_KEY and config.ALPACA_SECRET_KEY:
+                    self.alpaca_data_provider = AlpacaDataProvider(paper=paper_trading)
+                    
+                    # Test connection
+                    if self.alpaca_data_provider.test_connection():
+                        logger.info("✓ Alpaca Data Provider initialized")
+                        
+                        # Initialize order executor if keys are available
+                        self.alpaca_order_executor = AlpacaOrderExecutor(paper=paper_trading)
+                        logger.info("✓ Alpaca Order Executor initialized")
+                    else:
+                        logger.warning("⚠️ Alpaca connection failed, falling back to simulation")
+                        self.use_live_data = False
+                        self.alpaca_data_provider = None
+                else:
+                    logger.warning("⚠️ Alpaca API keys not found, using simulation mode")
+                    self.use_live_data = False
+            except Exception as e:
+                logger.error(f"❌ Error initializing Alpaca: {e}")
+                logger.info("Falling back to simulation mode")
+                self.use_live_data = False
+                self.alpaca_data_provider = None
+                self.alpaca_order_executor = None
+        
+        if not self.use_live_data:
+            logger.info("📊 Running in SIMULATION mode")
+        
+        # Initialize Components
         self.strategy = TradingStrategy(config.to_dict())
         self.trade_logger = TradeLogger(config.trades_file)
         
@@ -53,7 +102,7 @@ class LiveTradingBot:
         self.capital = config.initial_capital
         self.initial_capital = self.capital
         
-        # Daten (Simulation)
+        # Data (Simulation mode)
         self.data: Optional[pd.DataFrame] = None
         self.current_index = 0
         
@@ -62,29 +111,82 @@ class LiveTradingBot:
         logger.info(f"Update Interval: {config.update_interval}s")
         logger.info(f"Active Strategies: {config.active_strategies}")
         logger.info(f"Cooperation Logic: {config.cooperation_logic}")
+        logger.info(f"Mode: {'LIVE (Alpaca)' if self.use_live_data else 'SIMULATION'}")
+        logger.info(f"Trading Type: {'PAPER' if paper_trading else 'LIVE'}")
         logger.info("=" * 70)
     
     def initialize_data(self):
-        """Initialisiere Marktdaten (simuliert)"""
-        logger.info("Generiere initiale Marktdaten...")
-        self.data = generate_sample_data(n_bars=500, start_price=30000)
-        self.current_index = len(self.data) - 1
-        logger.info(f"✓ {len(self.data)} Kerzen generiert")
+        """Initialize market data (from Alpaca or simulated)"""
+        if self.use_live_data and self.alpaca_data_provider:
+            try:
+                logger.info(f"Loading historical data from Alpaca for {config.trading_symbol}...")
+                
+                # Convert trading symbol format if needed (BTC/USDT -> BTCUSD)
+                symbol = config.trading_symbol.replace('/', '').replace('USDT', 'USD')
+                
+                # Get historical data from Alpaca
+                self.data = self.alpaca_data_provider.get_historical_bars(
+                    symbol=symbol,
+                    timeframe='15min',
+                    limit=500
+                )
+                
+                if len(self.data) > 0:
+                    self.current_index = len(self.data) - 1
+                    logger.info(f"✓ {len(self.data)} bars loaded from Alpaca")
+                else:
+                    logger.warning("No data from Alpaca, falling back to simulation")
+                    self.use_live_data = False
+                    self.data = generate_sample_data(n_bars=500, start_price=30000)
+                    self.current_index = len(self.data) - 1
+                    
+            except Exception as e:
+                logger.error(f"Error loading Alpaca data: {e}")
+                logger.info("Falling back to simulation mode")
+                self.use_live_data = False
+                self.data = generate_sample_data(n_bars=500, start_price=30000)
+                self.current_index = len(self.data) - 1
+        else:
+            logger.info("Generating simulated market data...")
+            self.data = generate_sample_data(n_bars=500, start_price=30000)
+            self.current_index = len(self.data) - 1
+            logger.info(f"✓ {len(self.data)} candles generated")
     
     def add_new_candle(self):
-        """Füge neue Kerze hinzu (simuliert Live-Daten)"""
+        """Add new candle (from Alpaca or simulated)"""
         if self.data is None:
             return
         
-        # Hole letzten Preis
+        if self.use_live_data and self.alpaca_data_provider:
+            try:
+                # Get latest data from Alpaca
+                symbol = config.trading_symbol.replace('/', '').replace('USDT', 'USD')
+                current_price = self.alpaca_data_provider.get_current_price(symbol)
+                
+                if current_price > 0:
+                    # Create new candle with current price
+                    last_close = self.data['close'].iloc[-1]
+                    new_candle = pd.DataFrame({
+                        'open': [last_close],
+                        'high': [max(current_price, last_close)],
+                        'low': [min(current_price, last_close)],
+                        'close': [current_price],
+                        'volume': [self.data['volume'].iloc[-1]]  # Use last volume as estimate
+                    })
+                    
+                    self.data = pd.concat([self.data, new_candle], ignore_index=True)
+                    self.current_index = len(self.data) - 1
+                    return
+            except Exception as e:
+                logger.warning(f"Error getting live data: {e}, using simulation")
+        
+        # Simulation mode: Generate new candle with Random Walk
         last_close = self.data['close'].iloc[-1]
         
-        # Generiere neue Kerze mit Random Walk
         new_price = last_close + np.random.normal(0, 100)
-        new_price = max(new_price, 1000)  # Verhindere negative Preise
+        new_price = max(new_price, 1000)  # Prevent negative prices
         
         new_candle = pd.DataFrame({
-            'timestamp': [datetime.now()],
             'open': [last_close],
             'high': [new_price + abs(np.random.normal(0, 50))],
             'low': [new_price - abs(np.random.normal(0, 50))],
