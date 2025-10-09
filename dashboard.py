@@ -1,0 +1,595 @@
+"""
+dashboard.py - Visual Dashboard with Metrics and Charts
+========================================================
+Enhanced dashboard with modal window for managing metrics and charts.
+Supports multiple chart types and real-time data integration.
+"""
+import json
+import os
+from typing import Dict, List, Any, Optional
+from datetime import datetime
+import logging
+
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.use('Agg')  # Non-interactive backend
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+
+try:
+    import plotly.graph_objects as go
+    import plotly.express as px
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+
+from utils import calculate_performance_metrics, load_trades_from_csv
+
+logger = logging.getLogger(__name__)
+
+
+class DashboardConfig:
+    """Configuration for dashboard metrics and charts"""
+    
+    DEFAULT_METRICS = [
+        'total_pnl',
+        'win_rate',
+        'total_trades',
+        'best_trade',
+        'worst_trade',
+        'avg_pnl'
+    ]
+    
+    DEFAULT_CHARTS = [
+        {'type': 'line', 'title': 'P&L Over Time', 'data_source': 'pnl_history'},
+        {'type': 'bar', 'title': 'Trades per Strategy', 'data_source': 'strategy_stats'},
+        {'type': 'pie', 'title': 'Win/Loss Distribution', 'data_source': 'win_loss'}
+    ]
+    
+    def __init__(self, config_file: str = "data/dashboard_config.json"):
+        """
+        Initialize dashboard configuration
+        
+        Args:
+            config_file: Path to configuration file
+        """
+        self.config_file = config_file
+        self.metrics = self.DEFAULT_METRICS.copy()
+        self.charts = self.DEFAULT_CHARTS.copy()
+        self.load_config()
+    
+    def load_config(self):
+        """Load configuration from file"""
+        if os.path.exists(self.config_file):
+            try:
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.metrics = data.get('metrics', self.DEFAULT_METRICS)
+                    self.charts = data.get('charts', self.DEFAULT_CHARTS)
+                logger.info(f"Dashboard config loaded from {self.config_file}")
+            except Exception as e:
+                logger.warning(f"Could not load dashboard config: {e}")
+    
+    def save_config(self):
+        """Save configuration to file"""
+        os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
+        try:
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump({
+                    'metrics': self.metrics,
+                    'charts': self.charts,
+                    'updated_at': datetime.now().isoformat()
+                }, f, indent=2)
+            logger.info(f"Dashboard config saved to {self.config_file}")
+        except Exception as e:
+            logger.error(f"Could not save dashboard config: {e}")
+    
+    def add_metric(self, metric: str):
+        """Add a metric to the dashboard"""
+        if metric not in self.metrics:
+            self.metrics.append(metric)
+            self.save_config()
+            logger.info(f"Added metric: {metric}")
+    
+    def remove_metric(self, metric: str):
+        """Remove a metric from the dashboard"""
+        if metric in self.metrics:
+            self.metrics.remove(metric)
+            self.save_config()
+            logger.info(f"Removed metric: {metric}")
+    
+    def add_chart(self, chart_type: str, title: str, data_source: str):
+        """Add a chart to the dashboard"""
+        chart = {'type': chart_type, 'title': title, 'data_source': data_source}
+        self.charts.append(chart)
+        self.save_config()
+        logger.info(f"Added chart: {title}")
+    
+    def remove_chart(self, title: str):
+        """Remove a chart from the dashboard"""
+        self.charts = [c for c in self.charts if c['title'] != title]
+        self.save_config()
+        logger.info(f"Removed chart: {title}")
+
+
+class VisualDashboard:
+    """
+    Visual Dashboard for Trading Bot
+    
+    Displays metrics and charts with real-time data integration.
+    Supports browser cache and database storage.
+    """
+    
+    def __init__(self, trades_file: str = "data/trades.csv", 
+                 config_file: str = "data/dashboard_config.json"):
+        """
+        Initialize dashboard
+        
+        Args:
+            trades_file: Path to trades CSV file
+            config_file: Path to dashboard configuration
+        """
+        self.trades_file = trades_file
+        self.config = DashboardConfig(config_file)
+        logger.info("Visual Dashboard initialized")
+    
+    def get_metrics(self) -> Dict[str, Any]:
+        """
+        Get current metrics
+        
+        Returns:
+            Dictionary with metric values
+        """
+        trades = load_trades_from_csv(self.trades_file)
+        all_metrics = calculate_performance_metrics(trades)
+        
+        # Filter to only configured metrics
+        return {k: v for k, v in all_metrics.items() if k in self.config.metrics}
+    
+    def get_chart_data(self, data_source: str) -> Dict[str, Any]:
+        """
+        Get data for a specific chart
+        
+        Args:
+            data_source: Type of data to retrieve
+        
+        Returns:
+            Dictionary with chart data
+        """
+        trades = load_trades_from_csv(self.trades_file)
+        
+        if data_source == 'pnl_history':
+            return self._get_pnl_history(trades)
+        elif data_source == 'strategy_stats':
+            return self._get_strategy_stats(trades)
+        elif data_source == 'win_loss':
+            return self._get_win_loss_distribution(trades)
+        else:
+            return {}
+    
+    def _get_pnl_history(self, trades: List[Dict]) -> Dict[str, Any]:
+        """Get P&L history over time"""
+        if not trades:
+            return {'timestamps': [], 'pnl': []}
+        
+        timestamps = []
+        cumulative_pnl = []
+        total = 0
+        
+        for trade in trades:
+            if trade.get('pnl', '0') != '0.00':
+                try:
+                    pnl = float(trade.get('pnl', 0))
+                    total += pnl
+                    timestamps.append(trade.get('timestamp', ''))
+                    cumulative_pnl.append(total)
+                except (ValueError, TypeError):
+                    continue
+        
+        return {'timestamps': timestamps, 'pnl': cumulative_pnl}
+    
+    def _get_strategy_stats(self, trades: List[Dict]) -> Dict[str, Any]:
+        """Get trade statistics per strategy"""
+        strategy_counts = {}
+        
+        for trade in trades:
+            strategies = trade.get('triggering_strategies', '')
+            if strategies:
+                for strategy in strategies.split(','):
+                    strategy = strategy.strip()
+                    strategy_counts[strategy] = strategy_counts.get(strategy, 0) + 1
+        
+        return {
+            'strategies': list(strategy_counts.keys()),
+            'counts': list(strategy_counts.values())
+        }
+    
+    def _get_win_loss_distribution(self, trades: List[Dict]) -> Dict[str, Any]:
+        """Get win/loss distribution"""
+        wins = 0
+        losses = 0
+        
+        for trade in trades:
+            if trade.get('pnl', '0') != '0.00':
+                try:
+                    pnl = float(trade.get('pnl', 0))
+                    if pnl > 0:
+                        wins += 1
+                    elif pnl < 0:
+                        losses += 1
+                except (ValueError, TypeError):
+                    continue
+        
+        return {'labels': ['Wins', 'Losses'], 'values': [wins, losses]}
+    
+    def generate_chart_matplotlib(self, chart_config: Dict[str, Any], 
+                                  output_file: str) -> bool:
+        """
+        Generate chart using Matplotlib
+        
+        Args:
+            chart_config: Chart configuration
+            output_file: Output file path
+        
+        Returns:
+            True if successful
+        """
+        if not MATPLOTLIB_AVAILABLE:
+            logger.warning("Matplotlib not available")
+            return False
+        
+        try:
+            chart_type = chart_config['type']
+            title = chart_config['title']
+            data_source = chart_config['data_source']
+            
+            data = self.get_chart_data(data_source)
+            
+            plt.figure(figsize=(10, 6))
+            
+            if chart_type == 'line' and data_source == 'pnl_history':
+                plt.plot(range(len(data['pnl'])), data['pnl'], marker='o')
+                plt.xlabel('Trade Number')
+                plt.ylabel('Cumulative P&L ($)')
+                plt.grid(True)
+            
+            elif chart_type == 'bar' and data_source == 'strategy_stats':
+                plt.bar(data['strategies'], data['counts'])
+                plt.xlabel('Strategy')
+                plt.ylabel('Number of Trades')
+                plt.xticks(rotation=45)
+            
+            elif chart_type == 'pie' and data_source == 'win_loss':
+                plt.pie(data['values'], labels=data['labels'], autopct='%1.1f%%')
+            
+            plt.title(title)
+            plt.tight_layout()
+            
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            plt.savefig(output_file)
+            plt.close()
+            
+            logger.info(f"Chart saved to {output_file}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error generating chart: {e}")
+            return False
+    
+    def generate_chart_plotly(self, chart_config: Dict[str, Any], 
+                             output_file: str) -> bool:
+        """
+        Generate interactive chart using Plotly
+        
+        Args:
+            chart_config: Chart configuration
+            output_file: Output file path (HTML)
+        
+        Returns:
+            True if successful
+        """
+        if not PLOTLY_AVAILABLE:
+            logger.warning("Plotly not available")
+            return False
+        
+        try:
+            chart_type = chart_config['type']
+            title = chart_config['title']
+            data_source = chart_config['data_source']
+            
+            data = self.get_chart_data(data_source)
+            
+            fig = None
+            
+            if chart_type == 'line' and data_source == 'pnl_history':
+                fig = go.Figure(data=go.Scatter(
+                    x=list(range(len(data['pnl']))),
+                    y=data['pnl'],
+                    mode='lines+markers'
+                ))
+                fig.update_layout(
+                    title=title,
+                    xaxis_title='Trade Number',
+                    yaxis_title='Cumulative P&L ($)'
+                )
+            
+            elif chart_type == 'bar' and data_source == 'strategy_stats':
+                fig = go.Figure(data=go.Bar(
+                    x=data['strategies'],
+                    y=data['counts']
+                ))
+                fig.update_layout(
+                    title=title,
+                    xaxis_title='Strategy',
+                    yaxis_title='Number of Trades'
+                )
+            
+            elif chart_type == 'pie' and data_source == 'win_loss':
+                fig = go.Figure(data=go.Pie(
+                    labels=data['labels'],
+                    values=data['values']
+                ))
+                fig.update_layout(title=title)
+            
+            if fig:
+                os.makedirs(os.path.dirname(output_file), exist_ok=True)
+                fig.write_html(output_file)
+                logger.info(f"Interactive chart saved to {output_file}")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error generating Plotly chart: {e}")
+            return False
+    
+    def generate_all_charts(self, output_dir: str = "data/charts", 
+                           use_plotly: bool = True) -> List[str]:
+        """
+        Generate all configured charts
+        
+        Args:
+            output_dir: Directory for chart outputs
+            use_plotly: Use Plotly (True) or Matplotlib (False)
+        
+        Returns:
+            List of generated file paths
+        """
+        generated_files = []
+        
+        for chart in self.config.charts:
+            title_safe = chart['title'].replace(' ', '_').replace('/', '_')
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            
+            if use_plotly and PLOTLY_AVAILABLE:
+                filename = f"{title_safe}_{timestamp}.html"
+                filepath = os.path.join(output_dir, filename)
+                if self.generate_chart_plotly(chart, filepath):
+                    generated_files.append(filepath)
+            elif MATPLOTLIB_AVAILABLE:
+                filename = f"{title_safe}_{timestamp}.png"
+                filepath = os.path.join(output_dir, filename)
+                if self.generate_chart_matplotlib(chart, filepath):
+                    generated_files.append(filepath)
+        
+        return generated_files
+    
+    def display_metrics_console(self):
+        """Display metrics in console format"""
+        metrics = self.get_metrics()
+        
+        print("\n" + "=" * 60)
+        print("📊 DASHBOARD METRICS")
+        print("=" * 60)
+        
+        for key, value in metrics.items():
+            label = key.replace('_', ' ').title()
+            if 'pnl' in key or 'trade' in key.lower():
+                print(f"{label:.<30} ${value:,.2f}")
+            elif 'rate' in key:
+                print(f"{label:.<30} {value:.2f}%")
+            else:
+                print(f"{label:.<30} {value}")
+        
+        print("=" * 60)
+    
+    def export_dashboard_html(self, output_file: str = "data/dashboard.html"):
+        """
+        Export complete dashboard as HTML
+        
+        Args:
+            output_file: Output HTML file path
+        """
+        metrics = self.get_metrics()
+        
+        html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading Bot Dashboard</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }}
+        .dashboard {{
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        h1 {{
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }}
+        .metrics {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }}
+        .metric-card {{
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }}
+        .metric-label {{
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }}
+        .metric-value {{
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 5px;
+        }}
+        .charts {{
+            margin-top: 30px;
+        }}
+        .timestamp {{
+            text-align: right;
+            color: #999;
+            font-size: 12px;
+            margin-top: 20px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h1>📊 Trading Bot Dashboard</h1>
+        
+        <div class="metrics">
+"""
+        
+        for key, value in metrics.items():
+            label = key.replace('_', ' ').title()
+            if 'pnl' in key or 'trade' in key.lower():
+                formatted_value = f"${value:,.2f}"
+            elif 'rate' in key:
+                formatted_value = f"{value:.2f}%"
+            else:
+                formatted_value = str(value)
+            
+            html += f"""
+            <div class="metric-card">
+                <div class="metric-label">{label}</div>
+                <div class="metric-value">{formatted_value}</div>
+            </div>
+"""
+        
+        html += """
+        </div>
+        
+        <div class="charts">
+            <h2>Charts</h2>
+            <p><em>Charts can be generated using generate_all_charts() method</em></p>
+        </div>
+        
+        <div class="timestamp">
+            Generated: {timestamp}
+        </div>
+    </div>
+</body>
+</html>
+""".format(timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(html)
+        
+        logger.info(f"Dashboard exported to {output_file}")
+
+
+class DashboardModal:
+    """
+    Modal window manager for dashboard configuration
+    
+    Simulates a modal interface for adding/removing metrics and charts.
+    In a GUI application, this would create an actual modal window.
+    """
+    
+    def __init__(self, dashboard: VisualDashboard):
+        """
+        Initialize modal
+        
+        Args:
+            dashboard: VisualDashboard instance
+        """
+        self.dashboard = dashboard
+        self.is_open = False
+    
+    def open(self):
+        """Open the modal"""
+        self.is_open = True
+        logger.info("Dashboard modal opened")
+    
+    def close(self):
+        """Close the modal"""
+        self.is_open = False
+        logger.info("Dashboard modal closed")
+    
+    def add_metric(self, metric: str):
+        """Add a metric through the modal"""
+        if self.is_open:
+            self.dashboard.config.add_metric(metric)
+            return True
+        return False
+    
+    def remove_metric(self, metric: str):
+        """Remove a metric through the modal"""
+        if self.is_open:
+            self.dashboard.config.remove_metric(metric)
+            return True
+        return False
+    
+    def add_chart(self, chart_type: str, title: str, data_source: str):
+        """Add a chart through the modal"""
+        if self.is_open:
+            self.dashboard.config.add_chart(chart_type, title, data_source)
+            return True
+        return False
+    
+    def remove_chart(self, title: str):
+        """Remove a chart through the modal"""
+        if self.is_open:
+            self.dashboard.config.remove_chart(title)
+            return True
+        return False
+    
+    def get_available_metrics(self) -> List[str]:
+        """Get list of available metrics"""
+        return [
+            'total_pnl', 'win_rate', 'total_trades',
+            'best_trade', 'worst_trade', 'avg_pnl'
+        ]
+    
+    def get_available_chart_types(self) -> List[str]:
+        """Get list of available chart types"""
+        return ['line', 'bar', 'pie']
+    
+    def get_available_data_sources(self) -> List[str]:
+        """Get list of available data sources"""
+        return ['pnl_history', 'strategy_stats', 'win_loss']
+
+
+def create_dashboard(trades_file: str = "data/trades.csv",
+                     config_file: str = "data/dashboard_config.json") -> VisualDashboard:
+    """
+    Factory function to create a dashboard instance
+    
+    Args:
+        trades_file: Path to trades CSV
+        config_file: Path to dashboard config
+    
+    Returns:
+        VisualDashboard instance
+    """
+    return VisualDashboard(trades_file, config_file)

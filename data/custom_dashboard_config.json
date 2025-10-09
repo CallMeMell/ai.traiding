@@ -1,0 +1,20 @@
+{
+  "metrics": [
+    "total_pnl",
+    "win_rate",
+    "total_trades"
+  ],
+  "charts": [
+    {
+      "type": "line",
+      "title": "P&L Trend",
+      "data_source": "pnl_history"
+    },
+    {
+      "type": "pie",
+      "title": "Win/Loss",
+      "data_source": "win_loss"
+    }
+  ],
+  "updated_at": "2025-10-09T01:36:26.441802"
+}

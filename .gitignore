@@ -17,6 +17,9 @@ logs/
 data/trades.csv
 data/backtest_results.csv
 data/trading_bot.db
+data/dashboard.html
+data/dashboard_config.json
+data/charts/
 
 # Environment
 .env
