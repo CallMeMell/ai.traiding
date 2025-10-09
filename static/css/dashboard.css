@@ -147,6 +147,36 @@ body.dark-mode {
     }
 }
 
+/* Quick Access Button */
+.quick-access-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all var(--transition-speed) ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.quick-access-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.quick-access-btn:active {
+    transform: translateY(0);
+}
+
+.quick-access-btn i {
+    font-size: 16px;
+}
+
 /* Theme Toggle */
 .theme-toggle {
     background: var(--card-bg);
