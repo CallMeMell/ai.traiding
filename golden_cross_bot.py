@@ -27,6 +27,7 @@ import argparse
 from typing import Optional
 from datetime import datetime, timedelta
 import logging
+import pandas as pd
 
 from golden_cross_strategy import GoldenCrossStrategy
 from utils import setup_logging, TradeLogger
