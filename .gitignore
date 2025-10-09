@@ -25,6 +25,14 @@ data/demo_*/
 data/*_equity.csv
 data/batch_backtest_*.csv
 data/reversal_backtest_*.csv
+data/optimization_*.csv
+data/optimization_*.txt
+data/grid_search_*.csv
+data/grid_search_*.txt
+data/random_search_*.csv
+data/random_search_*.txt
+data/genetic_algorithm_*.csv
+data/genetic_algorithm_*.txt
 
 # Environment
 .env

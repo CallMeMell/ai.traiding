@@ -221,9 +221,16 @@ update_interval: int = 60  # Sekunden
    - Dokumentiere Ergebnisse
    - Wähle Parameter mit bestem Risk/Reward
 
-2. **Grid Search** (Fortgeschritten):
-   - Systematisch alle Kombinationen testen
-   - Nutze Python-Script dafür (kann ich bereitstellen)
+2. **Automated Parameter Optimization** (Empfohlen):
+   - **Grid Search:** Systematisch alle Kombinationen testen
+   - **Random Search:** Schneller, gut für große Parameter-Räume
+   - **Genetic Algorithm:** Evolutionäre Optimierung
+   
+   ```bash
+   python demo_parameter_optimization.py
+   ```
+   
+   Siehe auch: `PARAMETER_OPTIMIZATION_GUIDE.md`
 
 3. **Walk-Forward Analysis:**
    - Optimiere auf Trainings-Periode
