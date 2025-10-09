@@ -504,13 +504,58 @@ def run_tests():
     return result
 
 
+class TestBrokerIntegration(unittest.TestCase):
+    """Test integration with broker_api.py"""
+    
+    def test_broker_factory_simulated(self):
+        """Test creating simulated broker through factory"""
+        try:
+            from broker_api import BrokerFactory
+            
+            broker = BrokerFactory.create_broker(
+                'simulated',
+                initial_capital=10000.0,
+                enable_slippage=True,
+                enable_fees=True
+            )
+            
+            self.assertIsNotNone(broker)
+            
+            # Test placing order
+            order = broker.place_market_order('BTCUSDT', 0.1, 'BUY', current_price=50000.0)
+            self.assertEqual(order['status'], 'FILLED')
+            self.assertIn('slippage', order)
+            self.assertIn('fees', order)
+            
+            # Test getting balance
+            balance = broker.get_account_balance()
+            self.assertIn('total', balance)
+            
+            # Test getting positions
+            positions = broker.get_positions()
+            self.assertEqual(len(positions), 1)
+            
+        except ImportError:
+            self.skipTest("broker_api not available")
+
+
 if __name__ == '__main__':
     print("=" * 80)
     print("SIMULATED LIVE TRADING ENVIRONMENT - TEST SUITE")
     print("=" * 80)
     print()
     
-    result = run_tests()
+    # Add broker integration tests
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    suite.addTests(loader.loadTestsFromTestCase(TestSimulatedLiveTradingEnvironment))
+    suite.addTests(loader.loadTestsFromTestCase(TestOrderExecutionResult))
+    suite.addTests(loader.loadTestsFromTestCase(TestSimulationMetrics))
+    suite.addTests(loader.loadTestsFromTestCase(TestRealisticConditions))
+    suite.addTests(loader.loadTestsFromTestCase(TestBrokerIntegration))
+    
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
     
     print()
     print("=" * 80)
