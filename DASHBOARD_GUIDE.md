@@ -1,21 +1,32 @@
-# 📊 Visual Dashboard Guide
+# 📊 Dashboard Guide - Trading Bot Visualization
 
 ## Übersicht
 
-Das Enhanced Visual Dashboard ist eine leistungsstarke Erweiterung für den Trading-Bot, die es ermöglicht, Metriken und Diagramme zu verwalten und zu visualisieren.
+Das Trading Bot Dashboard bietet **zwei leistungsstarke Möglichkeiten** zur Visualisierung Ihrer Trading-Performance:
+
+1. **🌐 Web Dashboard** - Interaktive Browser-basierte Oberfläche mit Flask
+2. **📊 Programmatic Dashboard** - Python API für Charts, Exports und Automatisierung
 
 ---
 
 ## ✨ Features
 
-### 🎯 Hauptfunktionen
+### 🌐 Web Dashboard (Flask)
+
+- **Live Web Interface**: Professionelle Browser-Oberfläche mit Echtzeit-Updates
+- **Interactive Charts**: Equity Curve, P&L Distribution, Strategy Performance
+- **REST API**: JSON endpoints für externe Integration
+- **Auto-Refresh**: Automatische Datenaktualisierung alle 30 Sekunden
+- **Responsive Design**: Funktioniert auf Desktop, Tablet und Mobile
+
+### 📊 Programmatic Dashboard (Python API)
 
 - **Modal-Fenster**: Verwalten Sie Metriken und Diagramme über ein modales Interface
 - **Mehrere Diagrammtypen**: Unterstützung für Linien-, Balken- und Kreisdiagramme
-- **Echtzeitdaten**: Integration von Live-Daten aus dem Trading-Bot
-- **Persistente Konfiguration**: Speicherung der Einstellungen im Browser-Cache oder Datenbank
-- **Interaktive Charts**: Verwendung von Plotly für interaktive Visualisierungen
+- **Matplotlib & Plotly**: Flexible Chart-Generierung für Reports
+- **Persistente Konfiguration**: Speicherung der Einstellungen in JSON
 - **Export-Funktionen**: HTML-Export für einfaches Teilen
+- **Console Display**: Metriken direkt im Terminal anzeigen
 
 ### 📈 Unterstützte Metriken
 
@@ -44,9 +55,68 @@ Installieren Sie die erforderlichen Pakete:
 pip install -r requirements.txt
 ```
 
-Die neuen Abhängigkeiten umfassen:
+Die Dashboard-Abhängigkeiten umfassen:
+- `Flask>=3.0.0` - Für Web Dashboard
 - `matplotlib>=3.7.0` - Für statische Diagramme
 - `plotly>=5.18.0` - Für interaktive Diagramme
+
+---
+
+## 🌐 Web Dashboard Verwendung
+
+### Starten des Web Dashboards
+
+```bash
+# Methode 1: Mit Flag
+python dashboard.py --web
+
+# Methode 2: Über Funktion
+python -c "from dashboard import start_web_dashboard; start_web_dashboard()"
+```
+
+Das Dashboard ist dann verfügbar unter: **http://localhost:5000**
+
+### Web Dashboard Features
+
+- **Live Metriken**: Total P&L, Capital, Win Rate, Best/Worst Trade
+- **Interactive Charts**: 
+  - Equity Curve (Kapitalverlauf)
+  - P&L Distribution (Gewinn/Verlust pro Trade)
+  - Strategy Performance (Performance nach Strategie)
+- **Recent Trades Table**: Letzte 20 Trades mit allen Details
+- **Auto-Refresh**: Aktualisiert sich automatisch alle 30 Sekunden
+- **API Endpoints**: REST API für externe Tools
+
+### API Endpoints
+
+```bash
+GET /api/metrics         # Performance-Metriken
+GET /api/charts          # Chart-Daten
+GET /api/trades          # Recent Trades
+GET /api/config          # Dashboard-Konfiguration
+GET /api/status          # Bot-Status
+```
+
+**Beispiel API-Aufruf:**
+```bash
+curl http://localhost:5000/api/metrics
+```
+
+---
+
+## 📊 Programmatic Dashboard Verwendung
+
+### Demo ausführen
+
+```bash
+# Programmatic Dashboard Demo (ohne --web)
+python dashboard.py
+```
+
+Dies zeigt:
+- Metriken in der Konsole
+- Generiert Charts (PNG/HTML)
+- Exportiert HTML-Dashboard
 
 ### Erste Schritte
 

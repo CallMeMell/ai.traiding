@@ -1,10 +1,12 @@
-```
 # Core Dependencies
 pandas>=2.0.0
 numpy>=1.24.0
 python-dotenv>=1.0.0
 
-# Dashboard and Visualization
+# Web Dashboard (Flask-based interactive web interface)
+Flask>=3.0.0
+
+# Dashboard and Visualization (for programmatic charts and exports)
 matplotlib>=3.7.0
 plotly>=5.18.0
 

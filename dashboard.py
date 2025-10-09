@@ -593,3 +593,158 @@ def create_dashboard(trades_file: str = "data/trades.csv",
         VisualDashboard instance
     """
     return VisualDashboard(trades_file, config_file)
+
+
+# ==================== FLASK WEB DASHBOARD ====================
+
+try:
+    from flask import Flask, render_template, jsonify
+    FLASK_AVAILABLE = True
+except ImportError:
+    FLASK_AVAILABLE = False
+    logger.warning("Flask not available. Web dashboard will not be accessible.")
+
+if FLASK_AVAILABLE:
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'trading-bot-secret-key-change-in-production'
+    
+    # Global dashboard instance for web interface
+    _web_dashboard = None
+    
+    def init_web_dashboard(trades_file: str = "data/trades.csv",
+                          config_file: str = "data/dashboard_config.json"):
+        """Initialize the web dashboard instance"""
+        global _web_dashboard
+        _web_dashboard = create_dashboard(trades_file, config_file)
+        return _web_dashboard
+    
+    @app.route('/')
+    def index():
+        """Main dashboard page"""
+        return render_template('dashboard.html')
+    
+    @app.route('/api/metrics')
+    def api_metrics():
+        """API endpoint for performance metrics"""
+        if _web_dashboard is None:
+            init_web_dashboard()
+        metrics = _web_dashboard.get_metrics()
+        return jsonify(metrics)
+    
+    @app.route('/api/charts')
+    def api_charts():
+        """API endpoint for chart data"""
+        if _web_dashboard is None:
+            init_web_dashboard()
+        
+        charts_data = {}
+        for chart in _web_dashboard.config.charts:
+            data_source = chart.get('data_source')
+            charts_data[data_source] = _web_dashboard.get_chart_data(data_source)
+        
+        return jsonify(charts_data)
+    
+    @app.route('/api/trades')
+    def api_trades():
+        """API endpoint for recent trades"""
+        if _web_dashboard is None:
+            init_web_dashboard()
+        
+        trades = load_trades_from_csv(_web_dashboard.trades_file)
+        # Return last 20 trades
+        recent_trades = trades[-20:] if len(trades) > 20 else trades
+        return jsonify(recent_trades)
+    
+    @app.route('/api/config')
+    def api_config():
+        """API endpoint for dashboard configuration"""
+        if _web_dashboard is None:
+            init_web_dashboard()
+        
+        return jsonify({
+            'metrics': _web_dashboard.config.metrics,
+            'charts': _web_dashboard.config.charts
+        })
+    
+    @app.route('/api/status')
+    def api_status():
+        """API endpoint for bot status"""
+        return jsonify({
+            'status': 'running',
+            'last_update': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+    
+    def start_web_dashboard(host: str = '0.0.0.0', port: int = 5000, 
+                           trades_file: str = "data/trades.csv",
+                           config_file: str = "data/dashboard_config.json",
+                           debug: bool = False):
+        """
+        Start the Flask web dashboard server
+        
+        Args:
+            host: Host to bind to
+            port: Port to bind to
+            trades_file: Path to trades CSV
+            config_file: Path to dashboard config
+            debug: Enable debug mode
+        """
+        print("=" * 70)
+        print("🌐 Trading Bot Web Dashboard wird gestartet...")
+        print("=" * 70)
+        
+        # Initialize dashboard
+        init_web_dashboard(trades_file, config_file)
+        
+        # Create templates directory if needed
+        templates_dir = os.path.join(os.path.dirname(__file__), 'templates')
+        os.makedirs(templates_dir, exist_ok=True)
+        
+        print(f"📁 Templates: {templates_dir}")
+        print(f"🚀 Dashboard läuft auf: http://localhost:{port}")
+        print("📊 API Endpoints:")
+        print(f"   - http://localhost:{port}/api/metrics")
+        print(f"   - http://localhost:{port}/api/charts")
+        print(f"   - http://localhost:{port}/api/trades")
+        print(f"   - http://localhost:{port}/api/config")
+        print(f"   - http://localhost:{port}/api/status")
+        print("📊 Drücke Ctrl+C zum Beenden")
+        print("=" * 70)
+        
+        app.run(host=host, port=port, debug=debug)
+
+
+if __name__ == '__main__':
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == '--web':
+        # Start web dashboard
+        if FLASK_AVAILABLE:
+            start_web_dashboard()
+        else:
+            print("Error: Flask is not installed. Install it with: pip install Flask")
+            sys.exit(1)
+    else:
+        # Demo of programmatic usage
+        print("=" * 70)
+        print("📊 Dashboard Demo - Programmatic Usage")
+        print("=" * 70)
+        
+        dashboard = create_dashboard()
+        
+        # Display metrics
+        dashboard.display_metrics_console()
+        
+        # Generate charts
+        print("\n🎨 Generating charts...")
+        charts = dashboard.generate_all_charts()
+        print(f"✅ Generated {len(charts)} charts")
+        
+        # Export HTML
+        print("\n📄 Exporting HTML dashboard...")
+        dashboard.export_dashboard_html()
+        print("✅ Dashboard exported to data/dashboard.html")
+        
+        print("\n" + "=" * 70)
+        print("💡 Tip: Run with '--web' flag to start web dashboard:")
+        print("   python dashboard.py --web")
+        print("=" * 70)
