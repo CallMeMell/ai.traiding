@@ -181,6 +181,50 @@
         }
       },
       "detail": "🔍 Lint all PowerShell scripts using PSScriptAnalyzer"
+    },
+    {
+      "label": "Live: Automated Setup",
+      "type": "shell",
+      "command": "bash scripts/automated_setup.sh",
+      "windows": {
+        "command": ".\\scripts\\automated_setup.ps1",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "problemMatcher": [],
+      "detail": "🚀 Vollautomatisierter Setup für Live Trading - API Keys, Risk Config, Preflight & Dry-Run Test"
+    },
+    {
+      "label": "Live: Automated Setup (Auto)",
+      "type": "shell",
+      "command": "bash scripts/automated_setup.sh --auto",
+      "windows": {
+        "command": ".\\scripts\\automated_setup.ps1 -Auto",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "problemMatcher": [],
+      "detail": "🤖 Automatischer Setup mit Defaults - für Testing/CI"
     }
   ]
 }
