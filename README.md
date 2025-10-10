@@ -126,6 +126,23 @@ MASTER_VERSION/
 
 📖 **[Quick Start Guide](QUICK_START_SIMULATED_TRADING.md)** | **[Full Documentation](SIMULATED_LIVE_TRADING_GUIDE.md)**
 
+### ✅ Automatisierter Workflow (NEU) 🆕
+- **Phasenbasierte Automatisierung**: Strukturierte Abfolge für Daten-, Strategie- und API-Phasen
+- **Zeitlimits**: Konfigurierbare Timeouts pro Phase (Standard: 2h für Daten/Strategie, 1h für API)
+- **Automatische Pausen**: Selbstprüfung zwischen Phasen ohne manuelle Bestätigung
+- **Fehlerbehandlung**: Retry-Mechanismus mit Backoff bei transienten Fehlern
+- **Live-Monitoring**: Heartbeat und Metriken werden in Session-Events geschrieben
+- **API-Sicherheit**: Sichere Verwaltung von API-Keys aus Umgebungsvariablen
+
+### ✅ View Session Dashboard (NEU) 🆕
+- **Echtzeit-Visualisierung**: Streamlit-basiertes Dashboard mit Plotly-Charts
+- **PnL/Equity Curve**: Liniendiagramm für Gewinn-/Verlustentwicklung
+- **Wins/Losses**: Balkendiagramm nach Zeitfenster
+- **Flexible Filter**: Zeitbereich (letzte N Stunden/Tage, benutzerdefiniert) und Strategy-Tags
+- **URL-Persistenz**: Filterzustand wird in URL gespeichert
+- **Auto-Refresh**: Live-Updates alle paar Sekunden
+- **Null-Risiko**: Komplett entkoppelt von Trading-Logik
+
 ---
 
 ## 🚀 Installation
@@ -329,6 +346,102 @@ monitor.start_monitoring()
 ```
 
 📖 **See [LIVE_MARKET_MONITOR_GUIDE.md](LIVE_MARKET_MONITOR_GUIDE.md) for detailed setup and usage.**
+
+### 🤖 Automatisierter Workflow ausführen 🆕
+
+Starte den automatisierten Real-Money-Readiness Workflow:
+
+```bash
+python automation/runner.py
+```
+
+**Was passiert:**
+- **Phase 1 (Daten)**: Lädt und validiert Daten (Timeout: 2 Stunden)
+- **Pause & Check**: Automatische Selbstprüfung (max. 10 Minuten)
+- **Phase 2 (Strategie)**: Testet und validiert Strategien (Timeout: 2 Stunden)
+- **Pause & Check**: Automatische Selbstprüfung
+- **Phase 3 (API)**: Validiert API-Keys und Konnektivität (Timeout: 1 Stunde)
+- **Abschluss**: Speichert vollständiges Session-Log und Metriken
+
+**Ausgabe:**
+```
+======================================================================
+AUTOMATION RUNNER - REAL-MONEY READINESS WORKFLOW
+======================================================================
+
+--- Phase 1: Data Phase ---
+Executing data phase...
+
+--- Pause and Self-Check ---
+Running self-check...
+
+--- Phase 2: Strategy Phase ---
+Executing strategy phase...
+
+--- Pause and Self-Check ---
+Running self-check...
+
+--- Phase 3: API Phase ---
+Executing API phase...
+
+======================================================================
+WORKFLOW COMPLETED - Status: success
+======================================================================
+
+AUTOMATION SUMMARY
+======================================================================
+Status: success
+Duration: 16.00 seconds
+
+Phases completed:
+  - data_phase: success (2.00s)
+  - strategy_phase: success (2.00s)
+  - api_phase: success (2.00s)
+======================================================================
+```
+
+**Session-Dateien:**
+- `data/session/events.jsonl` - Alle Events (JSONL-Format)
+- `data/session/summary.json` - Zusammenfassung mit ROI
+
+### 📊 View Session Dashboard starten 🆕
+
+Visualisiere Sessions und Trades in Echtzeit:
+
+```bash
+# Optional: Installiere Streamlit (falls nicht vorhanden)
+pip install streamlit plotly
+
+# Starte Dashboard
+streamlit run tools/view_session_app.py
+```
+
+**Features:**
+- **Echtzeit-Metriken**: Initial Capital, Current Equity, ROI, Fortschritt
+- **Equity Curve**: Liniendiagramm zeigt PnL-Entwicklung
+- **Wins vs Losses**: Balkendiagramm pro Phase
+- **Event-Historie**: Tabelle mit letzten 20 Events
+
+**Filter:**
+- **Zeitbereich**: Alle, letzte 1h, letzte 24h, letzte 7 Tage, benutzerdefiniert
+- **Strategy Tag**: Alle, data_phase, strategy_phase, api_phase
+- **Auto-Refresh**: Aktivierbar für Live-Updates alle 5 Sekunden
+
+**Browser öffnet automatisch:** `http://localhost:8501`
+
+### 🔐 API-Keys konfigurieren
+
+Erstelle eine `.env` Datei für API-Keys:
+
+```bash
+# .env Datei im Hauptverzeichnis
+BINANCE_API_KEY=dein_binance_api_key
+BINANCE_API_SECRET=dein_binance_api_secret
+ALPACA_API_KEY=dein_alpaca_api_key
+ALPACA_API_SECRET=dein_alpaca_api_secret
+```
+
+**Wichtig:** Niemals API-Keys direkt im Code committen!
 
 ---
 
