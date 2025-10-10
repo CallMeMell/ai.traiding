@@ -634,20 +634,24 @@ Ctrl+Shift+P → "Tasks: Run Task" → "Live: Runner"
 
 Die neue `automation/live_switch.py` bietet eine einfache, sichere Methode zum Wechseln zwischen DRY_RUN und LIVE Modi:
 
-**Zu Live-Modus wechseln (mit Bestätigung):**
+**Option 1: PowerShell-Script (empfohlen):**
+```powershell
+# Aktuellen Status prüfen
+.\scripts\live_switch.ps1 -Status
+
+# Zu DRY_RUN wechseln
+.\scripts\live_switch.ps1 -DryRun
+
+# Zu Live-Modus wechseln (mit Bestätigung)
+.\scripts\live_switch.ps1 -Live
+```
+
+**Option 2: Direkter Python-Aufruf:**
 ```powershell
 # Windows PowerShell (venv\Scripts verwenden)
-.\venv\Scripts\python.exe -m automation.live_switch --live
-```
-
-**Zu DRY_RUN Modus wechseln:**
-```powershell
-.\venv\Scripts\python.exe -m automation.live_switch --dry-run
-```
-
-**Aktuellen Status prüfen:**
-```powershell
 .\venv\Scripts\python.exe -m automation.live_switch --status
+.\venv\Scripts\python.exe -m automation.live_switch --dry-run
+.\venv\Scripts\python.exe -m automation.live_switch --live
 ```
 
 **Python API Verwendung:**
