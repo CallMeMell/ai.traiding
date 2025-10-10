@@ -106,9 +106,21 @@ const Features = {
         this.hideAllViews();
         const modal = this.createModal('Project Progress Monitor', this.getViewSessionsContent());
         document.body.appendChild(modal);
-        // Load project progress and sessions data
+        // Load project progress, active tasks, and sessions data
         this.loadProjectProgress();
+        this.loadActiveTasks();
         this.loadSessions();
+        // Start auto-refresh for active tasks (every 5 seconds)
+        if (this.activeTasksInterval) {
+            clearInterval(this.activeTasksInterval);
+        }
+        this.activeTasksInterval = setInterval(() => {
+            if (document.getElementById('activeTasksList')) {
+                this.loadActiveTasks();
+            } else {
+                clearInterval(this.activeTasksInterval);
+            }
+        }, 5000);
     },
     
     // Show broker connection view
@@ -410,6 +422,27 @@ const Features = {
                 </div>
                 
                 <div class="panel-body">
+                    <!-- Active Tasks Section -->
+                    <div class="active-tasks-section" id="activeTasksSection">
+                        <h4><i class="fas fa-play-circle"></i> Active Tasks</h4>
+                        <div class="filter-controls-simple">
+                            <button class="btn btn-secondary" onclick="Features.loadActiveTasks()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div id="activeTasksLoading" class="loading-indicator" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Loading active tasks...
+                        </div>
+                        <div id="activeTasksList" class="active-tasks-list">
+                            <!-- Active tasks will be loaded here -->
+                        </div>
+                        <div id="activeTasksEmpty" class="empty-state" style="display: none;">
+                            <i class="fas fa-coffee"></i>
+                            <p>No active tasks running</p>
+                            <small>Active tasks will appear here when operations are in progress</small>
+                        </div>
+                    </div>
+                    
                     <!-- Overall Progress Bar -->
                     <div class="progress-section">
                         <h4>Overall Progress</h4>
@@ -579,6 +612,117 @@ const Features = {
                 </div>
             `;
         }).join('');
+    },
+    
+    // Load active tasks from API
+    async loadActiveTasks() {
+        const loadingEl = document.getElementById('activeTasksLoading');
+        const listEl = document.getElementById('activeTasksList');
+        const emptyEl = document.getElementById('activeTasksEmpty');
+        
+        if (!listEl) return;
+        
+        try {
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (listEl) listEl.innerHTML = '';
+            if (emptyEl) emptyEl.style.display = 'none';
+            
+            const response = await fetch('/api/active-tasks');
+            const data = await response.json();
+            const tasks = data.tasks || [];
+            
+            if (loadingEl) loadingEl.style.display = 'none';
+            
+            if (!tasks || tasks.length === 0) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+            
+            // Render active tasks
+            tasks.forEach(task => {
+                const taskCard = this.createActiveTaskCard(task);
+                listEl.appendChild(taskCard);
+            });
+            
+        } catch (error) {
+            console.error('Error loading active tasks:', error);
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (listEl) listEl.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle"></i> Error loading active tasks</div>';
+        }
+    },
+    
+    // Create active task card element
+    createActiveTaskCard(task) {
+        const card = document.createElement('div');
+        card.className = 'active-task-card';
+        
+        // Determine status class and icon
+        let statusClass = 'status-running';
+        let statusIcon = 'fa-spinner fa-spin';
+        let statusText = 'Running';
+        
+        if (task.status === 'completed') {
+            statusClass = 'status-completed';
+            statusIcon = 'fa-check-circle';
+            statusText = 'Completed';
+        } else if (task.status === 'failed') {
+            statusClass = 'status-failed';
+            statusIcon = 'fa-times-circle';
+            statusText = 'Failed';
+        } else if (task.status === 'queued') {
+            statusClass = 'status-queued';
+            statusIcon = 'fa-clock';
+            statusText = 'Queued';
+        }
+        
+        // Get task type icon
+        let typeIcon = 'fa-cog';
+        if (task.type === 'backtest') typeIcon = 'fa-chart-line';
+        else if (task.type === 'simulation') typeIcon = 'fa-flask';
+        else if (task.type === 'optimization') typeIcon = 'fa-sliders-h';
+        else if (task.type === 'live_trading') typeIcon = 'fa-rocket';
+        
+        card.innerHTML = `
+            <div class="task-header">
+                <div class="task-title">
+                    <i class="fas ${typeIcon}"></i>
+                    <strong>${task.name}</strong>
+                </div>
+                <div class="task-status ${statusClass}">
+                    <i class="fas ${statusIcon}"></i>
+                    <span>${statusText}</span>
+                </div>
+            </div>
+            <div class="task-details">
+                <div class="task-info">
+                    <span class="info-label">Type:</span>
+                    <span class="info-value">${task.type}</span>
+                </div>
+                ${task.details ? `
+                <div class="task-info">
+                    <span class="info-label">Details:</span>
+                    <span class="info-value">${task.details}</span>
+                </div>
+                ` : ''}
+                <div class="task-info">
+                    <span class="info-label">Started:</span>
+                    <span class="info-value">${task.started_at}</span>
+                </div>
+            </div>
+            ${task.status === 'running' ? `
+            <div class="task-progress">
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: ${task.progress}%">
+                            <span class="progress-text">${task.progress}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+        `;
+        
+        return card;
     },
     
     // Load sessions from API (simplified for progress monitoring)
