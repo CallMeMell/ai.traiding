@@ -4,6 +4,36 @@ Dieses Dokument trackt laufende Arbeiten an Issues und Features. Öffne die GitH
 
 ---
 
+## ✅ Kürzlich abgeschlossen: Automation & CI Smoke Testing
+
+**Automation für lokale Entwicklung & CI (Issue #40):**
+
+✅ **VS Code Compound Task "Dev: Start All"**
+- Startet Automation Runner + View Session gleichzeitig
+- Separate Terminals für beide Prozesse
+- Cross-platform Scripts unter `scripts/`
+
+✅ **Python Wrapper Scripts**
+- `scripts/setup_env.py` - Environment setup (Verzeichnisse, .env defaults, unbuffered output)
+- `scripts/run_automation.py` - Runner wrapper mit Duration-Parameter
+- `scripts/run_view_session.py` - Streamlit wrapper
+- `scripts/validate_session.py` - Schema validation für events.jsonl & summary.json
+
+✅ **GitHub Actions Workflow**
+- `.github/workflows/session-smoke.yml` - automatischer Smoke Test
+- workflow_dispatch trigger (manuelle Ausführung mit Parametern)
+- pull_request trigger (optional, auskommentiert)
+- DRY_RUN=true by default, keine Secrets erforderlich
+- Schema-Validierung, Artifact-Upload, Summary-Generation
+
+**Vorteile:**
+- 🚀 One-click Start für lokale Entwicklung
+- ✅ CI-Smoke-Tests ohne API-Keys
+- 📦 Session-Daten als Artifacts
+- 📊 Übersichtliche Summaries in GitHub Actions
+
+---
+
 ## Issue #42: View Session – Visualisierung & Filter
 
 **Branch**: `feature/view-session-visualization-#42`

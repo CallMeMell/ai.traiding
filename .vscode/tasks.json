@@ -4,9 +4,9 @@
     {
       "label": "Install Dev Deps",
       "type": "shell",
-      "command": "python3 -m venv venv && . venv/bin/activate && pip install --upgrade pip && pip install streamlit plotly pandas requests python-dotenv",
+      "command": "python3 -m venv venv && . venv/bin/activate && pip install --upgrade pip && pip install streamlit plotly pandas requests python-dotenv pydantic",
       "windows": {
-        "command": "python -m venv venv && .\\venv\\Scripts\\activate && pip install --upgrade pip && pip install streamlit plotly pandas requests python-dotenv"
+        "command": "python -m venv venv && .\\venv\\Scripts\\activate && pip install --upgrade pip && pip install streamlit plotly pandas requests python-dotenv pydantic"
       },
       "group": "build",
       "presentation": {
@@ -18,9 +18,9 @@
     {
       "label": "Run: Automation Runner (Dry-Run)",
       "type": "shell",
-      "command": ". venv/bin/activate && export DRY_RUN=true && export BROKER_NAME=binance && export BINANCE_BASE_URL=https://testnet.binance.vision && python automation/runner.py",
+      "command": ". venv/bin/activate && python scripts/run_automation.py",
       "windows": {
-        "command": ".\\venv\\Scripts\\activate && set DRY_RUN=true && set BROKER_NAME=binance && set BINANCE_BASE_URL=https://testnet.binance.vision && python automation/runner.py"
+        "command": ".\\venv\\Scripts\\activate && python scripts/run_automation.py"
       },
       "group": "test",
       "presentation": {
@@ -32,9 +32,9 @@
     {
       "label": "Run: View Session (Streamlit)",
       "type": "shell",
-      "command": ". venv/bin/activate && streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0",
+      "command": ". venv/bin/activate && python scripts/run_view_session.py",
       "windows": {
-        "command": ".\\venv\\Scripts\\activate && streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0"
+        "command": ".\\venv\\Scripts\\activate && python scripts/run_view_session.py"
       },
       "group": "test",
       "presentation": {
@@ -51,6 +51,19 @@
           "beginsPattern": "^.*Streamlit.*$",
           "endsPattern": "^.*You can now view your Streamlit app.*$"
         }
+      }
+    },
+    {
+      "label": "Dev: Start All",
+      "dependsOn": [
+        "Run: Automation Runner (Dry-Run)",
+        "Run: View Session (Streamlit)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
       }
     }
   ]

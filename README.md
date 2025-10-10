@@ -872,6 +872,56 @@ Dieses Projekt enthält vordefinierte VS Code Tasks für schnelle Entwicklung in
 - [#42](https://github.com/CallMeMell/ai.traiding/issues/42) - View Session Dashboard
 - [#44](https://github.com/CallMeMell/ai.traiding/issues/44) - Echtgeld-Automatisierung
 
+### Automatischer Start & CI Smoke
+
+**One-Click Start für lokale Entwicklung:**
+
+Mit dem neuen **"Dev: Start All"** Task kannst du Runner und View Session gleichzeitig starten:
+
+1. Drücke `Ctrl+Shift+P` (bzw. `Cmd+Shift+P` auf Mac)
+2. Wähle "Tasks: Run Task"
+3. Wähle **"Dev: Start All"**
+
+Dies startet automatisch:
+- ✅ Automation Runner (im Dry-Run-Modus, separate Terminal)
+- ✅ View Session Dashboard (Streamlit auf Port 8501, separate Terminal)
+- ✅ Port 8501 wird automatisch weitergeleitet in Codespaces
+
+**Manuelle Alternative:**
+- **Runner**: `python scripts/run_automation.py [--duration SECONDS] [--enable-validation]`
+- **View Session**: `python scripts/run_view_session.py`
+- **Validation**: `python scripts/validate_session.py`
+
+**Cross-Platform Scripts:**
+Alle Scripts unter `scripts/` funktionieren auf Windows, macOS und Linux:
+- `setup_env.py` - Erstellt Verzeichnisse, .env-Datei, aktiviert unbuffered Output
+- `run_automation.py` - Wrapper für Runner mit Timeout-Support
+- `run_view_session.py` - Wrapper für Streamlit
+- `validate_session.py` - Validiert Events & Summary gegen Schemas
+
+**GitHub Actions - CI Smoke Test:**
+
+Automatische Smoke Tests laufen bei jedem PR (optional) oder manuell:
+
+1. Gehe zu **Actions** → **Session Smoke Test**
+2. Klicke **Run workflow**
+3. Wähle Parameter:
+   - `duration_secs`: Wie lange der Test läuft (default: 60s)
+   - `mode`: `dry_run` (default, keine echten Trades) oder `live`
+4. Der Workflow:
+   - ✅ Installiert Dependencies
+   - ✅ Führt Automation für X Sekunden aus (DRY_RUN=true)
+   - ✅ Validiert Events & Summary gegen Schemas
+   - ✅ Lädt Session-Daten als Artifact hoch
+   - ✅ Zeigt Summary mit Trades, Events, Status im Actions-Log
+
+**Vorteile:**
+- 🔒 **DRY_RUN standardmäßig** - keine echten Trades
+- 🔑 **Keine Secrets erforderlich** - läuft ohne API-Keys
+- ✅ **Schema-Validierung** - stellt sicher, dass Events/Summary korrekt sind
+- 📦 **Artifacts** - Session-Daten zum Download verfügbar
+- 📊 **Summary** - übersichtliche Ergebnisse direkt im Actions-Tab
+
 ---
 
 ## ⚠️ Disclaimer
