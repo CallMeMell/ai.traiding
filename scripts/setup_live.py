@@ -83,9 +83,12 @@ def store_credentials(api_key, api_secret):
         print(f"❌ Failed to store credentials: {e}")
         return False
 
-def run_strategy_selection() -> Optional[str]:
+def run_strategy_selection(auto_mode: bool = False) -> Optional[str]:
     """
     Führe automatische Strategie-Auswahl durch
+    
+    Args:
+        auto_mode: Wenn True, wird die Auswahl ohne Benutzeraufforderung durchgeführt
     
     Returns:
         Name der empfohlenen Strategie oder None bei Fehler
@@ -99,10 +102,14 @@ def run_strategy_selection() -> Optional[str]:
     print("Dies kann einige Minuten dauern.")
     print()
     
-    choice = input("Strategie-Auswahl durchführen? (j/n) [j]: ").strip().lower()
-    if choice == 'n':
-        print("⏭️  Strategie-Auswahl übersprungen")
-        return None
+    if not auto_mode:
+        choice = input("Strategie-Auswahl durchführen? (j/n) [j]: ").strip().lower()
+        if choice == 'n':
+            print("⏭️  Strategie-Auswahl übersprungen")
+            return None
+    else:
+        print("🤖 Automatischer Modus: Strategie-Auswahl wird durchgeführt...")
+        print()
     
     try:
         # Import hier um Startup zu beschleunigen
@@ -273,6 +280,40 @@ def write_risk_config(risk_params):
         print(f"❌ Failed to write risk configuration: {e}")
         return False
 
+def update_strategy_in_config(strategy_name: str) -> bool:
+    """
+    Update strategy in existing config/live_risk.yaml
+    
+    Args:
+        strategy_name: Name of the strategy to set
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        config_path = "config/live_risk.yaml"
+        
+        if not os.path.exists(config_path):
+            print(f"⚠️  Config file {config_path} not found")
+            return False
+        
+        # Read existing config
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f) or {}
+        
+        # Update strategy
+        config['strategy'] = strategy_name
+        
+        # Write back
+        with open(config_path, 'w') as f:
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        
+        print(f"✅ Strategy updated in {config_path}: {strategy_name}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to update strategy in config: {e}")
+        return False
+
 def verify_storage():
     """
     Verify that credentials can be retrieved from keyring.
@@ -296,6 +337,43 @@ def verify_storage():
 
 def main():
     """Main setup wizard flow."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Live Trading Setup Wizard')
+    parser.add_argument('--auto-strategy', action='store_true',
+                        help='Automatically select and set the best strategy without prompting')
+    parser.add_argument('--strategy-only', action='store_true',
+                        help='Only run strategy selection and update config (skip API key setup)')
+    args = parser.parse_args()
+    
+    # Strategy-only mode: Just run selection and update config
+    if args.strategy_only:
+        print_banner()
+        print("🎯 Strategie-Auswahl Modus")
+        print("=" * 60)
+        print()
+        
+        recommended_strategy = run_strategy_selection(auto_mode=args.auto_strategy)
+        
+        if recommended_strategy:
+            # Update strategy in existing config
+            if update_strategy_in_config(recommended_strategy):
+                print()
+                print("=" * 60)
+                print("✅ Strategy Selection Complete!")
+                print("=" * 60)
+                print(f"   Selected Strategy: {recommended_strategy}")
+                print(f"   Updated in: config/live_risk.yaml")
+                print("=" * 60)
+                return 0
+            else:
+                print("⚠️  Strategy selected but config update failed")
+                return 1
+        else:
+            print("⚠️  No strategy selected")
+            return 1
+    
+    # Normal setup flow
     print_banner()
     
     # Prompt for API keys
@@ -313,7 +391,7 @@ def main():
         return 1
     
     # Run strategy selection
-    recommended_strategy = run_strategy_selection()
+    recommended_strategy = run_strategy_selection(auto_mode=args.auto_strategy)
     
     # Prompt for risk parameters
     risk_params = prompt_risk_params(recommended_strategy)
