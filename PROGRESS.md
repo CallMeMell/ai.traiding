@@ -103,6 +103,102 @@ Ziel: Vollautomatisierte Trading-Pipeline für Echtgeld mit Sicherheitschecks, M
 
 ---
 
+## ✅ Completed: Live Observability Enhancement (Issues #42, #44)
+
+**Branch**: `copilot/add-live-observability-features`  
+**Status**: ✅ Completed  
+**Related Issues**: #42 (View Session), #44 (Echtgeld-Automatisierung)  
+**Related PR**: Complements PR #48
+
+### Summary
+Implemented full live observability of the automation runner with structured events, schema validation, and real-time monitoring capabilities.
+
+### Key Features Delivered
+
+#### 1. **Schema Definition & Validation** ✅
+- Created `automation/schemas.py` with Pydantic v2 models
+- Event schema supports: timestamp, session_id, type, phase, level, message, metrics, order, details
+- Summary schema with session metadata, totals, ROI, max_drawdown, runtime
+- Validation utilities in `automation/validate.py` with lenient and strict modes
+- Comprehensive test coverage (13 tests passing)
+
+#### 2. **Enhanced Automation Runner** ✅
+- Rich event emission methods:
+  - `write_event()` - structured event creation
+  - `heartbeat()` - periodic health checks with metrics
+  - `begin_phase()` / `end_phase()` - phase lifecycle tracking
+  - `checkpoint()` - validation checkpoints
+  - `autocorrect_attempt()` - retry/backoff tracking
+  - `update_summary()` - incremental summary updates
+- Background heartbeat thread (daemon) for continuous monitoring
+- Session tracking with UUID
+- Validation support (optional, backward compatible)
+- JSON flush for immediate writes
+- Events: runner_start, runner_end, phase_start, phase_end, checkpoint, heartbeat, error, summary_updated
+
+#### 3. **Enhanced Streamlit View Session** ✅
+- **Activity Feed** (📰): Latest 100 events with emoji indicators, timestamps, and details
+- **Current Status Panel** (📡): Live phase, heartbeat age, uptime, session status
+- **Performance Metrics** (📊): Real-time KPIs, equity, P&L, win rate, trade stats
+- **Advanced Filters**:
+  - Timeframe presets: 15min, 1h, 4h, Today, All, Custom
+  - Phase filter (data, strategy, api)
+  - Event type filter (runner_start, checkpoint, heartbeat, etc.)
+- **Auto-refresh**: Configurable 10s interval with manual refresh button
+- **Caching**: Incremental event reading for performance
+- **Graceful states**: Loading, empty, error with actionable hints
+
+#### 4. **Testing** ✅
+- Schema validation tests: 13 tests passing
+- Session store tests: 8 tests passing
+- Enhanced view session tests: 6 tests passing
+- Smoke tests: 6 comprehensive tests validating end-to-end workflow
+- **Total: 33 tests passing**
+
+#### 5. **Documentation** ✅
+- Updated README with "Live-Überwachung (View Session)" section
+- Documented Activity Feed, Current Status Panel, filters, and controls
+- Added VS Code Tasks setup instructions
+- Updated PROGRESS.md with completion summary
+
+### Technical Highlights
+- **Pydantic v2** for robust schema validation
+- **Backward compatible** - validation is optional
+- **Real-time updates** - JSON flushed immediately after writes
+- **DRY_RUN mode** - works without API keys
+- **Thread-safe** - heartbeat runs in background daemon thread
+- **Performance optimized** - event caching and tail reading support
+
+### Files Added/Modified
+- **New**: `automation/schemas.py`, `automation/validate.py`
+- **New**: `test_schemas.py`, `test_view_session_enhanced.py`, `test_smoke_automation.py`
+- **Modified**: `automation/runner.py`, `core/session_store.py`, `tools/view_session_app.py`
+- **Modified**: `requirements.txt` (added pydantic), `README.md`, `PROGRESS.md`
+
+### Example Event Structure
+```json
+{
+  "timestamp": "2025-10-10T06:33:46.578201",
+  "session_id": "7823b4bd-e52b-4a9a-9443-fc62dd5583aa",
+  "type": "phase_start",
+  "phase": "data_phase",
+  "level": "info",
+  "message": "Starting data phase",
+  "status": "started"
+}
+```
+
+### Usage
+```bash
+# Run automation runner with live observability
+python automation/runner.py
+
+# View real-time session in separate terminal
+streamlit run tools/view_session_app.py
+```
+
+---
+
 ## Arbeitsweise
 
 ### Workflow für neue Features

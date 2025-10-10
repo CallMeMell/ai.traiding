@@ -143,6 +143,70 @@ MASTER_VERSION/
 - **Auto-Refresh**: Live-Updates alle paar Sekunden
 - **Null-Risiko**: Komplett entkoppelt von Trading-Logik
 
+### ✅ Live-Überwachung (View Session) 🆕
+Full live observability of automation runner execution with structured events and real-time monitoring:
+
+#### **Activity Feed** 📰
+- Latest 100 events with timestamps, types, phases, and messages
+- Emoji indicators for different event types (🚀 phase start, 🏁 phase end, ✅ checkpoint pass, 💓 heartbeat)
+- Real-time updates with automatic refresh
+- Color-coded by level (info, warning, error)
+
+#### **Current Status Panel** 📡
+- **Current Phase**: Shows which phase is currently executing
+- **Session Uptime**: Total runtime since session start
+- **Last Heartbeat**: Time since last heartbeat event (helps detect if runner is stuck)
+- **Session Status**: Overall status (running, success, failed)
+
+#### **Performance Metrics** 📊
+- Real-time KPIs: Equity, P&L, Win Rate
+- Trade statistics: Total trades, wins, losses
+- ROI and progress tracking
+
+#### **Filters & Controls** 🔍
+- **Timeframe Presets**: 15min, 1h, 4h, Today, All, Custom
+- **Phase Filter**: Filter by specific phases (data, strategy, api)
+- **Event Type Filter**: Filter by event types (runner_start, phase_start, checkpoint, heartbeat, etc.)
+- **Manual Refresh Button**: Force immediate data refresh
+- **Auto-refresh Toggle**: Enable/disable automatic updates (every 10s)
+
+#### **Starten**
+```bash
+# Start the automation runner (generates events)
+python automation/runner.py
+
+# In a separate terminal, start the View Session dashboard
+streamlit run tools/view_session_app.py
+```
+
+#### **Via VS Code Tasks**
+Add to `.vscode/tasks.json`:
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "View Session Dashboard",
+      "type": "shell",
+      "command": "streamlit run tools/view_session_app.py",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run Automation",
+      "type": "shell",
+      "command": "python automation/runner.py",
+      "problemMatcher": []
+    }
+  ]
+}
+```
+
+Then press `Ctrl+Shift+P` → "Tasks: Run Task" → select "View Session Dashboard" or "Run Automation".
+
 ---
 
 ## 🚀 Installation
