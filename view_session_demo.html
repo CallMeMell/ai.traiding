@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced View Session - Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+        
+        /* Active Tasks Section */
+        .active-tasks-section {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            border: 2px solid var(--border-color);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h4 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .auto-refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+        
+        .auto-refresh-indicator i {
+            font-size: 8px;
+            color: var(--success-color);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.8); }
+        }
+        
+        /* Task Summary */
+        .tasks-summary {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .summary-stat {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .summary-stat i {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+        
+        .summary-stat.status-running i { color: var(--primary-color); }
+        .summary-stat.status-completed i { color: var(--success-color); }
+        .summary-stat.status-failed i { color: var(--danger-color); }
+        
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .summary-updated {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 10px 12px;
+            background: var(--card-bg);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Task Cards */
+        .active-task-card {
+            background: rgba(102, 126, 234, 0.03);
+            padding: 18px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+        
+        .task-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .task-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-weight: 600;
+        }
+        
+        .task-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .status-running {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .status-completed {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-failed {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .task-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .task-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        
+        .task-info .info-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            min-width: 70px;
+        }
+        
+        .task-info .info-value {
+            color: var(--text-primary);
+        }
+        
+        /* Progress Bar */
+        .progress-bar-container {
+            height: 24px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-tasks"></i> Enhanced View Session - Active Tasks Monitor</h1>
+        <p class="subtitle">Real-time tracking with full transparency and dynamic updates</p>
+        
+        <div class="active-tasks-section">
+            <div class="section-header">
+                <h4><i class="fas fa-play-circle"></i> Active Tasks</h4>
+                <div class="auto-refresh-indicator">
+                    <i class="fas fa-circle"></i>
+                    <span>Auto-refresh: <strong>5s</strong></span>
+                </div>
+            </div>
+            
+            <!-- Task Summary -->
+            <div class="tasks-summary">
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <i class="fas fa-tasks"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">5</span>
+                            <span class="stat-label">Total Tasks</span>
+                        </div>
+                    </div>
+                    <div class="summary-stat status-running">
+                        <i class="fas fa-spinner fa-pulse"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">3</span>
+                            <span class="stat-label">Running</span>
+                        </div>
+                    </div>
+                    <div class="summary-stat status-completed">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">1</span>
+                            <span class="stat-label">Completed</span>
+                        </div>
+                    </div>
+                    <div class="summary-stat status-failed">
+                        <i class="fas fa-times-circle"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">1</span>
+                            <span class="stat-label">Failed</span>
+                        </div>
+                    </div>
+                    <div class="summary-stat">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">52%</span>
+                            <span class="stat-label">Avg Progress</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="summary-updated">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Last updated: 2025-10-10 01:30:45</span>
+                </div>
+            </div>
+            
+            <!-- Individual Task Cards -->
+            <div class="active-task-card">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-chart-line"></i>
+                        <strong>Backtest - Golden Cross Strategy</strong>
+                    </div>
+                    <div class="task-status status-completed">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Completed</span>
+                    </div>
+                </div>
+                <div class="task-details">
+                    <div class="task-info">
+                        <span class="info-label">Type:</span>
+                        <span class="info-value">backtest</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Details:</span>
+                        <span class="info-value">Backtest completed - Win rate: 68%</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Started:</span>
+                        <span class="info-value">2025-10-10 01:25:12</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Elapsed:</span>
+                        <span class="info-value"><i class="fas fa-clock"></i> 5m 33s</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="active-task-card">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-sliders-h"></i>
+                        <strong>Parameter Optimization</strong>
+                    </div>
+                    <div class="task-status status-running">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Running</span>
+                    </div>
+                </div>
+                <div class="task-details">
+                    <div class="task-info">
+                        <span class="info-label">Type:</span>
+                        <span class="info-value">optimization</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Details:</span>
+                        <span class="info-value">Testing combination 47/100</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Started:</span>
+                        <span class="info-value">2025-10-10 01:26:30</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Elapsed:</span>
+                        <span class="info-value"><i class="fas fa-clock"></i> 4m 15s</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">ETA:</span>
+                        <span class="info-value"><i class="fas fa-hourglass-half"></i> ~5m</span>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: 47%">
+                        <span>47%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="active-task-card">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-flask"></i>
+                        <strong>Live Paper Trading</strong>
+                    </div>
+                    <div class="task-status status-running">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Running</span>
+                    </div>
+                </div>
+                <div class="task-details">
+                    <div class="task-info">
+                        <span class="info-label">Type:</span>
+                        <span class="info-value">simulation</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Details:</span>
+                        <span class="info-value">Monitoring BTCUSDT, ETHUSDT, BNBUSDT</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Started:</span>
+                        <span class="info-value">2025-10-10 01:20:00</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Elapsed:</span>
+                        <span class="info-value"><i class="fas fa-clock"></i> 10m 45s</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">ETA:</span>
+                        <span class="info-value"><i class="fas fa-hourglass-half"></i> ~7m</span>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: 62%">
+                        <span>62%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="active-task-card">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-chart-line"></i>
+                        <strong>Strategy Validation</strong>
+                    </div>
+                    <div class="task-status status-running">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Running</span>
+                    </div>
+                </div>
+                <div class="task-details">
+                    <div class="task-info">
+                        <span class="info-label">Type:</span>
+                        <span class="info-value">backtest</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Details:</span>
+                        <span class="info-value">Validating on out-of-sample data</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Started:</span>
+                        <span class="info-value">2025-10-10 01:28:10</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Elapsed:</span>
+                        <span class="info-value"><i class="fas fa-clock"></i> 2m 35s</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">ETA:</span>
+                        <span class="info-value"><i class="fas fa-hourglass-half"></i> ~12m</span>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: 18%">
+                        <span>18%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="active-task-card">
+                <div class="task-header">
+                    <div class="task-title">
+                        <i class="fas fa-chart-line"></i>
+                        <strong>Market Data Download</strong>
+                    </div>
+                    <div class="task-status status-failed">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Failed</span>
+                    </div>
+                </div>
+                <div class="task-details">
+                    <div class="task-info">
+                        <span class="info-label">Type:</span>
+                        <span class="info-value">backtest</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Details:</span>
+                        <span class="info-value">Error: API rate limit exceeded</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Started:</span>
+                        <span class="info-value">2025-10-10 01:29:00</span>
+                    </div>
+                    <div class="task-info">
+                        <span class="info-label">Elapsed:</span>
+                        <span class="info-value"><i class="fas fa-clock"></i> 1m 45s</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
