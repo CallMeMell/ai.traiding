@@ -226,36 +226,45 @@ Starte den kompletten Dev-Workflow mit nur einem Klick: Automation Runner (Dry-R
 
 ---
 
-## 🚀 QUICKSTART - Live Session außerhalb von VS Code
+## 🚀 QUICKSTART - Windows (PowerShell) ⭐
 
-**🎯 Ziel: Live-Session mit einem Befehl starten - ohne VS Code!**
+**🎯 Ziel: Live-Session mit einem Befehl starten - Windows-optimiert!**
 
-### ⚡ Schnellstart (3 Schritte)
+### ⚡ Schnellstart für Windows (3 Schritte)
 
 **1️⃣ Repository klonen:**
-```bash
+```powershell
 git clone https://github.com/CallMeMell/ai.traiding.git
 cd ai.traiding
 ```
 
 **2️⃣ Optional: .env Datei erstellen (für eigene Konfiguration):**
-```bash
+```powershell
 # Kopiere die Beispiel-Datei
-cp .env.example .env
+Copy-Item .env.example .env
 
 # Bearbeite .env nach Bedarf (Standard: DRY_RUN=true)
 ```
 
 **3️⃣ Live-Session starten:**
 
-**Linux/macOS:**
-```bash
-./scripts/start_live.sh
-```
-
 **Windows PowerShell:**
 ```powershell
 .\scripts\start_live.ps1
+```
+
+**💡 Tipp: Bei ExecutionPolicy-Fehler**
+Falls PowerShell die Skript-Ausführung blockiert:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\start_live.ps1
+```
+
+### ⚡ Schnellstart für Linux/macOS
+
+**Live-Session starten:**
+```bash
+./scripts/start_live.sh
 ```
 
 **Das war's!** 🎉 Die Skripte machen alles automatisch:
@@ -375,36 +384,58 @@ Nach dem Start ist das Dashboard erreichbar unter:
 
 ### 🐛 Troubleshooting
 
-**Problem: "Python not found" oder "python3: command not found"**
+#### Windows-Spezifisch
+
+**Problem: "ExecutionPolicy" - Skript kann nicht ausgeführt werden**
+```powershell
+# Temporär für aktuelle PowerShell-Session
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Oder dauerhaft für aktuellen Benutzer
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+**Problem: "Python not found" (Windows)**
+```powershell
+# Installiere Python von python.org (3.8 oder höher)
+# Stelle sicher, dass "Add Python to PATH" aktiviert ist
+# Nach Installation PowerShell neu starten
+
+# Prüfen ob Python verfügbar ist:
+python --version
+```
+
+**Problem: "Port 8501 already in use" (Windows)**
+```powershell
+# Stoppe alte Streamlit-Prozesse
+taskkill /F /IM python.exe /FI "WINDOWTITLE eq *streamlit*"
+# Oder:
+taskkill /F /IM streamlit.exe
+
+# Oder nutze den VS Code Task "Stop: All Sessions"
+```
+
+**Problem: "python-dotenv not found" (Windows)**
+```powershell
+# Installiere python-dotenv im venv
+.\venv\Scripts\python.exe -m pip install python-dotenv
+```
+
+#### Allgemein (alle Plattformen)
+
+**Problem: "Python not found" (Linux/macOS)**
 ```bash
-# Installiere Python 3.8 oder höher
 # Ubuntu/Debian:
 sudo apt update && sudo apt install python3 python3-venv python3-pip
 
 # macOS (mit Homebrew):
 brew install python3
-
-# Windows: Lade Python von python.org herunter
 ```
 
-**Problem: "streamlit: command not found"**
-```bash
-# Stelle sicher, dass venv aktiviert ist
-source venv/bin/activate  # Linux/Mac
-.\venv\Scripts\activate   # Windows
-
-# Streamlit neu installieren
-pip install streamlit
-```
-
-**Problem: "Port 8501 already in use"**
+**Problem: "Port 8501 already in use" (Linux/macOS)**
 ```bash
 # Stoppe alte Streamlit-Prozesse
-# Linux/Mac:
 pkill -f streamlit
-
-# Windows:
-taskkill /F /IM streamlit.exe
 
 # Oder nutze den VS Code Task "Stop: All Sessions"
 ```
@@ -424,12 +455,6 @@ $env:PYTHONPATH = "$(pwd)"                # Windows PowerShell
 - ✅ Warte 5-10 Sekunden nach Runner-Start
 - ✅ Drücke "Refresh Now" im View Session Dashboard
 - ✅ Prüfe ob `data/session/events.jsonl` existiert und Daten enthält
-
-**Problem: venv-Aktivierung schlägt fehl (Windows)**
-```powershell
-# PowerShell Execution Policy anpassen
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
 
 **Problem: Script-Ausführung nicht erlaubt (Linux/macOS)**
 ```bash
