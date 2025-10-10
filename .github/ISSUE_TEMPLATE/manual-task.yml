@@ -1,0 +1,113 @@
+name: "[Manual] Manual Task"
+description: Manuelle Aufgabe mit Schritt-für-Schritt Checkliste
+title: "[Manual] "
+labels: ["manual"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Manual Task
+        Verwende diese Vorlage für manuelle Aufgaben die Schritt-für-Schritt durchgeführt werden müssen.
+
+  - type: input
+    id: task-title
+    attributes:
+      label: Aufgabentitel
+      description: "Kurze, prägnante Beschreibung der Aufgabe"
+      placeholder: "z.B. API Keys für Binance Testnet einrichten"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-checklist
+    attributes:
+      label: Schritte / Steps Checklist
+      description: "Schritt-für-Schritt Anleitung als Checkliste"
+      placeholder: |
+        - [ ] Schritt 1: Binance Account erstellen
+        - [ ] Schritt 2: Testnet aktivieren
+        - [ ] Schritt 3: API Keys generieren
+        - [ ] Schritt 4: Keys in .env eintragen
+        - [ ] Schritt 5: Verbindung testen
+      value: |
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: proof
+    attributes:
+      label: Proof / Nachweis
+      description: "Wie wird der Abschluss nachgewiesen?"
+      placeholder: |
+        - Screenshot von erfolgreichem API-Test
+        - Log-Output zeigt erfolgreiche Verbindung
+        - Testnet Balance ist sichtbar
+      value: |
+        - 
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: "Messbare Akzeptanzkriterien"
+      placeholder: |
+        - [ ] API Keys sind korrekt konfiguriert
+        - [ ] Testnet-Verbindung funktioniert
+        - [ ] Dokumentation ist aktualisiert
+      value: |
+        - [ ] 
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Aufwand / Effort
+      description: "Geschätzter Aufwand"
+      options:
+        - "XS (< 15 min)"
+        - "S (15-30 min)"
+        - "M (30-60 min)"
+        - "L (1-2h)"
+        - "XL (> 2h)"
+    validations:
+      required: false
+
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: Voraussetzungen / Prerequisites
+      description: "Was muss vorhanden sein, bevor diese Aufgabe gestartet werden kann?"
+      placeholder: |
+        - Python 3.8+ installiert
+        - pip dependencies installiert
+        - GitHub Account mit Schreibrechten
+      value: |
+        - 
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Referenzen
+      description: "Related Issues, PRs, Dokumentation"
+      placeholder: |
+        - Siehe BINANCE_MIGRATION_GUIDE.md
+        - Issue #44
+      value: |
+        - 
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-notes
+    attributes:
+      label: Notizen
+      description: "Zusätzliche Hinweise, Warnungen, Best Practices"
+      placeholder: "Optionale Ergänzungen"
+    validations:
+      required: false

@@ -1,0 +1,151 @@
+name: "[Epic] Epic Tracking"
+description: Meta-Epic für größere Initiativen mit Milestones und Tracking
+title: "[Epic] "
+labels: ["meta", "epic"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Epic Tracking
+        Verwende diese Vorlage für größere Initiativen, die mehrere Issues/Tasks umfassen.
+
+  - type: input
+    id: epic-title
+    attributes:
+      label: Epic Titel
+      description: "Kurze, prägnante Beschreibung der Initiative"
+      placeholder: "z.B. Live Observability Enhancement"
+    validations:
+      required: true
+
+  - type: textarea
+    id: epic-goal
+    attributes:
+      label: Epic Goal / Ziel
+      description: "Übergeordnetes Ziel dieser Initiative"
+      placeholder: "z.B. Vollständige Transparenz und Monitoring des Automation Runners mit strukturierten Events"
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcomes
+    attributes:
+      label: Erwartete Outcomes
+      description: "Konkrete Ergebnisse dieser Initiative"
+      placeholder: |
+        - Feature X ist implementiert und getestet
+        - Performance verbessert um Y%
+        - Dokumentation komplett aktualisiert
+      value: |
+        - 
+    validations:
+      required: true
+
+  - type: textarea
+    id: milestones
+    attributes:
+      label: Milestones / Meilensteine
+      description: "Wichtige Zwischenschritte und Deliverables"
+      placeholder: |
+        - [ ] M1: Schema Definition & Validation (Week 1)
+        - [ ] M2: Automation Runner Enhancement (Week 2)
+        - [ ] M3: Streamlit View Integration (Week 3)
+        - [ ] M4: Testing & Documentation (Week 4)
+      value: |
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: sub-issues
+    attributes:
+      label: Sub-Issues / Zugehörige Issues
+      description: "Alle Issues die Teil dieses Epics sind"
+      placeholder: |
+        - #42 (View Session Visualization)
+        - #44 (Automation Runner Enhancements)
+        - #50 (Live Observability)
+      value: |
+        - 
+    validations:
+      required: false
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risiken / Risks
+      description: "Potenzielle Risiken und Abhängigkeiten"
+      placeholder: |
+        - Abhängigkeit von externer API
+        - Breaking Changes in Library X
+        - Zeitaufwand größer als geschätzt
+      value: |
+        - 
+    validations:
+      required: false
+
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: Definition of Done (DoD)
+      description: "Wann gilt dieses Epic als abgeschlossen?"
+      placeholder: |
+        - [ ] Alle Sub-Issues sind geschlossen
+        - [ ] 100% Test-Coverage für neue Features
+        - [ ] Dokumentation ist vollständig
+        - [ ] Code-Review durchgeführt
+        - [ ] Deployed in Production
+      value: |
+        - [ ] 
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorität
+      description: "Geschäftliche Priorität"
+      options:
+        - "Critical (sofort)"
+        - "High (diese Woche)"
+        - "Medium (dieser Sprint)"
+        - "Low (Backlog)"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Geschätzter Aufwand
+      description: "Gesamtaufwand für das Epic"
+      options:
+        - "S (< 1 Woche)"
+        - "M (1-2 Wochen)"
+        - "L (2-4 Wochen)"
+        - "XL (1-2 Monate)"
+        - "XXL (> 2 Monate)"
+    validations:
+      required: false
+
+  - type: textarea
+    id: success-metrics
+    attributes:
+      label: Success Metrics
+      description: "Wie messen wir den Erfolg?"
+      placeholder: |
+        - Reduzierung der Debug-Zeit um 50%
+        - 100% Event-Coverage
+        - Positive User Feedback
+      value: |
+        - 
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Zusätzlicher Kontext
+      description: "Weitere Informationen, Screenshots, Architektur-Diagramme"
+      placeholder: "Optionale Ergänzungen"
+    validations:
+      required: false
