@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "python",
+  "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python",
   "python.linting.enabled": true,
   "python.linting.pylintEnabled": false,
   "python.linting.flake8Enabled": false,
@@ -11,7 +11,8 @@
   },
   "files.watcherExclude": {
     "**/data/charts/**": true,
-    "**/logs/**": true
+    "**/logs/**": true,
+    "**/venv/**": true
   },
   "[python]": {
     "editor.tabSize": 4,
@@ -48,8 +49,10 @@
   "remote.autoForwardPorts": true,
   "remote.portsAttributes": {
     "8501": {
-      "label": "Streamlit View Session",
-      "onAutoForward": "openPreview"
+      "label": "View Session",
+      "onAutoForward": "openPreview",
+      "protocol": "http"
     }
-  }
+  },
+  "extensions.ignoreRecommendations": false
 }
