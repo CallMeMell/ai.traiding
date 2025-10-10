@@ -6,7 +6,13 @@
       "type": "shell",
       "command": "python3 -m venv venv && . venv/bin/activate && pip install --upgrade pip && (pip install -r requirements.txt || true) && pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema",
       "windows": {
-        "command": "python -m venv venv && .\\venv\\Scripts\\activate && pip install --upgrade pip && (pip install -r requirements.txt || echo Continuing with individual packages) && pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema"
+        "command": "python -m venv venv; if ($LASTEXITCODE -eq 0 -or (Test-Path venv)) { .\\venv\\Scripts\\python.exe -m pip install --upgrade pip; if (Test-Path requirements.txt) { .\\venv\\Scripts\\python.exe -m pip install -r requirements.txt }; .\\venv\\Scripts\\python.exe -m pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema }",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
       },
       "group": "build",
       "presentation": {
@@ -21,7 +27,18 @@
       "type": "shell",
       "command": ". venv/bin/activate && (test -f .env && export $(cat .env | grep -v '^#' | xargs) || true) && export DRY_RUN=${DRY_RUN:-true} && export BROKER_NAME=${BROKER_NAME:-binance} && export BINANCE_BASE_URL=${BINANCE_BASE_URL:-https://testnet.binance.vision} && python automation/runner.py",
       "windows": {
-        "command": ".\\venv\\Scripts\\activate && if exist .env (for /f \"usebackq delims== tokens=1,*\" %i in (.env) do if not \"%i\"==\"\" if not \"%i:~0,1%\"==\"#\" set %i=%j) && if not defined DRY_RUN set DRY_RUN=true && if not defined BROKER_NAME set BROKER_NAME=binance && if not defined BINANCE_BASE_URL set BINANCE_BASE_URL=https://testnet.binance.vision && python automation/runner.py"
+        "command": ".\\venv\\Scripts\\python.exe -m dotenv -f .env run --override -- .\\venv\\Scripts\\python.exe automation/runner.py",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          },
+          "env": {
+            "DRY_RUN": "true",
+            "BROKER_NAME": "binance",
+            "BINANCE_BASE_URL": "https://testnet.binance.vision"
+          }
+        }
       },
       "group": "test",
       "presentation": {
@@ -37,7 +54,13 @@
       "type": "shell",
       "command": ". venv/bin/activate && streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true",
       "windows": {
-        "command": ".\\venv\\Scripts\\activate && streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true"
+        "command": ".\\venv\\Scripts\\python.exe -m dotenv -f .env run --override -- .\\venv\\Scripts\\python.exe -m streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
       },
       "group": "test",
       "presentation": {

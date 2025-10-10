@@ -24,18 +24,14 @@ if (-not (Test-Path "venv")) {
     python -m venv venv
 }
 
-# Activate venv
-Write-Host "🔧 Activating virtual environment..." -ForegroundColor Yellow
-& ".\venv\Scripts\Activate.ps1"
-
-# Upgrade pip
+# Upgrade pip using venv python directly
 Write-Host "📦 Upgrading pip..." -ForegroundColor Yellow
-python -m pip install --upgrade pip --quiet
+& ".\venv\Scripts\python.exe" -m pip install --upgrade pip --quiet
 
 # Install dependencies
 Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
 if (Test-Path "requirements.txt") {
-    python -m pip install -r requirements.txt --quiet
+    & ".\venv\Scripts\python.exe" -m pip install -r requirements.txt --quiet
     if ($LASTEXITCODE -ne 0) {
         Write-Host "⚠️  Warning: Some requirements.txt packages failed" -ForegroundColor Yellow
     }
@@ -43,24 +39,29 @@ if (Test-Path "requirements.txt") {
 
 # Install Streamlit and required packages
 Write-Host "📦 Installing Streamlit and visualization packages..." -ForegroundColor Yellow
-python -m pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema --quiet
+& ".\venv\Scripts\python.exe" -m pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema --quiet
 
-# Load environment variables from .env file (if exists)
+# Set default environment variables for DRY_RUN
+$env:DRY_RUN = "true"
+$env:BROKER_NAME = "binance"
+$env:BINANCE_BASE_URL = "https://testnet.binance.vision"
+
+# Load environment variables from .env file using python-dotenv (if exists)
+# This will override the defaults above with values from .env
 if (Test-Path ".env") {
-    Write-Host "🔧 Loading environment variables from .env file..." -ForegroundColor Yellow
-    Get-Content ".env" | ForEach-Object {
-        if ($_ -match '^([^#][^=]+)=(.+)$') {
-            $name = $matches[1].Trim()
-            $value = $matches[2].Trim()
-            Set-Item -Path "env:$name" -Value $value
+    Write-Host "🔧 Loading environment variables from .env file (with override)..." -ForegroundColor Yellow
+    # Use python-dotenv to load and override environment variables
+    $envVars = & ".\venv\Scripts\python.exe" -m dotenv list 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        $envVars | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+                $name = $matches[1].Trim()
+                $value = $matches[2].Trim()
+                Set-Item -Path "env:$name" -Value $value
+            }
         }
     }
 }
-
-# Set default environment variables for DRY_RUN (if not set in .env)
-if (-not $env:DRY_RUN) { $env:DRY_RUN = "true" }
-if (-not $env:BROKER_NAME) { $env:BROKER_NAME = "binance" }
-if (-not $env:BINANCE_BASE_URL) { $env:BINANCE_BASE_URL = "https://testnet.binance.vision" }
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
@@ -96,11 +97,11 @@ try {
     $runnerJob = Start-Job -ScriptBlock {
         param($projectRoot, $dryRun, $brokerName, $baseUrl)
         Set-Location $projectRoot
-        & ".\venv\Scripts\Activate.ps1"
         $env:DRY_RUN = $dryRun
         $env:BROKER_NAME = $brokerName
         $env:BINANCE_BASE_URL = $baseUrl
-        python automation/runner.py
+        # Use python-dotenv to load .env with override, then run automation runner
+        & ".\venv\Scripts\python.exe" -m dotenv -f .env run --override -- ".\venv\Scripts\python.exe" automation/runner.py
     } -ArgumentList $projectRoot, $env:DRY_RUN, $env:BROKER_NAME, $env:BINANCE_BASE_URL
 
     # Wait a moment for runner to start
@@ -111,8 +112,8 @@ try {
     $streamlitJob = Start-Job -ScriptBlock {
         param($projectRoot)
         Set-Location $projectRoot
-        & ".\venv\Scripts\Activate.ps1"
-        streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+        # Use python-dotenv to load .env with override, then run streamlit
+        & ".\venv\Scripts\python.exe" -m dotenv -f .env run --override -- ".\venv\Scripts\python.exe" -m streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
     } -ArgumentList $projectRoot
 
     Write-Host ""
