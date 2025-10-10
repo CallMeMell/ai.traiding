@@ -35,6 +35,9 @@ data/genetic_algorithm_*.csv
 data/genetic_algorithm_*.txt
 data/session/events.jsonl
 data/session/summary.json
+data/strategy_ranking.csv
+data/demo_strategy_ranking.csv
+data/strategy_comparison.csv
 
 # Environment
 .env
