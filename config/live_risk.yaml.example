@@ -5,6 +5,15 @@
 # Trading pairs (comma-separated for multiple pairs)
 pairs: BTCUSDT
 
+# Trading strategy (automatically selected by setup wizard)
+# Available strategies:
+#   - Golden Cross (50/200)
+#   - MA Crossover (20/50)
+#   - RSI Mean Reversion
+#   - EMA Crossover (9/21)
+#   - Bollinger Bands
+strategy: Golden Cross (50/200)
+
 # Maximum risk per trade (as decimal, e.g., 0.005 = 0.5%)
 max_risk_per_trade: 0.005
 
