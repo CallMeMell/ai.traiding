@@ -41,15 +41,26 @@ fi
 echo "📦 Installing Streamlit and visualization packages..."
 pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema --quiet
 
-# Set environment variables for DRY_RUN
-export DRY_RUN=true
-export BROKER_NAME=binance
-export BINANCE_BASE_URL=https://testnet.binance.vision
+# Load environment variables from .env file (if exists)
+if [ -f ".env" ]; then
+    echo "🔧 Loading environment variables from .env file..."
+    export $(cat .env | grep -v '^#' | xargs)
+fi
+
+# Set default environment variables for DRY_RUN (if not set in .env)
+export DRY_RUN=${DRY_RUN:-true}
+export BROKER_NAME=${BROKER_NAME:-binance}
+export BINANCE_BASE_URL=${BINANCE_BASE_URL:-https://testnet.binance.vision}
 
 echo ""
 echo "=========================================="
 echo "✅ Setup complete!"
 echo "=========================================="
+echo ""
+echo "Configuration:"
+echo "  DRY_RUN: $DRY_RUN"
+echo "  BROKER_NAME: $BROKER_NAME"
+echo "  BINANCE_BASE_URL: $BINANCE_BASE_URL"
 echo ""
 echo "Starting processes in parallel..."
 echo "- Automation Runner (Dry-Run mode)"
