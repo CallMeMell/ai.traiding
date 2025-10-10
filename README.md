@@ -773,6 +773,41 @@ Dieses Projekt enthält vorkonfigurierte VS Code-Einstellungen für optimale Ent
 
 Siehe `PROGRESS.md` für detaillierte Checklisten und Workflow-Beschreibung.
 
+### Run Tasks
+
+Dieses Projekt enthält vordefinierte VS Code Tasks für schnelle Entwicklung in VS Code und Codespaces:
+
+**Verfügbare Tasks** (über `Terminal → Run Task...`):
+
+1. **Install Dev Deps**
+   - Erstellt Virtual Environment (venv)
+   - Aktualisiert pip
+   - Installiert benötigte Dependencies: streamlit, plotly, pandas, requests, python-dotenv
+   - Nutzen: Einmalige Einrichtung der Entwicklungsumgebung
+
+2. **Run: Automation Runner (Dry-Run)**
+   - Aktiviert Virtual Environment
+   - Setzt Umgebungsvariablen: `DRY_RUN=true`, `BROKER_NAME=binance`, `BINANCE_BASE_URL=https://testnet.binance.vision`
+   - Führt `python automation/runner.py` aus
+   - Nutzen: Testen des automatisierten Workflows ohne echte API-Keys
+   - **Standardmäßig im Dry-Run-Modus** (keine echten Trades)
+
+3. **Run: View Session (Streamlit)**
+   - Aktiviert Virtual Environment
+   - Startet Streamlit-Dashboard auf Port 8501
+   - Nutzen: Live-Visualisierung von Session-Daten und Events
+   - **Port 8501 wird automatisch weitergeleitet** und öffnet Preview in Codespaces
+
+**Umschalten auf Live-Trading:**
+- Wenn API-Keys verfügbar sind, Task "Run: Automation Runner (Dry-Run)" in `.vscode/tasks.json` bearbeiten
+- Entferne `export DRY_RUN=true` (Linux/macOS) oder `set DRY_RUN=true` (Windows)
+- Füge echte API-Keys in `.env` Datei ein
+- ⚠️ **Achtung**: Nur mit Testnet-Keys oder sehr kleinen Beträgen testen!
+
+**Referenzen:**
+- [#42](https://github.com/CallMeMell/ai.traiding/issues/42) - View Session Dashboard
+- [#44](https://github.com/CallMeMell/ai.traiding/issues/44) - Echtgeld-Automatisierung
+
 ---
 
 ## ⚠️ Disclaimer

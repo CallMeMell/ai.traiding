@@ -44,5 +44,12 @@
   "gitlens.currentLine.enabled": true,
   "gitlens.hovers.currentLine.over": "line",
   "gitlens.hovers.enabled": true,
-  "gitlens.modes.zenMode.hideStatusBar": true
+  "gitlens.modes.zenMode.hideStatusBar": true,
+  "remote.autoForwardPorts": true,
+  "remote.portsAttributes": {
+    "8501": {
+      "label": "Streamlit View Session",
+      "onAutoForward": "openPreview"
+    }
+  }
 }
