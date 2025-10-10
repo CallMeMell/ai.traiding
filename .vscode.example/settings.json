@@ -25,5 +25,13 @@
     },
     "terminal.integrated.env.osx": {
         "PYTHONPATH": "${workspaceFolder}"
+    },
+    "remote.autoForwardPorts": true,
+    "remote.portsAttributes": {
+        "8501": {
+            "label": "View Session",
+            "onAutoForward": "openPreview",
+            "protocol": "http"
+        }
     }
 }
