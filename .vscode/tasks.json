@@ -225,6 +225,75 @@
       },
       "problemMatcher": [],
       "detail": "🤖 Automatischer Setup mit Defaults - für Testing/CI"
+    },
+    {
+      "label": "System: Run Orchestrator",
+      "type": "shell",
+      "command": ". venv/bin/activate && python system/orchestrator.py",
+      "windows": {
+        "command": ".\\venv\\Scripts\\python.exe system\\orchestrator.py",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          },
+          "env": {
+            "DRY_RUN": "true"
+          }
+        }
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "problemMatcher": [],
+      "detail": "🚀 Run system orchestrator (dry-run mode)"
+    },
+    {
+      "label": "System: Run Tests",
+      "type": "shell",
+      "command": ". venv/bin/activate && python -m pytest tests/ -v",
+      "windows": {
+        "command": ".\\venv\\Scripts\\python.exe -m pytest tests\\ -v",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "problemMatcher": [],
+      "detail": "🧪 Run all system tests"
+    },
+    {
+      "label": "System: Nightly Test",
+      "type": "shell",
+      "command": ". venv/bin/activate && python scripts/nightly_run.py",
+      "windows": {
+        "command": ".\\scripts\\nightly_run.ps1",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "problemMatcher": [],
+      "detail": "🌙 Run nightly system test"
     }
   ]
 }
