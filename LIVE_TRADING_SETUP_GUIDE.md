@@ -291,8 +291,11 @@ config/live_risk.yaml
 1. **Environment Variables**: `LIVE_ACK`, `DRY_RUN`, `LIVE_TRADING`, `BINANCE_BASE_URL`
 2. **Credentials**: API key and secret are present
 3. **Time Sync**: Local time vs Binance server (max 1000ms drift)
-4. **Exchange Info**: Trading pairs are valid and active
+4. **Exchange Info**: Trading pairs are valid and active with MIN_NOTIONAL details
 5. **Account Balance**: Minimum balance requirements (10 USDT)
+6. **Risk Configuration**: Validates `config/live_risk.yaml` settings
+7. **Order Types**: Ensures configured order types are supported by exchange
+8. **Kill Switch**: Reports KILL_SWITCH status (informational)
 
 **Output Format:**
 ```
@@ -508,6 +511,9 @@ This uses `DRY_RUN=true` and testnet by default.
 - Time out of sync
 - Insufficient balance
 - Invalid trading pairs
+- Missing or invalid risk configuration (`config/live_risk.yaml`)
+- Order types not supported by exchange
+- Invalid risk parameter ranges (max_risk, daily_loss_limit, etc.)
 
 ---
 

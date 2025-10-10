@@ -126,7 +126,7 @@ def check_time_sync() -> Tuple[bool, str]:
 
 def check_exchange_info(symbols: Optional[list] = None) -> Tuple[bool, str]:
     """
-    Validate exchange info for trading symbols.
+    Validate exchange info for trading symbols with detailed filter information.
     
     Args:
         symbols: List of symbols to check (default: ["BTCUSDT"])
@@ -163,7 +163,19 @@ def check_exchange_info(symbols: Optional[list] = None) -> Tuple[bool, str]:
                 if filter_type not in filters:
                     return False, f"Symbol {symbol} missing {filter_type} filter"
             
-            print_status(STATUS_OK, f"Symbol {symbol} validated (status: TRADING)")
+            # Extract and display MIN_NOTIONAL details
+            min_notional_filter = filters.get("MIN_NOTIONAL", {})
+            if "minNotional" in min_notional_filter:
+                min_notional = float(min_notional_filter["minNotional"])
+                print_status(STATUS_OK, f"Symbol {symbol} validated (status: TRADING, min notional: {min_notional:.2f} USDT)")
+            else:
+                print_status(STATUS_OK, f"Symbol {symbol} validated (status: TRADING)")
+            
+            # Display LOT_SIZE details for reference
+            lot_size_filter = filters.get("LOT_SIZE", {})
+            if "minQty" in lot_size_filter:
+                min_qty = lot_size_filter["minQty"]
+                print_status(STATUS_OK, f"  Min quantity: {min_qty}, Step size: {lot_size_filter.get('stepSize', 'N/A')}")
         
         return True, "Exchange info validated"
         
@@ -233,6 +245,155 @@ def check_account_balance() -> Tuple[bool, str]:
     except Exception as e:
         return False, f"Failed to check account balance: {str(e)}"
 
+def check_risk_configuration() -> Tuple[bool, str]:
+    """
+    Check risk management configuration from config/live_risk.yaml.
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    print("\n⚙️  Checking risk configuration...")
+    
+    try:
+        import yaml
+        
+        config_path = "config/live_risk.yaml"
+        if not os.path.exists(config_path):
+            return False, f"Risk configuration file not found: {config_path}"
+        
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        # Validate required fields
+        required_fields = {
+            "pairs": str,
+            "max_risk_per_trade": (int, float),
+            "daily_loss_limit": (int, float),
+            "max_open_exposure": (int, float),
+            "allowed_order_types": str,
+            "max_slippage": (int, float)
+        }
+        
+        for field, expected_type in required_fields.items():
+            if field not in config:
+                return False, f"Missing required field: {field}"
+            
+            if not isinstance(config[field], expected_type):
+                return False, f"Field '{field}' has wrong type (expected {expected_type.__name__})"
+        
+        # Validate ranges
+        max_risk = float(config["max_risk_per_trade"])
+        if max_risk <= 0 or max_risk > 0.1:
+            return False, f"max_risk_per_trade must be between 0 and 0.1 (10%), got: {max_risk}"
+        
+        daily_loss = float(config["daily_loss_limit"])
+        if daily_loss <= 0 or daily_loss > 0.2:
+            return False, f"daily_loss_limit must be between 0 and 0.2 (20%), got: {daily_loss}"
+        
+        max_exposure = float(config["max_open_exposure"])
+        if max_exposure <= 0 or max_exposure > 1.0:
+            return False, f"max_open_exposure must be between 0 and 1.0 (100%), got: {max_exposure}"
+        
+        max_slippage = float(config["max_slippage"])
+        if max_slippage < 0 or max_slippage > 0.05:
+            return False, f"max_slippage must be between 0 and 0.05 (5%), got: {max_slippage}"
+        
+        # Validate order types
+        allowed_order_types = config["allowed_order_types"]
+        valid_order_types = ["LIMIT_ONLY", "LIMIT_AND_MARKET"]
+        if allowed_order_types not in valid_order_types:
+            return False, f"allowed_order_types must be one of {valid_order_types}, got: {allowed_order_types}"
+        
+        print_status(STATUS_OK, f"Risk config validated (pairs: {config['pairs']})")
+        print_status(STATUS_OK, f"  Max risk/trade: {max_risk*100:.2f}%, Daily loss limit: {daily_loss*100:.2f}%")
+        print_status(STATUS_OK, f"  Max exposure: {max_exposure*100:.2f}%, Order types: {allowed_order_types}")
+        print_status(STATUS_OK, f"  Max slippage: {max_slippage*100:.2f}%")
+        
+        return True, "Risk configuration validated"
+        
+    except yaml.YAMLError as e:
+        return False, f"Invalid YAML in {config_path}: {str(e)}"
+    except Exception as e:
+        return False, f"Failed to check risk configuration: {str(e)}"
+
+def check_kill_switch() -> Tuple[bool, str]:
+    """
+    Check KILL_SWITCH status and report it.
+    This is informational - KILL_SWITCH enabled is not an error.
+    
+    Returns:
+        Tuple of (success, message)
+    """
+    print("\n🛑 Checking kill switch status...")
+    
+    kill_switch = os.getenv("KILL_SWITCH", "false").lower()
+    
+    if kill_switch == "true":
+        print_status(STATUS_OK, "KILL_SWITCH is ENABLED - no orders will be placed")
+        return True, "Kill switch enabled (orders blocked)"
+    else:
+        print_status(STATUS_OK, "KILL_SWITCH is disabled - normal trading mode")
+        return True, "Kill switch disabled"
+
+def check_order_types_support(symbols: Optional[list] = None) -> Tuple[bool, str]:
+    """
+    Check that configured order types are supported by exchange for all symbols.
+    
+    Args:
+        symbols: List of symbols to check (default: ["BTCUSDT"])
+        
+    Returns:
+        Tuple of (success, message)
+    """
+    print("\n📝 Checking order types support...")
+    
+    if symbols is None:
+        symbols = ["BTCUSDT"]
+    
+    try:
+        import yaml
+        
+        # Load config to get allowed order types
+        config_path = "config/live_risk.yaml"
+        if not os.path.exists(config_path):
+            # If no config, skip this check
+            print_status(STATUS_OK, "No risk config found - skipping order type validation")
+            return True, "Order type check skipped (no config)"
+        
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        allowed_order_types = config.get("allowed_order_types", "LIMIT_ONLY")
+        
+        base_url = os.getenv("BINANCE_BASE_URL", "https://api.binance.com")
+        response = requests.get(f"{base_url}/api/v3/exchangeInfo", timeout=10)
+        response.raise_for_status()
+        
+        exchange_info = response.json()
+        symbol_map = {s["symbol"]: s for s in exchange_info.get("symbols", [])}
+        
+        for symbol in symbols:
+            if symbol not in symbol_map:
+                return False, f"Symbol {symbol} not found on exchange"
+            
+            info = symbol_map[symbol]
+            supported_order_types = info.get("orderTypes", [])
+            
+            # Check if required order types are supported
+            if allowed_order_types == "LIMIT_ONLY":
+                if "LIMIT" not in supported_order_types:
+                    return False, f"Symbol {symbol} does not support LIMIT orders"
+            elif allowed_order_types == "LIMIT_AND_MARKET":
+                if "LIMIT" not in supported_order_types or "MARKET" not in supported_order_types:
+                    return False, f"Symbol {symbol} does not support required order types"
+            
+            print_status(STATUS_OK, f"Symbol {symbol} supports {allowed_order_types}")
+        
+        return True, "Order types validated"
+        
+    except Exception as e:
+        return False, f"Failed to check order types: {str(e)}"
+
 def run_all_checks() -> int:
     """
     Run all preflight checks.
@@ -267,6 +428,9 @@ def run_all_checks() -> int:
         ("Time Sync", check_time_sync),
         ("Exchange Info", lambda: check_exchange_info(symbols)),
         ("Account Balance", check_account_balance),
+        ("Risk Configuration", check_risk_configuration),
+        ("Order Types", lambda: check_order_types_support(symbols)),
+        ("Kill Switch", check_kill_switch),
     ]
     
     for check_name, check_func in checks:
@@ -290,6 +454,19 @@ def run_all_checks() -> int:
         print("   - Monitor your positions closely")
         print("   - Set up alerts for large losses")
         print("   - Have an emergency stop plan")
+        
+        # Log success to file
+        try:
+            os.makedirs("logs", exist_ok=True)
+            with open("logs/preflight_checks.log", "a") as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"[{datetime.now().isoformat()}] Preflight checks PASSED\n")
+                f.write(f"  Symbols: {', '.join(symbols) if symbols else 'BTCUSDT'}\n")
+                f.write(f"  KILL_SWITCH: {os.getenv('KILL_SWITCH', 'false')}\n")
+                f.write(f"{'='*60}\n")
+        except Exception as e:
+            print(f"\n⚠️  Warning: Could not write to log file: {e}")
+        
         print("\n🚀 Starting live trading runner...")
         return 0
     else:
@@ -297,6 +474,20 @@ def run_all_checks() -> int:
         print("=" * 60)
         print("\n❌ Cannot start live trading")
         print("   Fix the errors above and try again")
+        
+        # Log failure to file
+        try:
+            os.makedirs("logs", exist_ok=True)
+            with open("logs/preflight_checks.log", "a") as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"[{datetime.now().isoformat()}] Preflight checks FAILED\n")
+                f.write(f"  Symbols: {', '.join(symbols) if symbols else 'BTCUSDT'}\n")
+                f.write(f"  KILL_SWITCH: {os.getenv('KILL_SWITCH', 'false')}\n")
+                f.write(f"  Check output above for details\n")
+                f.write(f"{'='*60}\n")
+        except Exception as e:
+            print(f"\n⚠️  Warning: Could not write to log file: {e}")
+        
         return 1
 
 def main():
