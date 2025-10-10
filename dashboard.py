@@ -925,6 +925,76 @@ if FLASK_AVAILABLE:
             logger.error(f"Error fetching session {session_id}: {e}")
             return jsonify({'error': str(e)}), 500
     
+    @app.route('/api/progress')
+    def api_progress():
+        """API endpoint for project progress tracking"""
+        try:
+            # Determine progress based on various indicators
+            progress_steps = []
+            
+            # Check if directories exist (setup indicator)
+            data_dir = os.path.exists('data')
+            logs_dir = os.path.exists('logs')
+            
+            # Check if config exists
+            config_exists = os.path.exists('config.py')
+            
+            # Check if sessions exist
+            sessions = _get_session_list()
+            has_sessions = len(sessions) > 0
+            
+            # Check if trades file exists
+            trades_exist = os.path.exists('data/trades.csv')
+            
+            # Define project steps with completion status
+            progress_steps = [
+                {
+                    'id': 'setup',
+                    'title': 'Environment Setup',
+                    'completed': data_dir and logs_dir,
+                    'currentStep': False
+                },
+                {
+                    'id': 'config',
+                    'title': 'Configuration',
+                    'completed': config_exists,
+                    'currentStep': False
+                },
+                {
+                    'id': 'strategy',
+                    'title': 'Strategy Selection',
+                    'completed': config_exists,
+                    'currentStep': not has_sessions and config_exists
+                },
+                {
+                    'id': 'backtest',
+                    'title': 'Backtesting',
+                    'completed': has_sessions or trades_exist,
+                    'currentStep': False
+                },
+                {
+                    'id': 'simulation',
+                    'title': 'Simulated Trading',
+                    'completed': has_sessions,
+                    'currentStep': has_sessions
+                },
+                {
+                    'id': 'live',
+                    'title': 'Live Trading',
+                    'completed': False,
+                    'currentStep': False
+                }
+            ]
+            
+            return jsonify({
+                'steps': progress_steps,
+                'total_sessions': len(sessions),
+                'last_update': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+        except Exception as e:
+            logger.error(f"Error fetching progress: {e}")
+            return jsonify({'error': str(e)}), 500
+    
     def start_web_dashboard(host: str = '0.0.0.0', port: int = 5000, 
                            trades_file: str = "data/trades.csv",
                            config_file: str = "data/dashboard_config.json",
@@ -960,6 +1030,7 @@ if FLASK_AVAILABLE:
         print(f"   - http://localhost:{port}/api/status")
         print(f"   - http://localhost:{port}/api/sessions")
         print(f"   - http://localhost:{port}/api/sessions/<session_id>")
+        print(f"   - http://localhost:{port}/api/progress (NEW)")
         print("📊 Drücke Ctrl+C zum Beenden")
         print("=" * 70)
         

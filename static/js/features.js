@@ -57,7 +57,8 @@ const Features = {
             case 'Trade History':
                 this.showTradeHistory();
                 break;
-            case 'View Sessions':
+            case 'Progress Monitor':
+            case 'View Sessions':  // Legacy support
                 this.showViewSessions();
                 break;
             case 'Settings':
@@ -103,9 +104,10 @@ const Features = {
     // Show view sessions view
     showViewSessions() {
         this.hideAllViews();
-        const modal = this.createModal('View Sessions', this.getViewSessionsContent());
+        const modal = this.createModal('Project Progress Monitor', this.getViewSessionsContent());
         document.body.appendChild(modal);
-        // Load sessions data
+        // Load project progress and sessions data
+        this.loadProjectProgress();
         this.loadSessions();
     },
     
@@ -139,10 +141,10 @@ const Features = {
         const modal = document.createElement('div');
         modal.className = 'feature-modal';
         
-        // Add quick access to View Sessions unless we're already in View Sessions
-        const quickAccessLink = title !== 'View Sessions' ? `
-            <button class="modal-quick-access" onclick="Features.showViewSessions()" title="Quick Access to View Sessions">
-                <i class="fas fa-folder-open"></i> View Sessions
+        // Add quick access to Progress Monitor unless we're already there
+        const quickAccessLink = (title !== 'Project Progress Monitor' && title !== 'View Sessions') ? `
+            <button class="modal-quick-access" onclick="Features.showViewSessions()" title="Monitor Project Progress">
+                <i class="fas fa-tasks"></i> Progress
             </button>
         ` : '';
         
@@ -401,79 +403,185 @@ const Features = {
     // Get view sessions content
     getViewSessionsContent() {
         return `
-            <div class="sessions-panel">
+            <div class="sessions-panel progress-monitor">
                 <div class="panel-header">
-                    <div class="filter-controls">
-                        <input type="text" id="sessionSearch" class="form-control" placeholder="Search sessions..." oninput="Features.loadSessions()">
-                        <select id="sessionFilter" class="form-control" onchange="Features.loadSessions()">
-                            <option value="all">All Sessions</option>
-                            <option value="profitable">Profitable Only</option>
-                            <option value="loss">Loss Only</option>
-                        </select>
-                        <input type="date" id="sessionDateFrom" class="form-control" placeholder="From Date" onchange="Features.loadSessions()">
-                        <input type="date" id="sessionDateTo" class="form-control" placeholder="To Date" onchange="Features.loadSessions()">
-                        <button class="btn btn-secondary" onclick="Features.loadSessions()">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                        <button class="btn btn-outline" onclick="Features.clearFilters()">
-                            <i class="fas fa-times"></i> Clear Filters
-                        </button>
-                    </div>
+                    <h3><i class="fas fa-tasks"></i> Project Progress Monitor</h3>
+                    <p class="subtitle">Track your trading bot setup and execution progress</p>
                 </div>
                 
                 <div class="panel-body">
-                    <div id="sessionsLoading" class="loading-indicator" style="display: none;">
-                        <i class="fas fa-spinner fa-spin"></i> Loading sessions...
+                    <!-- Overall Progress Bar -->
+                    <div class="progress-section">
+                        <h4>Overall Progress</h4>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="overallProgressBar">
+                                <div class="progress-bar-fill" id="overallProgressFill" style="width: 0%">
+                                    <span class="progress-text">0%</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div id="sessionsList" class="sessions-list">
-                        <!-- Sessions will be loaded here -->
+                    <!-- Step-by-Step Progress -->
+                    <div class="steps-section" id="projectSteps">
+                        <h4>Project Steps</h4>
+                        <div class="steps-list" id="stepsList">
+                            <!-- Steps will be dynamically loaded -->
+                        </div>
                     </div>
                     
-                    <div id="sessionsEmpty" class="empty-state" style="display: none;">
-                        <i class="fas fa-inbox"></i>
-                        <p>No trading sessions found</p>
-                        <small>Sessions will appear here after running simulated trading</small>
+                    <!-- Session History (Simplified) -->
+                    <div class="session-history-section">
+                        <h4><i class="fas fa-history"></i> Recent Sessions</h4>
+                        <div class="filter-controls-simple">
+                            <button class="btn btn-secondary" onclick="Features.loadSessions()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div id="sessionsLoading" class="loading-indicator" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Loading sessions...
+                        </div>
+                        <div id="sessionsList" class="sessions-list-simple">
+                            <!-- Sessions will be loaded here -->
+                        </div>
+                        <div id="sessionsEmpty" class="empty-state" style="display: none;">
+                            <i class="fas fa-inbox"></i>
+                            <p>No trading sessions found</p>
+                            <small>Sessions will appear here after running simulated trading</small>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     },
     
-    // Clear all filters
-    clearFilters() {
-        const searchEl = document.getElementById('sessionSearch');
-        const filterEl = document.getElementById('sessionFilter');
-        const dateFromEl = document.getElementById('sessionDateFrom');
-        const dateToEl = document.getElementById('sessionDateTo');
+    // Load project progress
+    async loadProjectProgress() {
+        const stepsListEl = document.getElementById('stepsList');
+        const progressBarFill = document.getElementById('overallProgressFill');
         
-        if (searchEl) searchEl.value = '';
-        if (filterEl) filterEl.value = 'all';
-        if (dateFromEl) dateFromEl.value = '';
-        if (dateToEl) dateToEl.value = '';
+        if (!stepsListEl) return;
         
-        this.loadSessions();
-    },
-    
-    // Parse session date from session ID
-    parseSessionDate(sessionId) {
-        try {
-            // Session ID format: YYYYMMDD_HHMMSS
-            const parts = sessionId.split('_');
-            if (parts.length >= 1) {
-                const dateStr = parts[0];
-                const year = dateStr.substring(0, 4);
-                const month = dateStr.substring(4, 6);
-                const day = dateStr.substring(6, 8);
-                return new Date(`${year}-${month}-${day}`);
+        // Define project workflow steps
+        const projectSteps = [
+            {
+                id: 'setup',
+                title: 'Environment Setup',
+                description: 'Install dependencies and configure environment',
+                icon: 'fa-cog',
+                completed: false
+            },
+            {
+                id: 'config',
+                title: 'Configuration',
+                description: 'Set up trading parameters and API keys',
+                icon: 'fa-sliders-h',
+                completed: false
+            },
+            {
+                id: 'strategy',
+                title: 'Strategy Selection',
+                description: 'Choose and configure trading strategies',
+                icon: 'fa-chess',
+                completed: false
+            },
+            {
+                id: 'backtest',
+                title: 'Backtesting',
+                description: 'Test strategies with historical data',
+                icon: 'fa-chart-line',
+                completed: false
+            },
+            {
+                id: 'simulation',
+                title: 'Simulated Trading',
+                description: 'Run paper trading simulations',
+                icon: 'fa-flask',
+                completed: false
+            },
+            {
+                id: 'live',
+                title: 'Live Trading',
+                description: 'Execute real trades with live market data',
+                icon: 'fa-rocket',
+                completed: false
             }
-        } catch (e) {
-            console.error('Error parsing session date:', e);
+        ];
+        
+        try {
+            // Fetch actual progress from API
+            const response = await fetch('/api/progress');
+            if (response.ok) {
+                const progressData = await response.json();
+                // Update steps based on actual progress
+                if (progressData.steps) {
+                    projectSteps.forEach(step => {
+                        const apiStep = progressData.steps.find(s => s.id === step.id);
+                        if (apiStep) {
+                            step.completed = apiStep.completed;
+                            step.currentStep = apiStep.currentStep || false;
+                        }
+                    });
+                }
+            } else {
+                // Fallback: Determine progress from sessions
+                const sessionsResponse = await fetch('/api/sessions');
+                if (sessionsResponse.ok) {
+                    const sessions = await sessionsResponse.json();
+                    // Mark steps as complete based on session existence
+                    projectSteps[0].completed = true; // Setup (if dashboard is running)
+                    projectSteps[1].completed = true; // Config (if dashboard is running)
+                    projectSteps[2].completed = sessions.length > 0; // Strategy (if sessions exist)
+                    projectSteps[3].completed = sessions.length > 0; // Backtest (if sessions exist)
+                    projectSteps[4].completed = sessions.length > 0; // Simulation (if sessions exist)
+                    projectSteps[4].currentStep = sessions.length > 0; // Current step
+                }
+            }
+        } catch (error) {
+            console.log('Using default progress state');
+            // Set reasonable defaults
+            projectSteps[0].completed = true; // Assume setup is done
+            projectSteps[1].completed = true; // Assume config is done
+            projectSteps[2].currentStep = true; // Current step
         }
-        return null;
+        
+        // Calculate overall progress
+        const completedSteps = projectSteps.filter(step => step.completed).length;
+        const totalSteps = projectSteps.length;
+        const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
+        
+        // Update progress bar
+        if (progressBarFill) {
+            progressBarFill.style.width = `${progressPercentage}%`;
+            progressBarFill.querySelector('.progress-text').textContent = `${progressPercentage}%`;
+        }
+        
+        // Render steps
+        stepsListEl.innerHTML = projectSteps.map(step => {
+            const statusClass = step.completed ? 'completed' : (step.currentStep ? 'current' : 'pending');
+            const statusIcon = step.completed ? 'fa-check-circle' : (step.currentStep ? 'fa-circle-notch fa-spin' : 'fa-circle');
+            
+            return `
+                <div class="step-item ${statusClass}">
+                    <div class="step-icon">
+                        <i class="fas ${step.icon}"></i>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-header">
+                            <h5>${step.title}</h5>
+                            <span class="step-status">
+                                <i class="fas ${statusIcon}"></i>
+                                ${step.completed ? 'Completed' : (step.currentStep ? 'In Progress' : 'Pending')}
+                            </span>
+                        </div>
+                        <p class="step-description">${step.description}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
     },
     
-    // Load sessions from API
+    // Load sessions from API (simplified for progress monitoring)
     async loadSessions() {
         const loadingEl = document.getElementById('sessionsLoading');
         const listEl = document.getElementById('sessionsList');
@@ -496,57 +604,22 @@ const Features = {
                 return;
             }
             
-            // Apply filters
-            const searchTerm = document.getElementById('sessionSearch')?.value.toLowerCase() || '';
-            const filter = document.getElementById('sessionFilter')?.value || 'all';
-            const dateFrom = document.getElementById('sessionDateFrom')?.value || '';
-            const dateTo = document.getElementById('sessionDateTo')?.value || '';
-            
-            const filteredSessions = sessions.filter(session => {
-                // Search filter
-                const matchesSearch = !searchTerm || 
-                    session.id.toLowerCase().includes(searchTerm) ||
-                    session.timestamp.toLowerCase().includes(searchTerm);
-                
-                // Performance filter
-                let matchesFilter = true;
-                if (filter === 'profitable') {
-                    matchesFilter = session.total_pnl > 0;
-                } else if (filter === 'loss') {
-                    matchesFilter = session.total_pnl < 0;
-                }
-                
-                // Date range filter
-                let matchesDateRange = true;
-                if (dateFrom || dateTo) {
-                    // Extract date from session ID (format: YYYYMMDD_HHMMSS)
-                    const sessionDate = this.parseSessionDate(session.id);
-                    if (sessionDate) {
-                        if (dateFrom) {
-                            const fromDate = new Date(dateFrom);
-                            if (sessionDate < fromDate) matchesDateRange = false;
-                        }
-                        if (dateTo) {
-                            const toDate = new Date(dateTo);
-                            toDate.setHours(23, 59, 59); // Include full day
-                            if (sessionDate > toDate) matchesDateRange = false;
-                        }
-                    }
-                }
-                
-                return matchesSearch && matchesFilter && matchesDateRange;
-            });
-            
-            if (filteredSessions.length === 0) {
-                if (emptyEl) emptyEl.style.display = 'block';
-                return;
-            }
+            // Show only the 5 most recent sessions for progress monitoring
+            const recentSessions = sessions.slice(0, 5);
             
             // Render sessions
-            filteredSessions.forEach(session => {
+            recentSessions.forEach(session => {
                 const sessionCard = this.createSessionCard(session);
                 listEl.appendChild(sessionCard);
             });
+            
+            // Show count if there are more
+            if (sessions.length > 5) {
+                const moreInfo = document.createElement('div');
+                moreInfo.className = 'more-sessions-info';
+                moreInfo.innerHTML = `<i class="fas fa-info-circle"></i> Showing 5 most recent of ${sessions.length} total sessions`;
+                listEl.appendChild(moreInfo);
+            }
             
         } catch (error) {
             console.error('Error loading sessions:', error);
@@ -555,426 +628,56 @@ const Features = {
         }
     },
     
-    // Create session card element
+    // Create session card element (simplified for progress monitoring)
     createSessionCard(session) {
         const card = document.createElement('div');
-        card.className = 'session-card';
+        card.className = 'session-card-simple';
         
         const pnlClass = session.total_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
-        const pnlIcon = session.total_pnl >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+        const statusIcon = session.total_pnl >= 0 ? 'fa-check-circle' : 'fa-times-circle';
         
         card.innerHTML = `
-            <div class="session-header">
-                <div class="session-id">
-                    <i class="fas fa-calendar-alt"></i>
-                    <strong>Session ${session.id}</strong>
+            <div class="session-header-simple">
+                <div class="session-id-simple">
+                    <i class="fas fa-folder"></i>
+                    <strong>${session.id}</strong>
                 </div>
-                <div class="session-pnl ${pnlClass}">
-                    <i class="fas ${pnlIcon}"></i>
-                    $${session.total_pnl.toFixed(2)}
-                </div>
-            </div>
-            <div class="session-info">
-                <div class="info-row">
-                    <span><i class="fas fa-clock"></i> ${session.timestamp || 'N/A'}</span>
-                </div>
-                <div class="info-row">
-                    <span><i class="fas fa-wallet"></i> Capital: $${session.initial_capital.toFixed(2)} → $${session.final_equity.toFixed(2)}</span>
-                </div>
-                <div class="info-row">
-                    <span><i class="fas fa-exchange-alt"></i> Trades: ${session.total_trades || 0}</span>
-                    <span><i class="fas fa-percentage"></i> Win Rate: ${(session.win_rate || 0).toFixed(1)}%</span>
+                <div class="session-status ${pnlClass}">
+                    <i class="fas ${statusIcon}"></i>
                 </div>
             </div>
-            <div class="session-actions">
-                <button class="btn btn-primary btn-sm" onclick="Features.viewSessionDetails('${session.id}')">
-                    <i class="fas fa-eye"></i> View Details
-                </button>
-                <button class="btn btn-secondary btn-sm" onclick="Features.exportSession('${session.id}')">
-                    <i class="fas fa-download"></i> Export
-                </button>
+            <div class="session-info-simple">
+                <div class="info-item">
+                    <span class="info-label">Timestamp:</span>
+                    <span class="info-value">${session.timestamp || 'N/A'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Result:</span>
+                    <span class="info-value ${pnlClass}">${session.total_pnl >= 0 ? 'Success' : 'Loss'} ($${session.total_pnl.toFixed(2)})</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Trades:</span>
+                    <span class="info-value">${session.total_trades || 0}</span>
+                </div>
             </div>
         `;
         
         return card;
     },
     
-    // View session details
-    async viewSessionDetails(sessionId) {
-        try {
-            const response = await fetch(`/api/sessions/${sessionId}`);
-            const sessionData = await response.json();
-            
-            if (sessionData.error) {
-                alert('Session not found or error loading details');
-                return;
-            }
-            
-            // Create detail modal
-            const detailModal = this.createModal(`Session Details - ${sessionId}`, this.getSessionDetailContent(sessionData));
-            document.body.appendChild(detailModal);
-            
-            // Render charts
-            setTimeout(() => {
-                this.renderSessionCharts(sessionData);
-            }, 100);
-            
-        } catch (error) {
-            console.error('Error loading session details:', error);
-            alert('Error loading session details');
-        }
-    },
-    
-    // Get session detail content
-    getSessionDetailContent(sessionData) {
-        return `
-            <div class="session-detail">
-                <div class="detail-metrics">
-                    <div class="metric-box">
-                        <span class="metric-label">Initial Capital</span>
-                        <span class="metric-value">$${(sessionData.metrics.initial_capital || 0)}</span>
-                    </div>
-                    <div class="metric-box">
-                        <span class="metric-label">Final Equity</span>
-                        <span class="metric-value">$${(sessionData.metrics.final_equity || 0)}</span>
-                    </div>
-                    <div class="metric-box">
-                        <span class="metric-label">Total P&L</span>
-                        <span class="metric-value ${(sessionData.metrics.total_pnl >= 0) ? 'success' : 'danger'}">
-                            $${(sessionData.metrics.total_pnl || 0)}
-                        </span>
-                    </div>
-                    <div class="metric-box">
-                        <span class="metric-label">Total Trades</span>
-                        <span class="metric-value">${sessionData.metrics.total_orders || 0}</span>
-                    </div>
-                </div>
-                
-                <div class="detail-filters">
-                    <h4><i class="fas fa-filter"></i> Filter Trades</h4>
-                    <div class="filter-controls">
-                        <select id="tradeTypeFilter" class="form-control" onchange="Features.filterTrades()">
-                            <option value="all">All Trade Types</option>
-                            <option value="BUY">Buy Orders</option>
-                            <option value="SELL">Sell Orders</option>
-                        </select>
-                        <select id="tradeStatusFilter" class="form-control" onchange="Features.filterTrades()">
-                            <option value="all">All Status</option>
-                            <option value="FILLED">Filled</option>
-                            <option value="PARTIAL">Partial</option>
-                            <option value="CANCELLED">Cancelled</option>
-                        </select>
-                        <select id="symbolFilter" class="form-control" onchange="Features.filterTrades()">
-                            <option value="all">All Symbols</option>
-                            ${this.getUniqueSymbols(sessionData.trades).map(symbol => 
-                                `<option value="${symbol}">${symbol}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="detail-charts">
-                    <div class="charts-grid">
-                        <div class="chart-box">
-                            <h4>Cumulative P&L Over Time</h4>
-                            <canvas id="sessionPnLChart"></canvas>
-                        </div>
-                        <div class="chart-box">
-                            <h4>Win/Loss Distribution</h4>
-                            <canvas id="sessionWinLossChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="charts-grid">
-                        <div class="chart-box">
-                            <h4>Trade Types Distribution</h4>
-                            <canvas id="sessionTradeTypesChart"></canvas>
-                        </div>
-                        <div class="chart-box">
-                            <h4>Execution Prices Timeline</h4>
-                            <canvas id="sessionTradesChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="detail-trades">
-                    <h4><i class="fas fa-list"></i> Execution History</h4>
-                    <div class="trades-table-container">
-                        <table class="trades-table" id="tradesTable">
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Symbol</th>
-                                    <th>Side</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tradesTableBody">
-                                ${sessionData.trades.map(trade => `
-                                    <tr data-side="${trade.side}" data-status="${trade.status}" data-symbol="${trade.symbol}">
-                                        <td>${trade.order_id || 'N/A'}</td>
-                                        <td>${trade.symbol || 'N/A'}</td>
-                                        <td class="${(trade.side === 'BUY') ? 'trade-type-buy' : 'trade-type-sell'}">
-                                            ${trade.side || 'N/A'}
-                                        </td>
-                                        <td>${trade.quantity || trade.filled_quantity || 'N/A'}</td>
-                                        <td>$${trade.execution_price || 'N/A'}</td>
-                                        <td>${trade.status || 'N/A'}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        `;
-    },
-    
-    // Get unique symbols from trades
-    getUniqueSymbols(trades) {
-        const symbols = new Set();
-        trades.forEach(trade => {
-            if (trade.symbol) {
-                symbols.add(trade.symbol);
-            }
-        });
-        return Array.from(symbols).sort();
-    },
-    
-    // Filter trades based on selected filters
-    filterTrades() {
-        const typeFilter = document.getElementById('tradeTypeFilter')?.value || 'all';
-        const statusFilter = document.getElementById('tradeStatusFilter')?.value || 'all';
-        const symbolFilter = document.getElementById('symbolFilter')?.value || 'all';
-        
-        const rows = document.querySelectorAll('#tradesTableBody tr');
-        rows.forEach(row => {
-            const side = row.getAttribute('data-side');
-            const status = row.getAttribute('data-status');
-            const symbol = row.getAttribute('data-symbol');
-            
-            let show = true;
-            if (typeFilter !== 'all' && side !== typeFilter) show = false;
-            if (statusFilter !== 'all' && status !== statusFilter) show = false;
-            if (symbolFilter !== 'all' && symbol !== symbolFilter) show = false;
-            
-            row.style.display = show ? '' : 'none';
-        });
-    },
-    
-    // Render session charts
-    renderSessionCharts(sessionData) {
-        // 1. Cumulative P&L Over Time (Line Chart)
-        const pnlCtx = document.getElementById('sessionPnLChart');
-        if (pnlCtx && sessionData.chart_data && sessionData.chart_data.pnl_over_time) {
-            const pnlData = sessionData.chart_data.pnl_over_time;
-            new Chart(pnlCtx, {
-                type: 'line',
-                data: {
-                    labels: pnlData.map(d => `Trade ${d.trade_number}`),
-                    datasets: [{
-                        label: 'Cumulative P&L ($)',
-                        data: pnlData.map(d => d.cumulative_pnl),
-                        borderColor: 'rgb(102, 126, 234)',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 3,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toFixed(2);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // 2. Win/Loss Distribution (Bar Chart)
-        const winLossCtx = document.getElementById('sessionWinLossChart');
-        if (winLossCtx && sessionData.chart_data && sessionData.chart_data.win_loss_distribution) {
-            const winLossData = sessionData.chart_data.win_loss_distribution;
-            new Chart(winLossCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Wins', 'Losses'],
-                    datasets: [{
-                        label: 'Number of Trades',
-                        data: [winLossData.wins, winLossData.losses],
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(255, 99, 132, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgb(75, 192, 192)',
-                            'rgb(255, 99, 132)'
-                        ],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // 3. Trade Types Distribution (Doughnut Chart)
-        const tradeTypesCtx = document.getElementById('sessionTradeTypesChart');
-        if (tradeTypesCtx && sessionData.chart_data && sessionData.chart_data.trade_types) {
-            const tradeTypes = sessionData.chart_data.trade_types;
-            new Chart(tradeTypesCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Buy Orders', 'Sell Orders'],
-                    datasets: [{
-                        data: [tradeTypes.BUY || 0, tradeTypes.SELL || 0],
-                        backgroundColor: [
-                            'rgba(102, 126, 234, 0.8)',
-                            'rgba(118, 75, 162, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgb(102, 126, 234)',
-                            'rgb(118, 75, 162)'
-                        ],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        }
-        
-        // 4. Execution Prices Timeline (Line Chart)
-        const tradesCtx = document.getElementById('sessionTradesChart');
-        if (tradesCtx) {
-            const trades = sessionData.trades || [];
-            const labels = trades.map((t, i) => `Trade ${i + 1}`);
-            const prices = trades.map(t => {
-                const priceStr = (t.execution_price || '0').replace('$', '').replace(',', '');
-                return parseFloat(priceStr) || 0;
-            });
-            
-            new Chart(tradesCtx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Execution Price ($)',
-                        data: prices,
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1,
-                        pointRadius: 4,
-                        pointHoverRadius: 7
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toFixed(2);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    },
-    
-    // Export session
-    async exportSession(sessionId) {
-        try {
-            const response = await fetch(`/api/sessions/${sessionId}`);
-            const sessionData = await response.json();
-            
-            if (sessionData.error) {
-                alert('Session not found');
-                return;
-            }
-            
-            // Convert to CSV
-            const csv = this.convertSessionToCSV(sessionData);
-            
-            // Download
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `session_${sessionId}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
-        } catch (error) {
-            console.error('Error exporting session:', error);
-            alert('Error exporting session');
-        }
-    },
-    
-    // Convert session to CSV
-    convertSessionToCSV(sessionData) {
-        const trades = sessionData.trades || [];
-        let csv = 'Order ID,Symbol,Side,Quantity,Execution Price,Status\n';
-        
-        trades.forEach(trade => {
-            csv += `${trade.order_id || ''},${trade.symbol || ''},${trade.side || ''},${trade.quantity || trade.filled_quantity || ''},${trade.execution_price || ''},${trade.status || ''}\n`;
-        });
-        
-        return csv;
-    },
+    /* 
+     * Removed detailed session analytics functions for simplified progress monitoring:
+     * - viewSessionDetails() - Removed detailed session view modal
+     * - getSessionDetailContent() - Removed detailed trade filters and charts
+     * - getUniqueSymbols() - No longer needed without trade filtering
+     * - filterTrades() - No longer needed without trade filtering  
+     * - renderSessionCharts() - Removed complex chart rendering (4 chart types)
+     * - exportSession() - Export functionality removed for simplification
+     * - convertSessionToCSV() - CSV conversion removed with export functionality
+     * 
+     * These functions were part of the extensive trading analytics features
+     * that have been removed to focus on project progress monitoring only.
+     */
     
     // Get broker connection content
     getBrokerConnectionContent() {
