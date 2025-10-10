@@ -144,6 +144,31 @@ MASTER_VERSION/
 - **Live-Monitoring**: Heartbeat und Metriken werden in Session-Events geschrieben
 - **API-Sicherheit**: Sichere Verwaltung von API-Keys aus Umgebungsvariablen
 
+### ✅ Daten-Lifecycle & Aufräumen 🆕
+- **Log-Rotation**: Automatische Archivierung alter Log-Dateien mit Kompression
+- **PII-Maskierung**: Schutz sensibler Daten (E-Mails, API-Keys, Passwörter, Telefonnummern)
+- **Integritätsprüfung**: Checksum-basierte Verifizierung aller Archive
+- **Konfigurierbare Retention**: Anpassbare Aufbewahrungsfristen (Standard: 30 Tage)
+- **Automatische Kompression**: Gzip-Kompression für Platzersparnis
+- **Metadata-Tracking**: Vollständige Nachverfolgbarkeit archivierter Dateien
+
+```python
+from automation.data_lifecycle import rotate_logs, mask_pii, check_archive
+
+# Log-Rotation durchführen
+result = rotate_logs()
+print(f"Archiviert: {result['archived_count']} Dateien")
+
+# Sensible Daten maskieren
+data = {"user": "Max Mustermann", "email": "max@example.com"}
+masked = mask_pii(data)
+# Ausgabe: {"user": "Ma**********nn", "email": "ma***********om"}
+
+# Archive-Integrität prüfen
+integrity_ok = check_archive()
+assert integrity_ok is True
+```
+
 ### ✅ View Session Dashboard (NEU) 🆕
 - **Echtzeit-Visualisierung**: Streamlit-basiertes Dashboard mit Plotly-Charts
 - **PnL/Equity Curve**: Liniendiagramm für Gewinn-/Verlustentwicklung
