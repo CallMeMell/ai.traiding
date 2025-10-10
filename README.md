@@ -74,6 +74,16 @@ MASTER_VERSION/
 - Detaillierte Performance-Metriken
 - Win Rate, ROI, Profit Factor, etc.
 
+### ✅ Automatische Strategie-Auswahl 🆕
+- **Intelligente Optimierung**: Analysiert alle Strategien mittels Backtest und wählt automatisch die beste
+- **Multi-Kriterien-Bewertung**: ROI, Sharpe Ratio, Calmar Ratio, Drawdown, Win Rate
+- **Automatische Konfiguration**: Beste Strategie wird direkt in Live-Config gesetzt
+- **Vollständig dokumentiert**: Logs und CSV-Export für Nachvollziehbarkeit
+- **Flexible Integration**: Standalone-Script oder Teil des Setup-Wizards
+- **CI/CD Ready**: Quiet Mode für Automatisierung und Cron-Jobs
+
+📖 **[Read the Auto Strategy Selection Guide](AUTO_STRATEGY_SELECTION_GUIDE.md)** für vollständige Dokumentation und Beispiele.
+
 ### ✅ Robuste Architektur
 - **Modular & OOP**: Saubere Klassenstruktur
 - **Zentrales Logging**: Rotating File Handler
@@ -274,6 +284,30 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 - ✅ Streamlit Dashboard starten (http://localhost:8501)
 
 Nach dem Start öffne deinen Browser: **http://localhost:8501**
+
+---
+
+### 🎯 Automatische Strategie-Auswahl (Bonus)
+
+Finde automatisch die beste Strategie für maximalen ROI:
+
+**Windows:**
+```powershell
+# Vollautomatisch - wählt beste Strategie und aktualisiert Config
+.\scripts\auto_select_strategy.ps1
+
+# Mit benutzerdefinierten Parametern
+.\scripts\auto_select_strategy.ps1 --min-trades 15 --initial-capital 50000
+```
+
+**Linux/macOS:**
+```bash
+python scripts/auto_select_strategy.py
+```
+
+**Ergebnis**: Die beste Strategie wird automatisch in `config/live_risk.yaml` gesetzt! 🏆
+
+📖 Siehe **[AUTO_STRATEGY_SELECTION_GUIDE.md](AUTO_STRATEGY_SELECTION_GUIDE.md)** für Details.
 
 ---
 
