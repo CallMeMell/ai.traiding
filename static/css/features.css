@@ -1568,6 +1568,45 @@
         padding: 15px;
     }
     
+    .summary-stats {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    
+    .summary-stat {
+        padding: 10px;
+        gap: 8px;
+    }
+    
+    .summary-stat i {
+        font-size: 20px;
+    }
+    
+    .stat-value {
+        font-size: 18px;
+    }
+    
+    .stat-label {
+        font-size: 10px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .auto-refresh-indicator {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .task-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
     .step-icon {
         width: 40px;
         height: 40px;
