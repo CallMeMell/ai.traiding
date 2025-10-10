@@ -1,0 +1,57 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install Dev Deps",
+      "type": "shell",
+      "command": "python3 -m venv venv && . venv/bin/activate && pip install --upgrade pip && pip install streamlit plotly pandas requests python-dotenv",
+      "windows": {
+        "command": "python -m venv venv && .\\venv\\Scripts\\activate && pip install --upgrade pip && pip install streamlit plotly pandas requests python-dotenv"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Automation Runner (Dry-Run)",
+      "type": "shell",
+      "command": ". venv/bin/activate && export DRY_RUN=true && export BROKER_NAME=binance && export BINANCE_BASE_URL=https://testnet.binance.vision && python automation/runner.py",
+      "windows": {
+        "command": ".\\venv\\Scripts\\activate && set DRY_RUN=true && set BROKER_NAME=binance && set BINANCE_BASE_URL=https://testnet.binance.vision && python automation/runner.py"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: View Session (Streamlit)",
+      "type": "shell",
+      "command": ". venv/bin/activate && streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0",
+      "windows": {
+        "command": ".\\venv\\Scripts\\activate && streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Streamlit.*$",
+          "endsPattern": "^.*You can now view your Streamlit app.*$"
+        }
+      }
+    }
+  ]
+}
