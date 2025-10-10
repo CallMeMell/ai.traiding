@@ -294,6 +294,72 @@
       },
       "problemMatcher": [],
       "detail": "🌙 Run nightly system test"
+    },
+    {
+      "label": "Test",
+      "type": "shell",
+      "command": ". venv/bin/activate && python -m pytest tests/",
+      "windows": {
+        "command": ".\\venv\\Scripts\\python.exe -m pytest tests\\",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Run pytest tests"
+    },
+    {
+      "label": "Lint",
+      "type": "shell",
+      "command": ". venv/bin/activate && python -m flake8 . || echo 'flake8 not installed'",
+      "windows": {
+        "command": ".\\venv\\Scripts\\python.exe -m flake8 . 2>$null; if ($LASTEXITCODE -ne 0) { Write-Host 'flake8 not installed or issues found' }",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Run linter (flake8)"
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": ". venv/bin/activate && python -m black . || echo 'black not installed'",
+      "windows": {
+        "command": ".\\venv\\Scripts\\python.exe -m black . 2>$null; if ($LASTEXITCODE -ne 0) { Write-Host 'black not installed' }",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Format code with black"
     }
   ]
 }
