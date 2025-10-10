@@ -12,7 +12,7 @@ from datetime import datetime
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from system.orchestrator import SystemOrchestrator
+from automation.runner import AutomationRunner
 from system.log_system.logger import configure_logging, LogLevel
 
 def main():
@@ -38,34 +38,37 @@ def main():
     os.environ['DRY_RUN'] = 'true'
     
     try:
-        # Create orchestrator
-        orchestrator = SystemOrchestrator(
-            dry_run=True,
-            enable_health_checks=True,
-            enable_recovery=True
+        # Create automation runner
+        runner = AutomationRunner(
+            data_phase_timeout=7200,      # 2 hours
+            strategy_phase_timeout=7200,  # 2 hours
+            api_phase_timeout=3600,       # 1 hour
+            heartbeat_interval=30,
+            enable_validation=True
         )
         
-        # Run system
-        results = orchestrator.run()
+        # Run automation workflow
+        results = runner.run()
         
         # Print summary
         print("\n" + "=" * 60)
         print("📊 Nightly Test Summary")
         print("=" * 60)
         print(f"Status: {results['status']}")
-        print(f"Duration: {results['duration_seconds']:.2f}s")
-        print(f"Phases: {len(results['phases'])}")
-        print(f"Errors: {len(results['errors'])}")
-        
-        if results['errors']:
-            print("\n❌ Errors:")
-            for error in results['errors']:
-                print(f"  - {error}")
+        print(f"Duration: {results.get('duration_seconds', 0):.2f}s")
+        print(f"Phases: {len(results.get('phases', {}))}")
         
         print("\n✅ Phases:")
-        for phase in results['phases']:
-            status_icon = "✅" if phase['status'] == 'success' else "❌"
-            print(f"  {status_icon} {phase['phase']}: {phase['status']} ({phase['duration_seconds']:.2f}s)")
+        for phase_name, phase_result in results.get('phases', {}).items():
+            status_icon = "✅" if phase_result['status'] == 'success' else "❌"
+            print(f"  {status_icon} {phase_name}: {phase_result['status']} ({phase_result.get('duration_seconds', 0):.2f}s)")
+        
+        # Check if summary.json was generated
+        summary_path = os.path.join('data', 'session', 'summary.json')
+        if os.path.exists(summary_path):
+            print(f"\n✅ Summary saved to {summary_path}")
+        else:
+            print(f"\n⚠️  Warning: Summary file not found at {summary_path}")
         
         print("=" * 60)
         
