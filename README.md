@@ -716,6 +716,10 @@ control keymgr.dll
 
 #### 📚 Weiterführende Dokumentation
 
+- **[LIVE_TRADING_SETUP_GUIDE.md](LIVE_TRADING_SETUP_GUIDE.md)** - Vollständige Setup-Anleitung für Live-Trading
+- **[SECURE_LIVE_TRADING_IMPLEMENTATION_SUMMARY.md](SECURE_LIVE_TRADING_IMPLEMENTATION_SUMMARY.md)** - Implementation Summary
+- **[LIVE_TRADING_MANUAL_TEST_GUIDE.md](LIVE_TRADING_MANUAL_TEST_GUIDE.md)** - 🧪 **NEU:** Schritt-für-Schritt Manuelle Test-Anleitung
+- **[LIVE_TRADING_TEST_CHECKLIST.md](LIVE_TRADING_TEST_CHECKLIST.md)** - ✅ **NEU:** Schnell-Checkliste für Tests
 - [BINANCE_INTEGRATION_SUMMARY.md](BINANCE_INTEGRATION_SUMMARY.md) - Binance API Details
 - [BINANCE_MIGRATION_GUIDE.md](BINANCE_MIGRATION_GUIDE.md) - Binance Setup Guide
 - [AUTOMATION_RUNNER_GUIDE.md](AUTOMATION_RUNNER_GUIDE.md) - Automation Runner
