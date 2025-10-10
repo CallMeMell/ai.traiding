@@ -2,7 +2,19 @@
 
 ## Overview
 
-The **View Session** feature provides a comprehensive interface for viewing, analyzing, and managing trading sessions. It allows users to review past trading activity, analyze performance metrics, and export session data for further analysis.
+The **View Session** (Progress Monitor) feature provides a comprehensive interface for viewing, analyzing, and managing trading sessions. It allows users to review past trading activity, analyze performance metrics, export session data, and **monitor all active tasks in real-time** with full transparency.
+
+### 🆕 Enhanced Active Task Monitoring
+
+The View Session page now includes a dedicated **Active Tasks** section that provides:
+
+- **Real-time tracking** of all ongoing operations (backtests, simulations, optimizations)
+- **Elapsed time display** showing how long each task has been running
+- **Estimated completion time (ETA)** based on current progress rate
+- **Task summary statistics** showing counts of running, completed, and failed tasks
+- **Visual progress bars** with percentage completion
+- **Auto-refresh every 5 seconds** to keep information current
+- **Detailed status information** for each task including type, details, and timestamps
 
 ## ✨ Universal Accessibility (NEW)
 
@@ -15,6 +27,40 @@ The View Session feature is now universally accessible from anywhere in the appl
 This ensures that you can always access your trading session history with a single click, no matter where you are in the application.
 
 ## Features
+
+### 🚀 Active Tasks Monitor (NEW)
+
+The Active Tasks section appears at the top of the View Session page and provides complete transparency of all ongoing work:
+
+#### Task Summary Dashboard
+- **Total Tasks**: Count of all active, completed, and failed tasks
+- **Running Tasks**: Number of tasks currently in progress with animated indicator
+- **Completed Tasks**: Count of successfully finished tasks
+- **Failed Tasks**: Number of tasks that encountered errors
+- **Average Progress**: Overall progress percentage across all running tasks
+- **Last Updated**: Timestamp of the most recent refresh
+
+#### Individual Task Cards
+Each task displays comprehensive information:
+- **Task Name and Type**: Clear identification with icon (backtest, simulation, optimization, live_trading)
+- **Status Badge**: Color-coded status (Running, Completed, Failed, Queued)
+- **Progress Bar**: Visual percentage indicator (for running tasks)
+- **Elapsed Time**: How long the task has been running (e.g., "5m 23s")
+- **Estimated Time**: Predicted time remaining until completion (e.g., "~3m")
+- **Task Details**: Specific information about what the task is doing
+- **Timestamps**: When the task started and last updated
+
+#### Real-Time Updates
+- **Auto-refresh**: Tasks automatically update every 5 seconds
+- **Pulse Indicator**: Visual indicator shows when auto-refresh is active
+- **Manual Refresh**: Button to immediately update task information
+- **Smooth Animations**: Progress bars and status changes animate smoothly
+
+#### Visual Design
+- **Color-coded Status**: Blue (running), Green (completed), Red (failed), Yellow (queued)
+- **Hover Effects**: Cards highlight when you hover over them
+- **Responsive Layout**: Works perfectly on desktop and mobile devices
+- **Clear Typography**: Easy-to-read fonts and sizing
 
 ### 📋 Session List View
 
@@ -70,11 +116,44 @@ Click "View Details" on any session to see:
 
 ## How to Use
 
-### Accessing View Sessions
+### Accessing View Sessions / Progress Monitor
 
-1. Open the Trading Bot Dashboard
-2. Click the **"View Sessions"** button in the navigation menu
-3. The session list will load automatically
+1. Open the Trading Bot Dashboard at `http://localhost:5000`
+2. Click the **"Progress Monitor"** button in the navigation menu
+3. The Active Tasks section loads first, followed by project progress and session history
+
+### Monitoring Active Tasks (NEW)
+
+The Active Tasks section provides real-time visibility of all ongoing operations:
+
+1. **View Task Summary**: At the top, see statistics showing:
+   - Total number of tasks
+   - How many are running, completed, or failed
+   - Average progress across all running tasks
+   
+2. **Monitor Individual Tasks**: Each task card shows:
+   - Task name and what it's doing
+   - Current progress with a visual bar
+   - How long it's been running
+   - Estimated time to completion
+   - Detailed status information
+
+3. **Auto-Refresh Behavior**:
+   - Tasks automatically update every 5 seconds
+   - Look for the pulsing indicator showing auto-refresh is active
+   - Click "Refresh Now" to manually update immediately
+
+4. **Task States**:
+   - **Running** (Blue badge): Task is actively executing, shows progress bar and ETA
+   - **Completed** (Green badge): Task finished successfully, shows final details
+   - **Failed** (Red badge): Task encountered an error, shows error message
+   - **Queued** (Yellow badge): Task is waiting to start
+
+5. **No Active Tasks**:
+   - If no tasks are running, you'll see a friendly empty state message
+   - Tasks will appear automatically when operations start
+
+### Viewing Session Details
 
 ### Viewing Session Details
 

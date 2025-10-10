@@ -116,6 +116,14 @@ const Features = {
         }
         this.activeTasksInterval = setInterval(() => {
             if (document.getElementById('activeTasksList')) {
+                // Add visual feedback for refresh
+                const indicator = document.getElementById('refreshIndicator');
+                if (indicator) {
+                    indicator.style.animation = 'none';
+                    setTimeout(() => {
+                        indicator.style.animation = '';
+                    }, 10);
+                }
                 this.loadActiveTasks();
             } else {
                 clearInterval(this.activeTasksInterval);
@@ -424,10 +432,16 @@ const Features = {
                 <div class="panel-body">
                     <!-- Active Tasks Section -->
                     <div class="active-tasks-section" id="activeTasksSection">
-                        <h4><i class="fas fa-play-circle"></i> Active Tasks</h4>
+                        <div class="section-header">
+                            <h4><i class="fas fa-play-circle"></i> Active Tasks</h4>
+                            <div class="auto-refresh-indicator">
+                                <i class="fas fa-circle" id="refreshIndicator"></i>
+                                <span>Auto-refresh: <strong>5s</strong></span>
+                            </div>
+                        </div>
                         <div class="filter-controls-simple">
                             <button class="btn btn-secondary" onclick="Features.loadActiveTasks()">
-                                <i class="fas fa-sync-alt"></i> Refresh
+                                <i class="fas fa-sync-alt"></i> Refresh Now
                             </button>
                         </div>
                         <div id="activeTasksLoading" class="loading-indicator" style="display: none;">
@@ -638,6 +652,80 @@ const Features = {
                 return;
             }
             
+            // Calculate summary statistics
+            const runningTasks = tasks.filter(t => t.status === 'running').length;
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const failedTasks = tasks.filter(t => t.status === 'failed').length;
+            const queuedTasks = tasks.filter(t => t.status === 'queued').length;
+            const avgProgress = runningTasks > 0 
+                ? Math.round(tasks.filter(t => t.status === 'running').reduce((sum, t) => sum + t.progress, 0) / runningTasks)
+                : 0;
+            
+            // Add summary section at the top
+            const summaryEl = document.createElement('div');
+            summaryEl.className = 'tasks-summary';
+            summaryEl.innerHTML = `
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <i class="fas fa-tasks"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">${tasks.length}</span>
+                            <span class="stat-label">Total Tasks</span>
+                        </div>
+                    </div>
+                    ${runningTasks > 0 ? `
+                    <div class="summary-stat status-running">
+                        <i class="fas fa-spinner fa-pulse"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">${runningTasks}</span>
+                            <span class="stat-label">Running</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${completedTasks > 0 ? `
+                    <div class="summary-stat status-completed">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">${completedTasks}</span>
+                            <span class="stat-label">Completed</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${failedTasks > 0 ? `
+                    <div class="summary-stat status-failed">
+                        <i class="fas fa-times-circle"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">${failedTasks}</span>
+                            <span class="stat-label">Failed</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${queuedTasks > 0 ? `
+                    <div class="summary-stat status-queued">
+                        <i class="fas fa-clock"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">${queuedTasks}</span>
+                            <span class="stat-label">Queued</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${runningTasks > 0 ? `
+                    <div class="summary-stat">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="stat-content">
+                            <span class="stat-value">${avgProgress}%</span>
+                            <span class="stat-label">Avg Progress</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                <div class="summary-updated">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Last updated: ${data.last_update || 'N/A'}</span>
+                </div>
+            `;
+            listEl.appendChild(summaryEl);
+            
             // Render active tasks
             tasks.forEach(task => {
                 const taskCard = this.createActiveTaskCard(task);
@@ -648,6 +736,54 @@ const Features = {
             console.error('Error loading active tasks:', error);
             if (loadingEl) loadingEl.style.display = 'none';
             if (listEl) listEl.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-triangle"></i> Error loading active tasks</div>';
+        }
+    },
+    
+    // Calculate elapsed time from start
+    calculateElapsedTime(startTime) {
+        try {
+            const start = new Date(startTime);
+            const now = new Date();
+            const diffMs = now - start;
+            const diffSecs = Math.floor(diffMs / 1000);
+            const diffMins = Math.floor(diffSecs / 60);
+            const diffHours = Math.floor(diffMins / 60);
+            
+            if (diffHours > 0) {
+                return `${diffHours}h ${diffMins % 60}m`;
+            } else if (diffMins > 0) {
+                return `${diffMins}m ${diffSecs % 60}s`;
+            } else {
+                return `${diffSecs}s`;
+            }
+        } catch (e) {
+            return 'N/A';
+        }
+    },
+    
+    // Estimate completion time based on progress
+    estimateCompletion(startTime, progress) {
+        try {
+            if (progress <= 0 || progress >= 100) return 'N/A';
+            
+            const start = new Date(startTime);
+            const now = new Date();
+            const elapsedMs = now - start;
+            const totalMs = (elapsedMs / progress) * 100;
+            const remainingMs = totalMs - elapsedMs;
+            const remainingSecs = Math.floor(remainingMs / 1000);
+            const remainingMins = Math.floor(remainingSecs / 60);
+            const remainingHours = Math.floor(remainingMins / 60);
+            
+            if (remainingHours > 0) {
+                return `~${remainingHours}h ${remainingMins % 60}m`;
+            } else if (remainingMins > 0) {
+                return `~${remainingMins}m`;
+            } else {
+                return `~${remainingSecs}s`;
+            }
+        } catch (e) {
+            return 'N/A';
         }
     },
     
@@ -682,6 +818,10 @@ const Features = {
         else if (task.type === 'optimization') typeIcon = 'fa-sliders-h';
         else if (task.type === 'live_trading') typeIcon = 'fa-rocket';
         
+        // Calculate elapsed time and estimate
+        const elapsedTime = this.calculateElapsedTime(task.started_at);
+        const estimatedTime = task.status === 'running' ? this.estimateCompletion(task.started_at, task.progress) : null;
+        
         card.innerHTML = `
             <div class="task-header">
                 <div class="task-title">
@@ -708,6 +848,16 @@ const Features = {
                     <span class="info-label">Started:</span>
                     <span class="info-value">${task.started_at}</span>
                 </div>
+                <div class="task-info">
+                    <span class="info-label">Elapsed:</span>
+                    <span class="info-value"><i class="fas fa-clock"></i> ${elapsedTime}</span>
+                </div>
+                ${estimatedTime ? `
+                <div class="task-info">
+                    <span class="info-label">ETA:</span>
+                    <span class="info-value"><i class="fas fa-hourglass-half"></i> ${estimatedTime}</span>
+                </div>
+                ` : ''}
             </div>
             ${task.status === 'running' ? `
             <div class="task-progress">
