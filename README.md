@@ -628,6 +628,50 @@ Ctrl+Shift+P → "Tasks: Run Task" → "Live: Runner"
 - 📋 Fehlermeldungen werden angezeigt
 - 🔧 Behebe die Fehler und versuche es erneut
 
+#### 🔄 Alternative: Live-Umschaltung mit live_switch.py
+
+**Sichere Umschaltung zwischen Modi:**
+
+Die neue `automation/live_switch.py` bietet eine einfache, sichere Methode zum Wechseln zwischen DRY_RUN und LIVE Modi:
+
+**Zu Live-Modus wechseln (mit Bestätigung):**
+```powershell
+# Windows PowerShell (venv\Scripts verwenden)
+.\venv\Scripts\python.exe -m automation.live_switch --live
+```
+
+**Zu DRY_RUN Modus wechseln:**
+```powershell
+.\venv\Scripts\python.exe -m automation.live_switch --dry-run
+```
+
+**Aktuellen Status prüfen:**
+```powershell
+.\venv\Scripts\python.exe -m automation.live_switch --status
+```
+
+**Python API Verwendung:**
+```python
+from automation.live_switch import switch_to_live, switch_to_dry_run, check_api_key
+
+# Prüfe API-Key vor Umschaltung
+if not check_api_key()[0]:
+    raise Exception("API-Key fehlt oder ungültig")
+
+# Wechsel zu Live-Modus (mit Bestätigung)
+result = switch_to_live()
+
+# Wechsel zurück zu DRY_RUN
+switch_to_dry_run()
+```
+
+**Was live_switch macht:**
+1. ✅ Validiert API-Keys und Secrets
+2. ✅ Prüft Umgebung (KILL_SWITCH, Base-URL)
+3. ✅ Fordert explizite Bestätigung ("LIVE_TRADING_BESTÄTIGT")
+4. ✅ Führt Preflight-Checks aus
+5. ✅ Setzt Environment-Variablen (DRY_RUN, LIVE_TRADING)
+
 #### 🛑 Notfall-Abschaltung: Kill Switch
 
 Falls du sofort alle Live-Orders stoppen möchtest:
