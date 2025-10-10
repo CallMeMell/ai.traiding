@@ -209,6 +209,151 @@ Then press `Ctrl+Shift+P` → "Tasks: Run Task" → select "View Session Dashboa
 
 ---
 
+## 🎯 Ein-Klick Dev Live Session (NEU) 🆕
+
+**Automatisierter One-Click-Workflow für lokales Dev-Setup und Monitoring!**
+
+Starte den kompletten Dev-Workflow mit nur einem Klick: Automation Runner (Dry-Run) + Streamlit View Session laufen parallel, Port 8501 wird automatisch weitergeleitet.
+
+### ✨ Features
+
+- ✅ **Ein-Klick-Start**: Task "Dev: Live Session" startet beide Prozesse parallel
+- ✅ **Automatisches Setup**: venv wird angelegt, Dependencies installiert (idempotent)
+- ✅ **Keine Secrets nötig**: DRY_RUN=true ist Standard
+- ✅ **Port-Weiterleitung**: Port 8501 öffnet automatisch Preview
+- ✅ **Cross-Platform**: Windows, macOS, Linux, Codespaces
+- ✅ **Reproduzierbar**: Funktioniert immer, ohne Datenbeschädigung
+
+### 🚀 Schnellstart - VS Code
+
+**Option 1: Über Command Palette (empfohlen)**
+1. Drücke `Ctrl+Shift+P` (Windows/Linux) oder `Cmd+Shift+P` (macOS)
+2. Tippe "Tasks: Run Task"
+3. Wähle **"Dev: Live Session"**
+4. Beide Prozesse starten automatisch
+5. Port 8501 öffnet sich automatisch mit View Session Dashboard
+
+**Option 2: Über Terminal**
+```bash
+# Run the "Dev: Live Session" task
+# In VS Code Terminal → Run Task → Dev: Live Session
+```
+
+### 🛠️ Manuelle Installation (einmalig)
+
+Falls du die Dependencies manuell installieren möchtest:
+
+```bash
+# Linux/Mac
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema
+
+# Windows
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema
+```
+
+Aber das ist **nicht nötig** - der Task "Install Dev Deps" macht das automatisch!
+
+### 📋 Verfügbare VS Code Tasks
+
+- **Install Dev Deps**: Erstellt venv und installiert alle Dependencies
+- **Run: Automation Runner (Dry-Run)**: Startet Runner im DRY_RUN-Modus (keine API-Keys)
+- **Run: View Session (Streamlit)**: Startet Streamlit Dashboard auf Port 8501
+- **Dev: Live Session**: ⭐ Startet beide Prozesse parallel (empfohlen)
+- **Stop: All Sessions**: Stoppt alle laufenden Streamlit-Prozesse
+
+### 🖥️ Außerhalb von VS Code (Shell-Skripte)
+
+**Linux/macOS:**
+```bash
+./scripts/start_live.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\start_live.ps1
+```
+
+Die Skripte machen:
+1. venv anlegen (falls nicht vorhanden)
+2. Dependencies installieren
+3. Automation Runner starten (DRY_RUN=true)
+4. Streamlit View Session starten (Port 8501)
+5. Beide laufen parallel, Ctrl+C stoppt alle
+
+### 🌐 Zugriff auf View Session
+
+Nach dem Start ist das Dashboard erreichbar unter:
+- **Lokal**: http://localhost:8501
+- **Codespaces/Remote**: Port 8501 wird automatisch weitergeleitet
+- **Preview**: Öffnet sich automatisch in VS Code
+
+### 🔍 Was passiert im DRY_RUN-Modus?
+
+- ✅ Keine echten API-Calls zu Binance/Alpaca
+- ✅ Simulierte Daten für Demo
+- ✅ Events werden generiert und gespeichert
+- ✅ View Session zeigt Live-Updates
+- ✅ Perfekt zum Testen und Entwickeln
+
+### 🐛 Troubleshooting
+
+**Problem: "streamlit: command not found"**
+```bash
+# Stelle sicher, dass venv aktiviert ist
+source venv/bin/activate  # Linux/Mac
+.\venv\Scripts\activate   # Windows
+
+# Streamlit neu installieren
+pip install streamlit
+```
+
+**Problem: "Port 8501 already in use"**
+```bash
+# Stoppe alte Streamlit-Prozesse
+# Linux/Mac:
+pkill -f streamlit
+
+# Windows:
+taskkill /F /IM streamlit.exe
+
+# Oder nutze den VS Code Task "Stop: All Sessions"
+```
+
+**Problem: "No module named 'core'"**
+```bash
+# Stelle sicher, dass du im Projekt-Root bist
+cd /pfad/zu/ai.traiding
+
+# Python path setzen
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"  # Linux/Mac
+$env:PYTHONPATH = "$(pwd)"                # Windows PowerShell
+```
+
+**Problem: View Session zeigt "No data available"**
+- Runner muss zuerst laufen und Events generieren
+- Warte ein paar Sekunden nach Runner-Start
+- Drücke "Refresh Now" im View Session Dashboard
+
+**Problem: venv-Aktivierung schlägt fehl (Windows)**
+```powershell
+# PowerShell Execution Policy anpassen
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### 📚 Weitere Dokumentation
+
+- [AUTOMATION_RUNNER_GUIDE.md](AUTOMATION_RUNNER_GUIDE.md) - Automation Runner Details
+- [VIEW_SESSION_GUIDE.md](VIEW_SESSION_GUIDE.md) - View Session Features
+- [VIEW_SESSION_STREAMLIT_GUIDE.md](VIEW_SESSION_STREAMLIT_GUIDE.md) - Streamlit Dashboard
+
+---
+
 ## 🚀 Installation
 
 ### 1. Virtuelle Umgebung erstellen (empfohlen)
