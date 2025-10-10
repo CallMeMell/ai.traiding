@@ -33,6 +33,7 @@ data/random_search_*.csv
 data/random_search_*.txt
 data/genetic_algorithm_*.csv
 data/genetic_algorithm_*.txt
+data/workflow_sessions/
 
 # Environment
 .env

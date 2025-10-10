@@ -1016,6 +1016,62 @@ if FLASK_AVAILABLE:
             logger.error(f"Error fetching session {session_id}: {e}")
             return jsonify({'error': str(e)}), 500
     
+    @app.route('/api/workflow-sessions')
+    def api_workflow_sessions():
+        """API endpoint for workflow session list"""
+        try:
+            sessions_dir = "data/workflow_sessions"
+            sessions = []
+            
+            if os.path.exists(sessions_dir):
+                for filename in os.listdir(sessions_dir):
+                    if filename.endswith('_summary.json'):
+                        filepath = os.path.join(sessions_dir, filename)
+                        try:
+                            with open(filepath, 'r') as f:
+                                session_data = json.load(f)
+                                sessions.append(session_data)
+                        except Exception as e:
+                            logger.error(f"Error loading workflow session {filename}: {e}")
+            
+            # Sort by start time (newest first)
+            sessions.sort(key=lambda x: x.get('start_time', ''), reverse=True)
+            return jsonify(sessions)
+        except Exception as e:
+            logger.error(f"Error fetching workflow sessions: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/workflow-sessions/<session_id>')
+    def api_workflow_session_detail(session_id):
+        """API endpoint for workflow session details"""
+        try:
+            summary_file = f"data/workflow_sessions/{session_id}_summary.json"
+            session_file = f"data/workflow_sessions/{session_id}.json"
+            
+            if not os.path.exists(summary_file):
+                return jsonify({'error': 'Workflow session not found'}), 404
+            
+            # Load summary
+            with open(summary_file, 'r') as f:
+                summary = json.load(f)
+            
+            # Load live view data if available
+            live_view_data = None
+            if os.path.exists(session_file):
+                try:
+                    with open(session_file, 'r') as f:
+                        live_view_data = json.load(f)
+                except Exception as e:
+                    logger.warning(f"Could not load live view data: {e}")
+            
+            return jsonify({
+                'summary': summary,
+                'live_view': live_view_data
+            })
+        except Exception as e:
+            logger.error(f"Error fetching workflow session {session_id}: {e}")
+            return jsonify({'error': str(e)}), 500
+    
     @app.route('/api/progress')
     def api_progress():
         """API endpoint for project progress tracking"""
