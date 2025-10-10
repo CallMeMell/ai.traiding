@@ -50,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced `.gitignore` for better system file exclusion
 
 ### Fixed
+- 🐛 **Nightly dry-run workflow** - Fixed `nightly_run.py` to properly generate `summary.json`
+  - Changed from using `SystemOrchestrator` to `AutomationRunner` for actual workflow execution
+  - Added explicit artifact upload for `summary.json` in GitHub Actions workflow
+  - Verified end-to-end: summary.json is now properly generated and uploaded as artifact
+
+### Fixed
 - N/A
 
 ### Security
