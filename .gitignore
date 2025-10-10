@@ -57,6 +57,7 @@ Thumbs.db
 
 # Config (optional - wenn du deine persönlichen Configs nicht teilen willst)
 # config/trading_config.json
+config/live_risk.yaml
 
 # Jupyter Notebooks (falls du welche erstellst)
 *.ipynb_checkpoints/

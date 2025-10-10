@@ -488,6 +488,240 @@ rmdir /s venv  # Windows
 
 ---
 
+## 🚨 GEFAHRZONE: Live-Trading
+
+**⚠️ ACHTUNG: Live-Trading mit echtem Geld - Nur für erfahrene Trader!**
+
+### 🔐 Sicherer Setup-Prozess (Windows-First)
+
+Diese Anleitung zeigt, wie du **sicher** Live-Trading aktivierst ohne deine API-Keys im Dateisystem zu speichern.
+
+#### 🛡️ Sicherheits-Prinzipien
+
+1. **✅ Windows Credential Manager**: API-Keys werden sicher im Windows Credential Manager gespeichert
+2. **✅ Keine Secrets in Dateien**: API-Keys werden nie in `.env` oder anderen Dateien gespeichert
+3. **✅ Preflight Checks**: Automatische Validierung vor jedem Live-Trading-Start
+4. **✅ Explizite Bestätigung**: `LIVE_ACK=I_UNDERSTAND` muss gesetzt sein
+5. **✅ Kill Switch**: Notfall-Abschaltung mit `KILL_SWITCH=true`
+
+#### 📋 Voraussetzungen
+
+**BEVOR du anfängst:**
+
+- [ ] ⚠️ **API-Keys widerrufen**: Falls du API-Keys versehentlich geteilt hast, widerrufe sie SOFORT auf Binance
+- [ ] ✅ **Neue Keys erstellen**: Erstelle neue API-Keys auf Binance mit folgenden Einstellungen:
+  - **Nur Reading + Spot Trading aktivieren**
+  - **NIEMALS Withdrawals aktivieren**
+  - **IP-Einschränkungen setzen** (nur deine IP)
+  - **2FA aktivieren** auf deinem Binance-Account
+- [ ] ✅ **Minimales Kapital**: Verwende nur Geld, das du dir leisten kannst zu verlieren
+- [ ] ✅ **Testing abgeschlossen**: Habe ausreichend mit DRY_RUN und Testnet getestet
+
+#### 🔧 Schritt 1: Setup-Wizard ausführen
+
+Der Setup-Wizard fragt deine API-Keys ab und speichert sie sicher im Windows Credential Manager:
+
+**Windows PowerShell:**
+```powershell
+# Führe den Setup-Wizard aus
+.\scripts\setup_live.ps1
+```
+
+**Was der Wizard macht:**
+1. ✅ Fragt Binance API-Key und Secret ab (sichere Eingabe ohne Anzeige)
+2. ✅ Speichert Keys im Windows Credential Manager (nicht auf Disk!)
+3. ✅ Fragt Risk-Management-Parameter ab (Trading-Pairs, Risk-Limits, Order-Types)
+4. ✅ Erstellt `config/live_risk.yaml` (enthält KEINE Secrets, nur Risk-Config)
+
+**VS Code Task Alternative:**
+```
+Ctrl+Shift+P → "Tasks: Run Task" → "Live: Setup"
+```
+
+#### 🔍 Schritt 2: Risk-Config überprüfen
+
+Nach dem Setup überprüfe die generierte `config/live_risk.yaml`:
+
+```yaml
+pairs: BTCUSDT
+max_risk_per_trade: 0.005    # 0.5% Risk pro Trade
+daily_loss_limit: 0.01       # 1% maximaler Tagesverlust
+max_open_exposure: 0.05      # 5% maximales offenes Exposure
+allowed_order_types: LIMIT_ONLY  # Nur Limit-Orders (sicherer)
+max_slippage: 0.003          # 0.3% maximales Slippage
+```
+
+**Empfohlene Anfangs-Einstellungen:**
+- **Pairs**: Starte mit `BTCUSDT` (hohes Volumen, niedrige Spreads)
+- **Order Types**: `LIMIT_ONLY` (sicherer, weniger Slippage)
+- **Risk per Trade**: `0.005` (0.5%) oder weniger
+- **Daily Loss Limit**: `0.01` (1%) als Circuit-Breaker
+
+#### 🚀 Schritt 3: Live-Trading starten
+
+**Windows PowerShell:**
+```powershell
+# Setze LIVE_ACK (explizite Bestätigung)
+$env:LIVE_ACK = "I_UNDERSTAND"
+
+# Starte Live-Trading
+.\scripts\start_live_prod.ps1
+```
+
+**VS Code Task Alternative:**
+```
+# In PowerShell Terminal:
+$env:LIVE_ACK = "I_UNDERSTAND"
+
+# Dann:
+Ctrl+Shift+P → "Tasks: Run Task" → "Live: Runner"
+```
+
+**Was beim Start passiert:**
+1. ✅ Lädt API-Keys aus Windows Credential Manager (nicht aus Dateien!)
+2. ✅ Setzt Production-Flags (`DRY_RUN=false`, `LIVE_TRADING=true`)
+3. ✅ Überprüft `LIVE_ACK=I_UNDERSTAND`
+4. ✅ Führt Preflight-Checks aus:
+   - Environment-Variablen validieren
+   - Production-Endpoint überprüfen (`https://api.binance.com`)
+   - Zeit-Synchronisation mit Binance-Server (max 1000ms Abweichung)
+   - Exchange-Info validieren (Trading-Pairs, Filter, Limits)
+   - Account-Balance überprüfen (mindestens 10 USDT)
+5. ✅ Startet Live-Trading Runner (`automation/runner.py` mit Production-Flags)
+
+**Bei Preflight-Fehler:**
+- ❌ Trading wird NICHT gestartet
+- 📋 Fehlermeldungen werden angezeigt
+- 🔧 Behebe die Fehler und versuche es erneut
+
+#### 🛑 Notfall-Abschaltung: Kill Switch
+
+Falls du sofort alle Live-Orders stoppen möchtest:
+
+```powershell
+# Setze Kill Switch
+$env:KILL_SWITCH = "true"
+
+# Preflight läuft durch, aber keine neuen Orders
+# Offene Orders werden gecancelt (falls implementiert)
+```
+
+**Kill Switch deaktivieren:**
+```powershell
+$env:KILL_SWITCH = "false"
+# Oder entfernen:
+Remove-Item Env:KILL_SWITCH
+```
+
+#### 📊 Live-Trading überwachen
+
+**View Session Dashboard parallel starten:**
+```powershell
+# In separater PowerShell-Session:
+.\venv\Scripts\python.exe -m streamlit run tools/view_session_app.py --server.port 8501
+```
+
+Öffne Browser: `http://localhost:8501`
+
+**Was zu überwachen ist:**
+- 📈 **P&L**: Gewinn/Verlust in Echtzeit
+- 📊 **Open Positions**: Aktuell offene Positionen
+- 🎯 **Win Rate**: Erfolgsquote deiner Trades
+- 🚨 **Daily Loss**: Tagesverlust (sollte unter `daily_loss_limit` bleiben)
+- 💸 **Exposure**: Offenes Exposure (sollte unter `max_open_exposure` bleiben)
+
+#### ⚠️ Wichtige Sicherheitshinweise
+
+**🚫 NIEMALS:**
+- ❌ API-Keys in `.env`, Git oder Chat teilen
+- ❌ Withdrawals-Permission aktivieren
+- ❌ Ohne IP-Einschränkungen handeln
+- ❌ Mit mehr Kapital starten als du verlieren kannst
+- ❌ Unbeaufsichtigt laufen lassen (erste Sessions)
+
+**✅ IMMER:**
+- ✅ API-Keys regelmäßig rotieren (neue Keys erstellen)
+- ✅ Logs überwachen (`logs/trading_bot.log`)
+- ✅ Alerts für große Verluste einrichten
+- ✅ Mit minimalem Kapital testen (z.B. 50-100 USDT)
+- ✅ Binance-Account regelmäßig überprüfen
+- ✅ 2FA aktiviert lassen
+
+#### 🔒 Secrets Management
+
+**Wie Keys gespeichert werden:**
+```
+Windows Credential Manager
+└── Service: "ai.traiding"
+    ├── binance_api_key: [DEIN_API_KEY]
+    └── binance_api_secret: [DEIN_SECRET]
+```
+
+**Keys anzeigen (Windows):**
+```powershell
+# Credential Manager öffnen
+control keymgr.dll
+
+# Oder via Python:
+.\venv\Scripts\python.exe -c "import keyring; print('Key exists:', keyring.get_password('ai.traiding', 'binance_api_key') is not None)"
+```
+
+**Keys löschen:**
+```powershell
+.\venv\Scripts\python.exe -c "import keyring; keyring.delete_password('ai.traiding', 'binance_api_key'); keyring.delete_password('ai.traiding', 'binance_api_secret'); print('Keys deleted')"
+```
+
+#### 📝 Checkliste vor dem ersten Live-Trade
+
+- [ ] Setup-Wizard erfolgreich durchgeführt (`.\scripts\setup_live.ps1`)
+- [ ] `config/live_risk.yaml` überprüft und angepasst
+- [ ] API-Keys im Windows Credential Manager gespeichert (nicht in Dateien!)
+- [ ] Binance API-Keys haben NUR "Reading + Spot Trading" (KEINE Withdrawals)
+- [ ] IP-Einschränkungen auf Binance-Keys gesetzt
+- [ ] 2FA auf Binance-Account aktiviert
+- [ ] Minimales Test-Kapital aufgeladen (z.B. 50-100 USDT)
+- [ ] `LIVE_ACK=I_UNDERSTAND` gesetzt
+- [ ] Preflight-Checks erfolgreich durchlaufen
+- [ ] View Session Dashboard läuft für Monitoring
+- [ ] Notfall-Plan bereit (Kill Switch, manuelles Order-Cancel auf Binance)
+
+#### 🚨 Was tun bei Problemen?
+
+**Problem: Preflight Check failed**
+```
+❌ [ERR] Time drift too large: 1500ms (max 1000ms)
+```
+**Lösung:** Synchronisiere deine System-Zeit mit einem Zeitserver.
+
+**Problem: Authentication failed**
+```
+❌ [ERR] Authentication failed - check API keys
+```
+**Lösung:**
+1. Überprüfe Keys im Credential Manager
+2. Prüfe ob Keys auf Binance gültig sind
+3. Prüfe IP-Einschränkungen (deine IP muss erlaubt sein)
+
+**Problem: Balance too low**
+```
+❌ [ERR] USDT balance too low: 5.00 (minimum: 10)
+```
+**Lösung:** Lade mindestens 10 USDT auf deinen Binance Spot-Account.
+
+**Problem: Keys nicht gefunden**
+```
+❌ Error: Credentials not found in Windows Credential Manager
+```
+**Lösung:** Führe Setup-Wizard erneut aus: `.\scripts\setup_live.ps1`
+
+#### 📚 Weiterführende Dokumentation
+
+- [BINANCE_INTEGRATION_SUMMARY.md](BINANCE_INTEGRATION_SUMMARY.md) - Binance API Details
+- [BINANCE_MIGRATION_GUIDE.md](BINANCE_MIGRATION_GUIDE.md) - Binance Setup Guide
+- [AUTOMATION_RUNNER_GUIDE.md](AUTOMATION_RUNNER_GUIDE.md) - Automation Runner
+
+---
+
 ## 🚀 Installation
 
 ### 1. Virtuelle Umgebung erstellen (empfohlen)

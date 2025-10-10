@@ -104,6 +104,50 @@
       },
       "problemMatcher": [],
       "detail": "Stop all running Streamlit sessions"
+    },
+    {
+      "label": "Live: Setup",
+      "type": "shell",
+      "command": "bash scripts/setup_live.sh",
+      "windows": {
+        "command": ".\\scripts\\setup_live.ps1",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "problemMatcher": [],
+      "detail": "🔐 Run secure setup wizard to store API keys in Windows Credential Manager"
+    },
+    {
+      "label": "Live: Runner",
+      "type": "shell",
+      "command": "bash scripts/start_live_prod.sh",
+      "windows": {
+        "command": ".\\scripts\\start_live_prod.ps1",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "problemMatcher": [],
+      "detail": "🚨 LIVE PRODUCTION TRADING - Runs preflight checks then starts live trading (requires LIVE_ACK=I_UNDERSTAND)"
     }
   ]
 }
