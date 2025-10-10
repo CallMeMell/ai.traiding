@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Dokumentation
+    url: https://github.com/CallMeMell/ai.traiding/blob/main/README.md
+    about: Vollständige Dokumentation und Guides im Repository
+  - name: 💬 Diskussion starten
+    url: https://github.com/CallMeMell/ai.traiding/discussions
+    about: Für allgemeine Fragen und Diskussionen
+  - name: 🐛 Bug Report (Diskussion)
+    url: https://github.com/CallMeMell/ai.traiding/discussions/categories/bugs
+    about: Bug-Reports können als Diskussion gestartet und später zu Issues konvertiert werden

@@ -4,6 +4,70 @@ Dieses Dokument trackt laufende Arbeiten an Issues und Features. Öffne die GitH
 
 ---
 
+## 📋 GitHub Issue Forms (NEU)
+
+**Status**: ✅ Implementiert  
+**Related**: Issue #55 (Split Guidance)
+
+### Überblick
+
+Das Projekt nutzt jetzt **GitHub Issue Forms** für standardisierte Issue-Erstellung. Dies verbessert die Qualität und Konsistenz neuer Issues erheblich.
+
+### Verfügbare Templates
+
+1. **automation-task.yml** – `[Auto]` Tasks
+   - Für automatisierte Aufgaben mit messbarem Outcome
+   - Felder: Goal, Measurable Outcome, Scope, Non-Goals, Acceptance Criteria, References, Effort
+   - Label: `automation`
+   - Maps zu: Automation-bezogenen Splits aus #55
+
+2. **manual-task.yml** – `[Manual]` Tasks
+   - Für manuelle Schritt-für-Schritt Aufgaben
+   - Felder: Steps Checklist, Proof, Acceptance Criteria, Effort, Prerequisites
+   - Label: `manual`
+   - Maps zu: Setup- und Konfigurations-Tasks aus #55
+
+3. **epic-tracking.yml** – `[Epic]` Meta-Tracking
+   - Für größere Initiativen mit mehreren Sub-Issues
+   - Felder: Outcomes, Milestones, Sub-Issues, Risks, Definition of Done, Success Metrics
+   - Labels: `meta`, `epic`
+   - Maps zu: Übergeordneten Tracking-Issues wie #50, #40
+
+4. **config.yml** – Issue Template Konfiguration
+   - Deaktiviert Blank Issues (verhindert unstrukturierte Issues)
+   - Fügt Contact Links hinzu (Dokumentation, Discussions)
+
+### Mapping zu #55 Split-Tasks
+
+Issue #55 beschreibt das Aufteilen großer Issues in kleinere, messbare Tasks:
+
+- **Automation Tasks** → Verwende `automation-task.yml`
+  - Beispiel: Live-Observability (#50) → Split in Schema-Definition, Runner-Enhancement, View-Integration
+  
+- **Manual Tasks** → Verwende `manual-task.yml`
+  - Beispiel: Ein-Klick Live-Session (#53) → Split in VS Code Task Setup, Script-Erstellung, Port-Forwarding
+
+- **Epic Tracking** → Verwende `epic-tracking.yml`
+  - Beispiel: Projektabschluss Sichtbarkeit (#40) → Übergeordnetes Tracking mit Milestones
+
+### Best Practices (aus #55)
+
+**Outcome-orientierte Titel:**
+- ✅ `[Auto] Live-Observability mit strukturierten Events und Real-time Monitoring`
+- ❌ `View Session verbessern`
+
+**Messbare Acceptance Criteria:**
+- ✅ `Event-Schema mit 8+ Feldern implementiert, 10+ Tests passing`
+- ❌ `Code funktioniert gut`
+
+### Dokumentation
+
+- README.md: Neue Sektion "Effiziente Issues" mit Beispielen und Best Practices
+- Alle Templates: Deutsche Labels und Beschreibungen (match current repo style)
+- Contact Links: Verweisen auf Repository-Dokumentation und Discussions
+
+---
+
 ## Issue #42: View Session – Visualisierung & Filter
 
 **Branch**: `feature/view-session-visualization-#42`

@@ -1,0 +1,112 @@
+name: "[Auto] Automation Task"
+description: Aufgabe zur Automatisierung mit messbarem Outcome
+title: "[Auto] "
+labels: ["automation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Automation Task
+        Verwende diese Vorlage für automatisierte Aufgaben mit klar definierten Zielen und messbaren Ergebnissen.
+
+  - type: input
+    id: goal
+    attributes:
+      label: Ziel / Goal
+      description: "Was soll erreicht werden? (outcome-orientiert, messbar)"
+      placeholder: "z.B. Live-Observability für Automation Runner mit strukturierten Events"
+    validations:
+      required: true
+
+  - type: textarea
+    id: measurable-outcome
+    attributes:
+      label: Messbarer Outcome
+      description: "Konkrete, messbare Ergebnisse"
+      placeholder: |
+        - Event-Schema mit 8+ Feldern (timestamp, session_id, type, phase, level, message, metrics, details)
+        - Structured logging in events.jsonl
+        - Real-time monitoring möglich
+      value: |
+        - 
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / Umfang
+      description: "Was ist im Scope dieser Aufgabe?"
+      placeholder: |
+        - Feature A implementieren
+        - Tests schreiben
+        - Dokumentation erstellen
+      value: |
+        - 
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-Goals
+      description: "Was ist explizit NICHT im Scope?"
+      placeholder: |
+        - UI/Frontend-Entwicklung
+        - Performance-Optimierung
+      value: |
+        - 
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: "Messbare Akzeptanzkriterien (Checkliste)"
+      placeholder: |
+        - [ ] Events werden nach Schema validiert
+        - [ ] 10+ Tests passing
+        - [ ] Dokumentation auf Deutsch erstellt
+      value: |
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Referenzen
+      description: "Related Issues, PRs, Dokumentation"
+      placeholder: |
+        - Issue #42
+        - PR #15
+        - Docs: AUTOMATION_RUNNER_GUIDE.md
+      value: |
+        - 
+    validations:
+      required: false
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Aufwand / Effort
+      description: "Geschätzter Aufwand"
+      options:
+        - "XS (< 1h)"
+        - "S (1-4h)"
+        - "M (4-8h)"
+        - "L (1-2 Tage)"
+        - "XL (2-5 Tage)"
+        - "XXL (> 5 Tage)"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Zusätzlicher Kontext
+      description: "Weitere Informationen, Screenshots, Links"
+      placeholder: "Optionale Ergänzungen"
+    validations:
+      required: false

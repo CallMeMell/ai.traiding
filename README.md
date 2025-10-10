@@ -1053,6 +1053,67 @@ Bei Fragen oder Problemen:
 
 ---
 
+## 📋 Effiziente Issues
+
+Dieses Projekt nutzt **GitHub Issue Forms** für standardisierte und effiziente Issue-Erstellung. Wähle beim Erstellen eines neuen Issues die passende Vorlage:
+
+### Verfügbare Issue-Vorlagen
+
+1. **[Auto] Automation Task** – Für automatisierte Aufgaben
+   - ✅ Outcome-orientierter Titel
+   - ✅ Messbare Akzeptanzkriterien
+   - ✅ Klar definierter Scope und Non-Goals
+   - Beispiel: `[Auto] Live-Observability für Automation Runner`
+
+2. **[Manual] Manual Task** – Für manuelle Schritt-für-Schritt Aufgaben
+   - ✅ Checkliste mit konkreten Schritten
+   - ✅ Proof/Nachweis für Abschluss
+   - ✅ Voraussetzungen dokumentiert
+   - Beispiel: `[Manual] API Keys für Binance Testnet einrichten`
+
+3. **[Epic] Epic Tracking** – Für größere Initiativen
+   - ✅ Milestones und Sub-Issues
+   - ✅ Definition of Done (DoD)
+   - ✅ Risiken und Success Metrics
+   - Beispiel: `[Epic] Live Observability Enhancement`
+
+### Best Practices für Issue-Titel
+
+**✅ Gut (outcome-orientiert):**
+- `[Auto] Live-Observability für Automation Runner mit strukturierten Events`
+- `[Manual] Ein-Klick Dev Live Session Setup mit Port-Forwarding`
+- `[Epic] Projektabschluss: Sichtbarkeit & Monitoring-Features`
+
+**❌ Schlecht (task-orientiert):**
+- `View Session verbessern`
+- `Code aufräumen`
+- `Tests hinzufügen`
+
+### Messbare Acceptance Criteria
+
+**✅ Gut (messbar):**
+```markdown
+- [ ] Event-Schema mit 8+ Feldern implementiert
+- [ ] 10+ Tests passing (pytest)
+- [ ] Dokumentation auf Deutsch (min. 200 Zeilen)
+- [ ] Real-time monitoring funktioniert (< 100ms Latenz)
+```
+
+**❌ Schlecht (vage):**
+```markdown
+- [ ] Code funktioniert
+- [ ] Tests sind da
+- [ ] Doku ist gut
+```
+
+### Mehr Informationen
+
+- Alle Vorlagen sind unter [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/) verfügbar
+- Labels werden automatisch gesetzt: `automation`, `manual`, `meta`, `epic`
+- Siehe [PROGRESS.md](PROGRESS.md) für Beispiele und Workflow-Beschreibungen
+
+---
+
 ## 📜 Lizenz
 
 MIT License - Nutze und modifiziere frei für deine Zwecke.
