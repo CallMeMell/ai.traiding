@@ -44,10 +44,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📚 **Documentation**
   - `SYSTEM_12H_IMPLEMENTATION.md` - Implementation plan
   - `CHANGELOG.md` - This changelog
+  - `CONTRIBUTING.md` - Complete contribution guidelines with QA processes
+  - `RELEASE-NOTES.md` - Release versioning and notes
+  - README.md: ENV variable reference table (40+ variables documented)
   - Inline code documentation
 
 ### Changed
 - Enhanced `.gitignore` for better system file exclusion
+- README.md: Added comprehensive ENV variable table with examples
 
 ### Fixed
 - 🐛 **Nightly dry-run workflow** - Fixed `nightly_run.py` to properly generate `summary.json`
