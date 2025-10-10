@@ -39,7 +39,7 @@ class AutomationRunner:
                  strategy_phase_timeout: int = 7200,  # 2 hours
                  api_phase_timeout: int = 3600,  # 1 hour
                  heartbeat_interval: int = 30,  # 30 seconds
-                 enable_validation: bool = False):  # Validation off by default for backward compatibility
+                 enable_validation: bool = True):  # Validation enabled by default for strict schema compliance
         """
         Initialize automation runner.
         
