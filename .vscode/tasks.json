@@ -4,9 +4,9 @@
     {
       "label": "Install Dev Deps",
       "type": "shell",
-      "command": "python3 -m venv venv && . venv/bin/activate && pip install --upgrade pip && pip install streamlit plotly pandas requests python-dotenv",
+      "command": "python3 -m venv venv && . venv/bin/activate && pip install --upgrade pip && if [ -f requirements.txt ]; then pip install -r requirements.txt; fi && if [ -f requirements/dev.txt ]; then pip install -r requirements/dev.txt; fi && pip install streamlit plotly pandas requests python-dotenv",
       "windows": {
-        "command": "python -m venv venv && .\\venv\\Scripts\\activate && pip install --upgrade pip && pip install streamlit plotly pandas requests python-dotenv"
+        "command": "python -m venv venv && .\\venv\\Scripts\\activate && pip install --upgrade pip && (if exist requirements.txt pip install -r requirements.txt) && (if exist requirements\\dev.txt pip install -r requirements\\dev.txt) && pip install streamlit plotly pandas requests python-dotenv"
       },
       "group": "build",
       "presentation": {
@@ -27,6 +27,7 @@
         "reveal": "always",
         "panel": "dedicated"
       },
+      "isBackground": false,
       "problemMatcher": []
     },
     {
@@ -51,6 +52,19 @@
           "beginsPattern": "^.*Streamlit.*$",
           "endsPattern": "^.*You can now view your Streamlit app.*$"
         }
+      }
+    },
+    {
+      "label": "Dev: Live Session",
+      "dependsOn": [
+        "Run: Automation Runner (Dry-Run)",
+        "Run: View Session (Streamlit)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
       }
     }
   ]

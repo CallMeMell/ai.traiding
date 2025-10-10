@@ -862,6 +862,12 @@ Dieses Projekt enthält vordefinierte VS Code Tasks für schnelle Entwicklung in
    - Nutzen: Live-Visualisierung von Session-Daten und Events
    - **Port 8501 wird automatisch weitergeleitet** und öffnet Preview in Codespaces
 
+4. **Dev: Live Session** ⭐ **NEU**
+   - **Ein-Klick-Lösung**: Startet automatisch beide Prozesse parallel
+   - Automation Runner (Dry-Run) + View Session Dashboard gleichzeitig
+   - Ideal für schnelles Entwickeln und Live-Monitoring
+   - Keine API-Keys erforderlich (DRY_RUN=true standardmäßig)
+
 **Umschalten auf Live-Trading:**
 - Wenn API-Keys verfügbar sind, Task "Run: Automation Runner (Dry-Run)" in `.vscode/tasks.json` bearbeiten
 - Entferne `export DRY_RUN=true` (Linux/macOS) oder `set DRY_RUN=true` (Windows)
@@ -871,6 +877,86 @@ Dieses Projekt enthält vordefinierte VS Code Tasks für schnelle Entwicklung in
 **Referenzen:**
 - [#42](https://github.com/CallMeMell/ai.traiding/issues/42) - View Session Dashboard
 - [#44](https://github.com/CallMeMell/ai.traiding/issues/44) - Echtgeld-Automatisierung
+
+### Ein-Klick Live-Session (VS Code)
+
+Die einfachste Methode, das System zu starten und zu überwachen:
+
+#### 🚀 Schnellstart
+
+1. **In VS Code / Codespaces:**
+   - Drücke `Ctrl+Shift+P` (Windows/Linux) oder `Cmd+Shift+P` (macOS)
+   - Tippe "Run Task" und wähle **"Dev: Live Session"**
+   - Fertig! 🎉
+
+2. **Das passiert automatisch:**
+   - Virtual Environment wird aktiviert (oder erstellt, falls nicht vorhanden)
+   - Dependencies werden installiert (streamlit, plotly, pandas, etc.)
+   - Automation Runner startet im Dry-Run-Modus (keine echten Trades)
+   - View Session Dashboard öffnet sich auf Port 8501
+   - Port wird automatisch weitergeleitet und Preview öffnet sich
+
+#### 🖥️ Außerhalb von VS Code
+
+**Linux/macOS:**
+```bash
+./scripts/start_live.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+.\scripts\start_live.ps1
+```
+
+Diese Skripte:
+- Erstellen automatisch das venv, falls nicht vorhanden
+- Installieren alle Dependencies
+- Laden `.env` Datei, falls vorhanden
+- Starten beide Prozesse parallel
+- Standard: DRY_RUN=true (keine echten Trades)
+
+#### 🔧 Troubleshooting
+
+**Problem: Port 8501 nicht weitergeleitet**
+- ✅ In VS Code: Öffne "Ports" Tab (View → Ports)
+- ✅ Klicke auf Port 8501 → "Open in Browser" oder "Open in Preview"
+- ✅ In Codespaces: Port wird automatisch weitergeleitet
+
+**Problem: Streamlit nicht gefunden**
+- ✅ Führe "Install Dev Deps" Task aus (Ctrl+Shift+P → Run Task → Install Dev Deps)
+- ✅ Oder manuell: `pip install streamlit plotly pandas requests python-dotenv`
+
+**Problem: Automation Runner stoppt sofort**
+- ✅ Normal im Dry-Run-Modus - Runner führt schnellen Test-Durchlauf aus
+- ✅ Prüfe `data/session/` für Session-Daten und Events
+- ✅ View Session Dashboard zeigt Live-Daten und Historie
+
+**Problem: Beide Prozesse laufen nicht parallel**
+- ✅ Stelle sicher, dass VS Code Tasks 2.0.0 verwendet wird (`.vscode/tasks.json`)
+- ✅ Compound Tasks erfordern VS Code 1.30+
+
+#### ⚙️ Konfiguration
+
+**DRY_RUN deaktivieren (für Live-Trading):**
+
+In `.env` Datei setzen:
+```bash
+DRY_RUN=false
+BROKER_NAME=binance
+BINANCE_BASE_URL=https://api.binance.com  # oder Testnet
+BINANCE_API_KEY=dein_api_key
+BINANCE_API_SECRET=dein_api_secret
+```
+
+⚠️ **Vorsicht**: Live-Trading nur mit Testnet oder sehr kleinen Beträgen!
+
+#### 🎯 Features
+
+✅ Funktioniert auf Windows, macOS, Linux und Codespaces
+✅ Keine API-Keys erforderlich (Dry-Run standardmäßig)
+✅ Port-Forwarding automatisch konfiguriert
+✅ Idempotent: Mehrfaches Ausführen ist sicher
+✅ Erhält bestehende venv und Session-Daten
 
 ---
 
