@@ -1287,11 +1287,142 @@
     color: var(--primary-color);
 }
 
+/* Active Tasks Section */
+.active-tasks-section {
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 25px;
+}
+
+.active-tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.active-task-card {
+    background: rgba(102, 126, 234, 0.03);
+    padding: 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.active-task-card:hover {
+    background: rgba(102, 126, 234, 0.05);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.task-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.task-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+
+.task-title i {
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.task-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.task-status i {
+    font-size: 14px;
+}
+
+.status-running {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary-color);
+}
+
+.status-completed {
+    background: rgba(46, 204, 113, 0.1);
+    color: var(--success-color);
+}
+
+.status-failed {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--danger-color);
+}
+
+.status-queued {
+    background: rgba(241, 196, 15, 0.1);
+    color: #f1c40f;
+}
+
+.task-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.task-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.task-info .info-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 70px;
+}
+
+.task-info .info-value {
+    color: var(--text-primary);
+}
+
+.task-progress {
+    margin-top: 8px;
+}
+
+.task-progress .progress-bar-container {
+    height: 24px;
+}
+
+.task-progress .progress-bar {
+    height: 24px;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.task-progress .progress-bar-fill {
+    height: 24px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
+.task-progress .progress-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
 /* Responsive Design for Progress Monitor */
 @media (max-width: 768px) {
     .progress-section,
     .steps-section,
-    .session-history-section {
+    .session-history-section,
+    .active-tasks-section {
         padding: 20px;
     }
     
@@ -1309,5 +1440,15 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
+    }
+    
+    .task-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .task-status {
+        align-self: flex-end;
     }
 }

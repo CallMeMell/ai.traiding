@@ -29,6 +29,10 @@ from utils import calculate_performance_metrics, load_trades_from_csv
 
 logger = logging.getLogger(__name__)
 
+# Global task tracker for active operations
+_active_tasks = []
+_task_id_counter = 0
+
 
 class DashboardConfig:
     """Configuration for dashboard metrics and charts"""
@@ -608,7 +612,7 @@ def create_dashboard(trades_file: str = "data/trades.csv",
 # ==================== FLASK WEB DASHBOARD ====================
 
 try:
-    from flask import Flask, render_template, jsonify
+    from flask import Flask, render_template, jsonify, request
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
@@ -627,6 +631,93 @@ if FLASK_AVAILABLE:
         global _web_dashboard
         _web_dashboard = create_dashboard(trades_file, config_file)
         return _web_dashboard
+    
+    def _add_active_task(task_name: str, task_type: str, details: str = "") -> int:
+        """
+        Add an active task to the tracker
+        
+        Args:
+            task_name: Name of the task
+            task_type: Type of task (backtest, simulation, optimization, etc.)
+            details: Additional details about the task
+            
+        Returns:
+            Task ID
+        """
+        global _active_tasks, _task_id_counter
+        _task_id_counter += 1
+        
+        task = {
+            'id': _task_id_counter,
+            'name': task_name,
+            'type': task_type,
+            'details': details,
+            'status': 'running',
+            'progress': 0,
+            'started_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        _active_tasks.append(task)
+        logger.info(f"Added active task: {task_name} (ID: {_task_id_counter})")
+        return _task_id_counter
+    
+    def _update_active_task(task_id: int, progress: int = None, status: str = None, details: str = None):
+        """
+        Update an active task
+        
+        Args:
+            task_id: Task ID
+            progress: Progress percentage (0-100)
+            status: Task status (running, completed, failed)
+            details: Updated details
+        """
+        global _active_tasks
+        for task in _active_tasks:
+            if task['id'] == task_id:
+                if progress is not None:
+                    task['progress'] = min(100, max(0, progress))
+                if status is not None:
+                    task['status'] = status
+                if details is not None:
+                    task['details'] = details
+                task['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                logger.info(f"Updated task {task_id}: progress={progress}, status={status}")
+                return True
+        return False
+    
+    def _remove_active_task(task_id: int):
+        """
+        Remove a task from active tasks
+        
+        Args:
+            task_id: Task ID
+        """
+        global _active_tasks
+        _active_tasks = [task for task in _active_tasks if task['id'] != task_id]
+        logger.info(f"Removed task {task_id}")
+    
+    def _get_active_tasks() -> List[Dict[str, Any]]:
+        """
+        Get all active tasks
+        
+        Returns:
+            List of active tasks
+        """
+        global _active_tasks
+        # Clean up old completed/failed tasks (older than 1 hour)
+        current_time = datetime.now()
+        cleaned_tasks = []
+        for task in _active_tasks:
+            try:
+                updated_at = datetime.strptime(task['updated_at'], '%Y-%m-%d %H:%M:%S')
+                time_diff = (current_time - updated_at).total_seconds() / 3600
+                # Keep running tasks and recent completed/failed tasks (< 1 hour)
+                if task['status'] == 'running' or time_diff < 1:
+                    cleaned_tasks.append(task)
+            except:
+                cleaned_tasks.append(task)
+        _active_tasks = cleaned_tasks
+        return _active_tasks.copy()
     
     def _get_session_list() -> List[Dict[str, Any]]:
         """
@@ -995,6 +1086,64 @@ if FLASK_AVAILABLE:
             logger.error(f"Error fetching progress: {e}")
             return jsonify({'error': str(e)}), 500
     
+    @app.route('/api/active-tasks')
+    def api_active_tasks():
+        """API endpoint for active/running tasks"""
+        try:
+            tasks = _get_active_tasks()
+            return jsonify({
+                'tasks': tasks,
+                'count': len(tasks),
+                'last_update': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+        except Exception as e:
+            logger.error(f"Error fetching active tasks: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/active-tasks/add', methods=['POST'])
+    def api_add_task():
+        """API endpoint to add a new task (for testing/demo purposes)"""
+        try:
+            data = request.get_json()
+            task_id = _add_active_task(
+                task_name=data.get('name', 'Unnamed Task'),
+                task_type=data.get('type', 'general'),
+                details=data.get('details', '')
+            )
+            return jsonify({
+                'success': True,
+                'task_id': task_id,
+                'message': 'Task added successfully'
+            })
+        except Exception as e:
+            logger.error(f"Error adding task: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/active-tasks/<int:task_id>/update', methods=['POST'])
+    def api_update_task(task_id):
+        """API endpoint to update a task (for testing/demo purposes)"""
+        try:
+            data = request.get_json()
+            result = _update_active_task(
+                task_id=task_id,
+                progress=data.get('progress'),
+                status=data.get('status'),
+                details=data.get('details')
+            )
+            if result:
+                return jsonify({
+                    'success': True,
+                    'message': 'Task updated successfully'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Task not found'
+                }), 404
+        except Exception as e:
+            logger.error(f"Error updating task {task_id}: {e}")
+            return jsonify({'error': str(e)}), 500
+    
     def start_web_dashboard(host: str = '0.0.0.0', port: int = 5000, 
                            trades_file: str = "data/trades.csv",
                            config_file: str = "data/dashboard_config.json",
@@ -1030,11 +1179,49 @@ if FLASK_AVAILABLE:
         print(f"   - http://localhost:{port}/api/status")
         print(f"   - http://localhost:{port}/api/sessions")
         print(f"   - http://localhost:{port}/api/sessions/<session_id>")
-        print(f"   - http://localhost:{port}/api/progress (NEW)")
+        print(f"   - http://localhost:{port}/api/progress")
+        print(f"   - http://localhost:{port}/api/active-tasks (NEW)")
         print("📊 Drücke Ctrl+C zum Beenden")
         print("=" * 70)
         
         app.run(host=host, port=port, debug=debug)
+
+
+# Public API for task tracking (to be used by other modules)
+def add_task(task_name: str, task_type: str, details: str = "") -> int:
+    """
+    Add an active task (can be called from other modules)
+    
+    Args:
+        task_name: Name of the task
+        task_type: Type of task (backtest, simulation, optimization, etc.)
+        details: Additional details about the task
+        
+    Returns:
+        Task ID
+    """
+    return _add_active_task(task_name, task_type, details)
+
+def update_task(task_id: int, progress: int = None, status: str = None, details: str = None):
+    """
+    Update an active task (can be called from other modules)
+    
+    Args:
+        task_id: Task ID
+        progress: Progress percentage (0-100)
+        status: Task status (running, completed, failed)
+        details: Updated details
+    """
+    return _update_active_task(task_id, progress, status, details)
+
+def remove_task(task_id: int):
+    """
+    Remove a task (can be called from other modules)
+    
+    Args:
+        task_id: Task ID
+    """
+    return _remove_active_task(task_id)
 
 
 if __name__ == '__main__':
