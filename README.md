@@ -126,6 +126,18 @@ MASTER_VERSION/
 
 📖 **[Quick Start Guide](QUICK_START_SIMULATED_TRADING.md)** | **[Full Documentation](SIMULATED_LIVE_TRADING_GUIDE.md)**
 
+### ✅ Automatisierter Workflow für Echtgeld-Vorbereitung 🆕
+- **Vollautomatisch**: Bereitet Trading-Bot für Echtgeld-Einsatz vor ohne manuelle Eingriffe
+- **5 Workflow-Phasen**: Datenanalyse, Strategie-Optimierung, API-Vorbereitung, Live-View Integration, Validierung
+- **Zeitlimit-Überwachung**: Jeder Schritt hat definierte Zeitlimits (insgesamt ~5 Stunden)
+- **Automatische Fehlerkorrektur**: Bis zu 3 Wiederholungsversuche bei Fehlern
+- **Live-View Session**: Echtzeit-Visualisierung des Workflow-Fortschritts
+- **Zwischenschritt-Validierung**: 10-Sekunden-Pause nach jedem Schritt zur Selbstüberprüfung
+- **Session-Tracking**: Vollständige Dokumentation aller Schritte in JSON-Format
+- **Sicherheits-Checks**: Validiert API-Konfiguration, Verschlüsselung und Credentials
+
+📖 **[Automated Workflow Guide](AUTOMATED_WORKFLOW_GUIDE.md)** - Vollständige Dokumentation
+
 ---
 
 ## 🚀 Installation

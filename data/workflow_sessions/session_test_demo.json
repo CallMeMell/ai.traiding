@@ -1,0 +1,183 @@
+{
+  "session_id": "test_demo",
+  "start_time": "2025-10-10T02:36:13.569533",
+  "end_time": "2025-10-10T02:37:45.224349",
+  "status": "COMPLETED",
+  "current_step_index": 9,
+  "steps": [
+    {
+      "name": "Marktdaten laden und analysieren",
+      "phase": "Phase 1: Datenanalyse",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:36:13.570131",
+      "end_time": "2025-10-10T02:36:13.573777",
+      "time_limit_seconds": 3600,
+      "error_message": null,
+      "elapsed_time": 0.003646,
+      "results": {
+        "n_bars": 1000,
+        "date_range": "0 bis 999",
+        "price_range": "$28333.39 - $32758.73",
+        "avg_volume": "549.24",
+        "volatility": "0.33%"
+      }
+    },
+    {
+      "name": "Datenvalidierung und -bereinigung",
+      "phase": "Phase 1: Datenanalyse",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:36:23.574552",
+      "end_time": "2025-10-10T02:36:23.577229",
+      "time_limit_seconds": 1800,
+      "error_message": null,
+      "elapsed_time": 0.002677,
+      "results": {
+        "initial_rows": 1000,
+        "cleaned_rows": 1000,
+        "removed_rows": 0,
+        "validation_passed": true
+      }
+    },
+    {
+      "name": "Strategieparameter-Analyse",
+      "phase": "Phase 1: Datenanalyse",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:36:33.578107",
+      "end_time": "2025-10-10T02:36:33.578428",
+      "time_limit_seconds": 1800,
+      "error_message": null,
+      "elapsed_time": 0.000321,
+      "results": {
+        "active_strategies": [
+          "rsi",
+          "ema_crossover"
+        ],
+        "cooperation_logic": "OR",
+        "strategy_count": 2,
+        "parameters": {
+          "rsi": {
+            "window": 14,
+            "oversold_threshold": 35,
+            "overbought_threshold": 65
+          },
+          "ema_crossover": {
+            "short_window": 9,
+            "long_window": 21
+          }
+        }
+      }
+    },
+    {
+      "name": "Strategie-Konfiguration dynamisch anpassen",
+      "phase": "Phase 2: Strategie-Optimierung",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:36:43.579390",
+      "end_time": "2025-10-10T02:36:43.580396",
+      "time_limit_seconds": 3600,
+      "error_message": null,
+      "elapsed_time": 0.001006,
+      "results": {
+        "market_volatility": "0.33%",
+        "optimized_strategies": [
+          "rsi",
+          "ema_crossover"
+        ],
+        "parameters": {
+          "rsi": {
+            "window": 14,
+            "oversold_threshold": 35,
+            "overbought_threshold": 65
+          },
+          "ema_crossover": {
+            "short_window": 9,
+            "long_window": 21
+          }
+        }
+      }
+    },
+    {
+      "name": "Backtesting und Profitabilitäts-Tests",
+      "phase": "Phase 2: Strategie-Optimierung",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:36:53.581385",
+      "end_time": "2025-10-10T02:36:55.210011",
+      "time_limit_seconds": 3600,
+      "error_message": null,
+      "elapsed_time": 1.628626,
+      "results": {
+        "roi": "490.97%",
+        "win_rate": "21.57%",
+        "sharpe_ratio": "0.54",
+        "total_trades": 51,
+        "is_profitable": false,
+        "final_capital": "$59097.30"
+      }
+    },
+    {
+      "name": "Broker-API Konfiguration prüfen",
+      "phase": "Phase 3: API-Vorbereitung",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:37:05.211032",
+      "end_time": "2025-10-10T02:37:05.218813",
+      "time_limit_seconds": 1800,
+      "error_message": null,
+      "elapsed_time": 0.007781,
+      "results": {
+        "binance_testnet_configured": false,
+        "paper_trading_available": false,
+        "recommended_mode": "paper_trading"
+      }
+    },
+    {
+      "name": "API-Sicherheit und Verschlüsselung validieren",
+      "phase": "Phase 3: API-Vorbereitung",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:37:15.219744",
+      "end_time": "2025-10-10T02:37:15.220322",
+      "time_limit_seconds": 1800,
+      "error_message": null,
+      "elapsed_time": 0.000578,
+      "results": {
+        "env_file_exists": false,
+        "keys_not_hardcoded": true,
+        "testnet_mode": true,
+        "ssl_enabled": true,
+        "all_passed": false
+      }
+    },
+    {
+      "name": "Live-View Session initialisieren",
+      "phase": "Phase 4: Live-View Integration",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:37:25.221239",
+      "end_time": "2025-10-10T02:37:25.222103",
+      "time_limit_seconds": 600,
+      "error_message": null,
+      "elapsed_time": 0.000864,
+      "results": {
+        "session_id": "test_demo",
+        "session_file": "data/workflow_sessions/session_test_demo.json",
+        "live_view_url": "/view-session/test_demo",
+        "progress": "77.8%"
+      }
+    },
+    {
+      "name": "Finale System-Validierung",
+      "phase": "Phase 5: Finale Validierung",
+      "status": "COMPLETED",
+      "start_time": "2025-10-10T02:37:35.222937",
+      "end_time": "2025-10-10T02:37:35.223333",
+      "time_limit_seconds": 1200,
+      "error_message": null,
+      "elapsed_time": 0.000396,
+      "results": {
+        "data_validated": true,
+        "strategy_optimized": true,
+        "profitability_tested": true,
+        "api_configured": true,
+        "security_validated": true,
+        "system_ready": true
+      }
+    }
+  ]
+}
