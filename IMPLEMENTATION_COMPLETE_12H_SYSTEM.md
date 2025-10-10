@@ -181,6 +181,8 @@ tests/test_orchestrator.py ........... PASSED                      [100%]
   - Run tests mit coverage
   - Run linting (flake8, black, isort)
   - Run system integration test
+  - Package build (dry-run simulation)
+  - Publish to test repository (dry-run)
 - **Status:** ✅ Configured
 
 #### 2. Nightly Jobs (`nightly.yml`)
