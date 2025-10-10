@@ -522,6 +522,130 @@ rmdir /s venv  # Windows
 
 ---
 
+## ⚙️ Umgebungsvariablen (ENV) - Vollständige Referenz
+
+Alle Umgebungsvariablen können in der `.env` Datei im Projekt-Root gesetzt werden. Verwende `.env.example` als Vorlage.
+
+### 🔧 Grundlegende Konfiguration
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `DRY_RUN` | Aktiviert sicheren Trockenlauf ohne echte API-Calls | `true` / `false` | `true` | ✅ |
+| `BROKER_NAME` | Trading-Platform Auswahl | `binance` / `alpaca` | `binance` | ✅ |
+| `LOG_LEVEL` | Logging-Detailgrad | `DEBUG` / `INFO` / `WARNING` / `ERROR` | `INFO` | ❌ |
+
+### 🔐 Binance API Credentials (Haupt-Plattform)
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `BINANCE_API_KEY` | Binance API-Schlüssel für Live-Trading | `xyz123abc...` | - | ⚠️ Nur für Live |
+| `BINANCE_SECRET_KEY` | Binance Secret Key für Live-Trading | `secret789...` | - | ⚠️ Nur für Live |
+| `BINANCE_BASE_URL` | Binance API Endpoint | `https://api.binance.com` (Live)<br>`https://testnet.binance.vision` (Test) | `https://testnet.binance.vision` | ❌ |
+
+### 🧪 Binance Testnet Credentials (Paper Trading)
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `BINANCE_TESTNET_API_KEY` | Testnet API-Schlüssel (Papierhandel) | `testkey123...` | - | ❌ |
+| `BINANCE_TESTNET_SECRET_KEY` | Testnet Secret Key (Papierhandel) | `testsecret...` | - | ❌ |
+
+### 🚨 Live-Trading Flags (DANGER ZONE)
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `LIVE_TRADING` | Aktiviert echtes Trading (erfordert API-Keys) | `true` / `false` | `false` | ⚠️ Nur für Live |
+| `LIVE_ACK` | Bestätigung für Live-Trading (Sicherheitscheck) | `I_UNDERSTAND` | - | ⚠️ Nur für Live |
+| `KILL_SWITCH` | Notfall-Stopp: Blockiert alle Live-Orders sofort | `true` / `false` | `false` | ❌ |
+
+### 🤖 Optional: OpenAI Integration
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `OPENAI_API_KEY` | OpenAI API-Key für KI-Features | `sk-proj-...` | - | ❌ |
+
+### 💰 Trading-Parameter (Optional - überschreibt config.py)
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `INITIAL_CAPITAL` | Startkapital für Backtests und Simulationen | `10000` | `10000` | ❌ |
+| `TRADE_SIZE` | Handelsvolumen pro Trade | `100` | `100` | ❌ |
+| `UPDATE_INTERVAL` | Update-Intervall in Sekunden | `60` | `60` | ❌ |
+
+### 🛡️ Risk-Management Parameter
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `STOP_LOSS_PERCENT` | Stop-Loss in Prozent | `10` | `10` | ❌ |
+| `TAKE_PROFIT_PERCENT` | Take-Profit in Prozent | `20` | `20` | ❌ |
+| `MAX_DAILY_LOSS` | Maximaler Tagesverlust in Prozent | `5` | `5` | ❌ |
+
+### 📋 Beispiel: Komplette .env Datei
+
+**Für DRY_RUN / Testnet (Standard - sicher):**
+```bash
+# Safe Mode Configuration
+DRY_RUN=true
+BROKER_NAME=binance
+BINANCE_BASE_URL=https://testnet.binance.vision
+
+# Optional: Testnet Keys für Paper Trading
+BINANCE_TESTNET_API_KEY=your_testnet_api_key
+BINANCE_TESTNET_SECRET_KEY=your_testnet_secret_key
+
+# Logging
+LOG_LEVEL=INFO
+
+# Risk Management
+STOP_LOSS_PERCENT=10
+TAKE_PROFIT_PERCENT=20
+MAX_DAILY_LOSS=5
+```
+
+**Für Live-Trading (DANGER - nur mit echten Keys):**
+```bash
+# ⚠️ ACHTUNG: Live-Trading mit echtem Geld
+DRY_RUN=false
+LIVE_TRADING=true
+LIVE_ACK=I_UNDERSTAND
+
+# Binance Live API (NIEMALS committen!)
+BINANCE_API_KEY=your_real_api_key_here
+BINANCE_SECRET_KEY=your_real_secret_key_here
+BINANCE_BASE_URL=https://api.binance.com
+
+# Broker Configuration
+BROKER_NAME=binance
+
+# Risk Management (wichtig für Live!)
+STOP_LOSS_PERCENT=5
+TAKE_PROFIT_PERCENT=10
+MAX_DAILY_LOSS=2
+
+# Emergency Kill Switch (auf false lassen)
+KILL_SWITCH=false
+```
+
+### 🔒 Sicherheitshinweise
+
+**✅ Best Practices:**
+- Verwende **Windows Credential Manager** für Live-Trading Keys (siehe Setup-Guide)
+- Nutze `.env` nur für DRY_RUN und Testnet
+- Stelle sicher, dass `.env` in `.gitignore` steht (ist standardmäßig der Fall)
+- Rotiere API-Keys regelmäßig
+
+**❌ Niemals:**
+- API-Keys in Git committen
+- `.env` mit echten Keys teilen oder in Chat posten
+- Withdrawals-Permission auf API-Keys aktivieren
+- Ohne IP-Einschränkungen handeln
+
+**📖 Weitere Informationen:**
+- [SECURITY.md](SECURITY.md) - Vollständige Sicherheitsrichtlinien
+- [LIVE_TRADING_SETUP_GUIDE.md](LIVE_TRADING_SETUP_GUIDE.md) - Setup für Live-Trading
+- [.env.example](.env.example) - Komplette ENV-Template-Datei
+
+---
+
 ## 🚨 GEFAHRZONE: Live-Trading
 
 **⚠️ ACHTUNG: Live-Trading mit echtem Geld - Nur für erfahrene Trader!**
