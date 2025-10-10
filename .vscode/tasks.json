@@ -148,6 +148,39 @@
       },
       "problemMatcher": [],
       "detail": "🚨 LIVE PRODUCTION TRADING - Runs preflight checks then starts live trading (requires LIVE_ACK=I_UNDERSTAND)"
+    },
+    {
+      "label": "Lint: PowerShell",
+      "type": "shell",
+      "command": "pwsh -Command \"Invoke-ScriptAnalyzer -Path scripts/*.ps1 -Settings PSGallery -Recurse\"",
+      "windows": {
+        "command": "pwsh -Command \"Invoke-ScriptAnalyzer -Path scripts/*.ps1 -Settings PSGallery -Recurse\"",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true
+      },
+      "problemMatcher": {
+        "owner": "powershell",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(\\w+):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      },
+      "detail": "🔍 Lint all PowerShell scripts using PSScriptAnalyzer"
     }
   ]
 }
