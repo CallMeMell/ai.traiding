@@ -226,6 +226,15 @@ Starte den kompletten Dev-Workflow mit nur einem Klick: Automation Runner (Dry-R
 
 ### 🚀 Schnellstart - VS Code
 
+**Voraussetzungen prüfen (optional):**
+```bash
+# Linux/macOS
+./scripts/validate_setup.sh
+
+# Windows PowerShell
+.\scripts\validate_setup.ps1
+```
+
 **Option 1: Über Command Palette (empfohlen)**
 1. Drücke `Ctrl+Shift+P` (Windows/Linux) oder `Cmd+Shift+P` (macOS)
 2. Tippe "Tasks: Run Task"
@@ -238,6 +247,14 @@ Starte den kompletten Dev-Workflow mit nur einem Klick: Automation Runner (Dry-R
 # Run the "Dev: Live Session" task
 # In VS Code Terminal → Run Task → Dev: Live Session
 ```
+
+**Was passiert beim ersten Start?**
+- ✅ Virtual Environment wird erstellt (venv/)
+- ✅ Alle Dependencies werden installiert
+- ✅ data/session/ Verzeichnis wird angelegt
+- ✅ Automation Runner startet im DRY_RUN-Modus
+- ✅ Streamlit Dashboard startet auf Port 8501
+- ⏱️ Erster Start dauert 1-2 Minuten (Dependencies-Installation)
 
 ### 🛠️ Manuelle Installation (einmalig)
 
@@ -303,6 +320,18 @@ Nach dem Start ist das Dashboard erreichbar unter:
 
 ### 🐛 Troubleshooting
 
+**Vor dem Start: Setup validieren**
+```bash
+# Linux/macOS
+./scripts/validate_setup.sh
+
+# Windows PowerShell
+.\scripts\validate_setup.ps1
+```
+Das Validierungsskript prüft automatisch alle Voraussetzungen und gibt klare Hinweise bei Problemen.
+
+---
+
 **Problem: "streamlit: command not found"**
 ```bash
 # Stelle sicher, dass venv aktiviert ist
@@ -337,14 +366,55 @@ $env:PYTHONPATH = "$(pwd)"                # Windows PowerShell
 
 **Problem: View Session zeigt "No data available"**
 - Runner muss zuerst laufen und Events generieren
-- Warte ein paar Sekunden nach Runner-Start
+- Warte 5-10 Sekunden nach Runner-Start
 - Drücke "Refresh Now" im View Session Dashboard
+- Prüfe ob `data/session/events.jsonl` existiert und nicht leer ist
 
 **Problem: venv-Aktivierung schlägt fehl (Windows)**
 ```powershell
 # PowerShell Execution Policy anpassen
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
+
+**Problem: Prozesse starten nicht parallel (VS Code)**
+- Prüfe ob `.vscode/tasks.json` existiert und korrekt ist
+- Task "Dev: Live Session" muss `"dependsOrder": "parallel"` enthalten
+- Bei Problemen: Nutze die Shell-Skripte (`start_live.sh` / `start_live.ps1`)
+
+**Problem: "Python 3 is not installed"**
+- Installiere Python 3.8 oder höher von [python.org](https://www.python.org/)
+- Linux/Ubuntu: `sudo apt-get install python3 python3-venv`
+- macOS: `brew install python3`
+
+**Problem: Dependencies-Installation schlägt fehl**
+```bash
+# Upgrade pip zuerst
+pip install --upgrade pip
+
+# Installiere Packages einzeln
+pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema
+
+# Bei weiterhin Problemen: Requirements einzeln prüfen
+pip install -r requirements.txt --verbose
+```
+
+### 🎯 Quick Reference
+
+| Aktion | VS Code | Shell/PowerShell |
+|--------|---------|------------------|
+| **Setup validieren** | - | `./scripts/validate_setup.sh` (Linux/Mac)<br>`.\scripts\validate_setup.ps1` (Windows) |
+| **Live Session starten** | `Ctrl+Shift+P` → "Tasks: Run Task" → "Dev: Live Session" | `./scripts/start_live.sh` (Linux/Mac)<br>`.\scripts\start_live.ps1` (Windows) |
+| **Nur Dependencies installieren** | Task: "Install Dev Deps" | Teil von `start_live.*` |
+| **Nur Runner starten** | Task: "Run: Automation Runner (Dry-Run)" | `source venv/bin/activate && DRY_RUN=true python automation/runner.py` |
+| **Nur View Session starten** | Task: "Run: View Session (Streamlit)" | `source venv/bin/activate && streamlit run tools/view_session_app.py` |
+| **Alle Sessions stoppen** | Task: "Stop: All Sessions" | `pkill -f streamlit` (Linux/Mac)<br>`taskkill /F /IM streamlit.exe` (Windows) |
+
+**Wichtige Pfade:**
+- 📊 View Session Dashboard: http://localhost:8501
+- 📝 Event Log: `data/session/events.jsonl`
+- 📈 Session Summary: `data/session/summary.json`
+- 🔧 VS Code Tasks: `.vscode/tasks.json`
+- ⚙️ VS Code Settings: `.vscode/settings.json`
 
 ### 📚 Weitere Dokumentation
 

@@ -6,44 +6,76 @@ $ErrorActionPreference = "Stop"
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "🚀 Starting Dev Live Session" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host ""
+
+# Pre-flight checks
+Write-Host "🔍 Running pre-flight checks..." -ForegroundColor Yellow
 
 # Check if Python is available
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
     Write-Host "❌ Error: Python is not installed!" -ForegroundColor Red
+    Write-Host "   Please install Python 3.8+ from https://www.python.org/" -ForegroundColor Yellow
     exit 1
 }
+
+$pythonVersion = (python --version 2>&1) -replace 'Python ', ''
+Write-Host "✅ Python $pythonVersion detected" -ForegroundColor Green
 
 # Set working directory to project root
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptPath
 Set-Location $projectRoot
+Write-Host "📁 Project root: $projectRoot" -ForegroundColor White
+
+# Verify we're in the correct directory
+if (-not (Test-Path "automation/runner.py")) {
+    Write-Host "❌ Error: Cannot find automation/runner.py" -ForegroundColor Red
+    Write-Host "   Please run this script from the project root or scripts directory" -ForegroundColor Yellow
+    exit 1
+}
+Write-Host "✅ Project structure validated" -ForegroundColor Green
 
 # Create venv if it doesn't exist
 if (-not (Test-Path "venv")) {
     Write-Host "📦 Creating virtual environment..." -ForegroundColor Yellow
     python -m venv venv
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ Error: Failed to create virtual environment" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "✅ Virtual environment created" -ForegroundColor Green
+} else {
+    Write-Host "✅ Virtual environment already exists" -ForegroundColor Green
 }
 
 # Activate venv
 Write-Host "🔧 Activating virtual environment..." -ForegroundColor Yellow
 & ".\venv\Scripts\Activate.ps1"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Error: Failed to activate virtual environment" -ForegroundColor Red
+    Write-Host "   If you see 'execution policy' error, run:" -ForegroundColor Yellow
+    Write-Host "   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser" -ForegroundColor Yellow
+    exit 1
+}
+Write-Host "✅ Virtual environment activated" -ForegroundColor Green
 
 # Upgrade pip
 Write-Host "📦 Upgrading pip..." -ForegroundColor Yellow
-python -m pip install --upgrade pip --quiet
+python -m pip install --upgrade pip --quiet 2>&1 | Out-Null
 
 # Install dependencies
 Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
 if (Test-Path "requirements.txt") {
-    python -m pip install -r requirements.txt --quiet
+    python -m pip install -r requirements.txt --quiet 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "⚠️  Warning: Some requirements.txt packages failed" -ForegroundColor Yellow
+        Write-Host "⚠️  Some requirements.txt packages may have failed (non-critical)" -ForegroundColor Yellow
     }
 }
 
 # Install Streamlit and required packages
 Write-Host "📦 Installing Streamlit and visualization packages..." -ForegroundColor Yellow
-python -m pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema --quiet
+python -m pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema --quiet 2>&1 | Out-Null
+Write-Host "✅ All packages installed" -ForegroundColor Green
 
 # Set environment variables for DRY_RUN
 $env:DRY_RUN = "true"
@@ -55,11 +87,17 @@ Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "✅ Setup complete!" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "ℹ️  Configuration:" -ForegroundColor Cyan
+Write-Host "   - DRY_RUN: true (no real trading)" -ForegroundColor White
+Write-Host "   - BROKER: binance (testnet)" -ForegroundColor White
+Write-Host "   - Events: data/session/events.jsonl" -ForegroundColor White
+Write-Host ""
 Write-Host "Starting processes in parallel..." -ForegroundColor Yellow
 Write-Host "- Automation Runner (Dry-Run mode)" -ForegroundColor White
 Write-Host "- Streamlit View Session (http://localhost:8501)" -ForegroundColor White
 Write-Host ""
-Write-Host "Press Ctrl+C to stop all processes" -ForegroundColor Yellow
+Write-Host "💡 Tip: Wait 5-10 seconds for processes to start" -ForegroundColor Yellow
+Write-Host "🛑 Press Ctrl+C to stop all processes" -ForegroundColor Yellow
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
