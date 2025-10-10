@@ -9,26 +9,32 @@ Die **Master-Version** ist jetzt vollständig und einsatzbereit! Hier ist eine �
 ```
 MASTER_VERSION/
 │
-├── config.py              ✅ Zentrale Konfiguration
-├── strategy.py            ✅ Alle 4 Trading-Strategien
-├── utils.py               ✅ Logging, Validierung, Helpers
-├── main.py                ✅ Live-Trading Bot
-├── backtester.py          ✅ Backtesting Engine
+├── config.py                      ✅ Zentrale Konfiguration
+├── strategy.py                    ✅ Alle 4 Trading-Strategien
+├── utils.py                       ✅ Logging, Validierung, Helpers
+├── main.py                        ✅ Live-Trading Bot
+├── backtester.py                  ✅ Backtesting Engine
+├── automated_workflow.py          ✅ 🆕 Automatisierter Workflow
 │
-├── requirements.txt       ✅ Python-Dependencies
-├── .env.example           ✅ Environment-Template
-├── .gitignore             ✅ Git-Konfiguration
+├── requirements.txt               ✅ Python-Dependencies
+├── .env.example                   ✅ Environment-Template
+├── .gitignore                     ✅ Git-Konfiguration
 │
-├── quick_start.bat        ✅ Windows Setup-Skript
-├── quick_start.sh         ✅ Linux/Mac Setup-Skript
+├── quick_start.bat                ✅ Windows Setup-Skript
+├── quick_start.sh                 ✅ Linux/Mac Setup-Skript
+├── start_automated_workflow.bat   ✅ 🆕 Workflow Start (Windows)
+├── start_automated_workflow.sh    ✅ 🆕 Workflow Start (Linux/Mac)
 │
-├── test_system.py         ✅ Systemtest
-├── demo.py                ✅ Interaktive Demo
+├── test_system.py                 ✅ Systemtest
+├── demo.py                        ✅ Interaktive Demo
+├── demo_automated_workflow.py     ✅ 🆕 Workflow Demo
 │
-├── README.md              ✅ Vollständige Dokumentation
-├── EVOLUTION_ANALYSIS.md  ✅ Versions-Vergleich
-├── FAQ.md                 ✅ Häufige Fragen
-└── START_HERE.md          ✅ Diese Datei
+├── README.md                      ✅ Vollständige Dokumentation
+├── AUTOMATED_WORKFLOW_GUIDE.md    ✅ 🆕 Workflow Dokumentation
+├── QUICK_START_AUTOMATED_WORKFLOW.md ✅ 🆕 Workflow Quick Start
+├── EVOLUTION_ANALYSIS.md          ✅ Versions-Vergleich
+├── FAQ.md                         ✅ Häufige Fragen
+└── START_HERE.md                  ✅ Diese Datei
 ```
 
 ---
@@ -124,6 +130,41 @@ Startet Bot im Live-Modus. `Ctrl+C` zum Beenden.
 ---
 
 ## 🎯 Typische Workflows
+
+### 🆕 Workflow 0: Automatisierte Vorbereitung für Echtgeld-Einsatz
+
+**Vollautomatischer Workflow zur Bot-Vorbereitung:**
+
+```bash
+# Windows:
+start_automated_workflow.bat
+
+# Linux/Mac:
+./start_automated_workflow.sh
+
+# Oder direkt:
+python demo_automated_workflow.py
+```
+
+**Was passiert:**
+1. ✅ Datenanalyse und -kreierung (automatisch)
+2. ✅ Strategie-Optimierung (automatisch)
+3. ✅ API-Vorbereitung (automatisch)
+4. ✅ Live-View Integration (automatisch)
+5. ✅ Finale Validierung (automatisch)
+
+**Dauer:** 1-2 Minuten (vollautomatisch)
+
+**Ergebnis:**
+- ✅ Alle Systeme validiert
+- ✅ Profitabilität getestet
+- ✅ Sicherheit geprüft
+- ✅ Session-Datei erstellt
+- ✅ Bereit für Paper Trading
+
+📖 **[Vollständige Dokumentation](AUTOMATED_WORKFLOW_GUIDE.md)**
+
+---
 
 ### Workflow 1: Backtest einer Strategie
 
