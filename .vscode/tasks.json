@@ -19,9 +19,9 @@
     {
       "label": "Run: Automation Runner (Dry-Run)",
       "type": "shell",
-      "command": ". venv/bin/activate && export DRY_RUN=true && export BROKER_NAME=binance && export BINANCE_BASE_URL=https://testnet.binance.vision && python automation/runner.py",
+      "command": ". venv/bin/activate && (test -f .env && export $(cat .env | grep -v '^#' | xargs) || true) && export DRY_RUN=${DRY_RUN:-true} && export BROKER_NAME=${BROKER_NAME:-binance} && export BINANCE_BASE_URL=${BINANCE_BASE_URL:-https://testnet.binance.vision} && python automation/runner.py",
       "windows": {
-        "command": ".\\venv\\Scripts\\activate && set DRY_RUN=true && set BROKER_NAME=binance && set BINANCE_BASE_URL=https://testnet.binance.vision && python automation/runner.py"
+        "command": ".\\venv\\Scripts\\activate && if exist .env (for /f \"usebackq delims== tokens=1,*\" %i in (.env) do if not \"%i\"==\"\" if not \"%i:~0,1%\"==\"#\" set %i=%j) && if not defined DRY_RUN set DRY_RUN=true && if not defined BROKER_NAME set BROKER_NAME=binance && if not defined BINANCE_BASE_URL set BINANCE_BASE_URL=https://testnet.binance.vision && python automation/runner.py"
       },
       "group": "test",
       "presentation": {
@@ -30,7 +30,7 @@
         "showReuseMessage": false
       },
       "problemMatcher": [],
-      "detail": "Runs automation runner in DRY_RUN mode (no API keys required)"
+      "detail": "Runs automation runner in DRY_RUN mode (loads .env if present, no API keys required)"
     },
     {
       "label": "Run: View Session (Streamlit)",
