@@ -291,8 +291,11 @@ config/live_risk.yaml
 1. **Environment Variables**: `LIVE_ACK`, `DRY_RUN`, `LIVE_TRADING`, `BINANCE_BASE_URL`
 2. **Credentials**: API key and secret are present
 3. **Time Sync**: Local time vs Binance server (max 1000ms drift)
-4. **Exchange Info**: Trading pairs are valid and active
+4. **Exchange Info**: Trading pairs are valid and active with MIN_NOTIONAL details
 5. **Account Balance**: Minimum balance requirements (10 USDT)
+6. **Risk Configuration**: Validates `config/live_risk.yaml` settings
+7. **Order Types**: Ensures configured order types are supported by exchange
+8. **Kill Switch**: Reports KILL_SWITCH status (informational)
 
 **Output Format:**
 ```
@@ -304,9 +307,76 @@ config/live_risk.yaml
 - `0`: All checks passed
 - `1`: One or more checks failed
 
+**Risk Configuration Validation:**
+
+The script validates the following parameters from `config/live_risk.yaml`:
+- `max_risk_per_trade`: Must be between 0 and 0.1 (10%)
+- `daily_loss_limit`: Must be between 0 and 0.2 (20%)
+- `max_open_exposure`: Must be between 0 and 1.0 (100%)
+- `max_slippage`: Must be between 0 and 0.05 (5%)
+- `allowed_order_types`: Must be `LIMIT_ONLY` or `LIMIT_AND_MARKET`
+
+**Logging:**
+
+Results are logged to `logs/preflight_checks.log` for audit trail.
+
 **Usage:**
 ```bash
 ./venv/bin/python scripts/live_preflight.py
+```
+
+**Example Output:**
+```
+============================================================
+🚀 Live Trading Preflight Checks
+============================================================
+
+📋 Trading pairs from config: BTCUSDT
+
+🔍 Checking environment variables...
+[OK] ✅ LIVE_ACK is set correctly
+[OK] ✅ DRY_RUN is set to false
+[OK] ✅ LIVE_TRADING is set to true
+[OK] ✅ Production endpoint configured
+
+🔑 Checking API credentials...
+[OK] ✅ API credentials present (keys not displayed)
+
+⏰ Checking time synchronization...
+[OK] ✅ Time sync OK (drift: 234ms)
+
+📊 Checking exchange information...
+[OK] ✅ Symbol BTCUSDT validated (status: TRADING, min notional: 10.00 USDT)
+[OK] ✅   Min quantity: 0.00001, Step size: 0.00001
+
+💰 Checking account balance...
+[OK] ✅ Account balance sufficient (USDT: 125.45)
+
+⚙️  Checking risk configuration...
+[OK] ✅ Risk config validated (pairs: BTCUSDT)
+[OK] ✅   Max risk/trade: 0.50%, Daily loss limit: 1.00%
+[OK] ✅   Max exposure: 5.00%, Order types: LIMIT_ONLY
+[OK] ✅   Max slippage: 0.30%
+
+📝 Checking order types support...
+[OK] ✅ Symbol BTCUSDT supports LIMIT_ONLY
+
+🛑 Checking kill switch status...
+[OK] ✅ KILL_SWITCH is disabled - normal trading mode
+
+============================================================
+[OK] ✅ All preflight checks passed
+============================================================
+
+✅ Ready for live trading
+
+⚠️  FINAL WARNINGS:
+   - You are about to trade with REAL MONEY
+   - Monitor your positions closely
+   - Set up alerts for large losses
+   - Have an emergency stop plan
+
+🚀 Starting live trading runner...
 ```
 
 ---
@@ -508,6 +578,9 @@ This uses `DRY_RUN=true` and testnet by default.
 - Time out of sync
 - Insufficient balance
 - Invalid trading pairs
+- Missing or invalid risk configuration (`config/live_risk.yaml`)
+- Order types not supported by exchange
+- Invalid risk parameter ranges (max_risk, daily_loss_limit, etc.)
 
 ---
 

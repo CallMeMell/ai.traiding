@@ -353,9 +353,13 @@ All requirements from problem statement met:
 - [x] Validates `LIVE_TRADING=true`
 - [x] Validates production endpoint
 - [x] Checks time synchronization
-- [x] Validates ExchangeInfo
+- [x] Validates ExchangeInfo with MIN_NOTIONAL details
 - [x] Checks account balance
+- [x] Validates risk configuration (max_risk, daily_loss_limit, max_open_exposure, slippage)
+- [x] Validates order types support (LIMIT_ONLY vs LIMIT_AND_MARKET)
+- [x] Reports KILL_SWITCH status
 - [x] Machine-readable output (OK/ERR)
+- [x] Logs results to logs/preflight_checks.log
 - [x] No secrets printed
 
 ### 3. Live Production Starter ✅
@@ -401,6 +405,15 @@ All requirements from problem statement met:
 - ✅ JSON validation (`.vscode/tasks.json`)
 - ✅ Import tests (`setup_live.py`, `live_preflight.py`)
 - ✅ Preflight script execution (environment checks)
+- ✅ Comprehensive preflight checks test suite (20 tests in `test_live_preflight.py`):
+  - Environment variable validation tests
+  - Credentials validation tests
+  - Time synchronization tests
+  - Risk configuration validation tests
+  - Kill switch detection tests
+  - Order types support tests
+  - Exchange info validation tests
+  - Integration tests
 
 ### Manual Testing Required
 
