@@ -10,6 +10,9 @@ import json
 import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SessionStore:
@@ -34,24 +37,39 @@ class SessionStore:
         os.makedirs(os.path.dirname(self.events_path), exist_ok=True)
         os.makedirs(os.path.dirname(self.summary_path), exist_ok=True)
     
-    def append_event(self, event: Dict[str, Any]) -> None:
+    def append_event(self, event: Dict[str, Any], validate: bool = False) -> None:
         """
         Append an event to the JSONL file.
         
         Args:
             event: Event dictionary with timestamp, type, and data
+            validate: Whether to validate against schema (optional, defaults to False for backward compatibility)
         """
         # Add timestamp if not present
         if 'timestamp' not in event:
             event['timestamp'] = datetime.now().isoformat()
         
-        # Append to JSONL file
+        # Optional validation
+        if validate:
+            try:
+                from automation.validate import validate_event_lenient
+                validated = validate_event_lenient(event)
+                if validated is None:
+                    logger.warning(f"Event validation failed, writing anyway: {event.get('type')}")
+            except Exception as e:
+                logger.warning(f"Could not validate event: {e}")
+        
+        # Append to JSONL file and flush immediately for real-time updates
         with open(self.events_path, 'a') as f:
             f.write(json.dumps(event) + '\n')
+            f.flush()  # Ensure immediate write to disk
     
-    def read_events(self) -> List[Dict[str, Any]]:
+    def read_events(self, tail: Optional[int] = None) -> List[Dict[str, Any]]:
         """
-        Read all events from JSONL file.
+        Read events from JSONL file.
+        
+        Args:
+            tail: If specified, only return the last N events
         
         Returns:
             List of event dictionaries
@@ -68,20 +86,37 @@ class SessionStore:
                         events.append(json.loads(line))
                     except json.JSONDecodeError:
                         continue
+        
+        # Return tail if specified
+        if tail is not None and tail > 0:
+            return events[-tail:]
         return events
     
-    def write_summary(self, summary: Dict[str, Any]) -> None:
+    def write_summary(self, summary: Dict[str, Any], validate: bool = False) -> None:
         """
         Write summary to JSON file (overwrites).
         
         Args:
             summary: Summary dictionary
+            validate: Whether to validate against schema (optional, defaults to False for backward compatibility)
         """
         # Add last_updated timestamp
         summary['last_updated'] = datetime.now().isoformat()
         
+        # Optional validation
+        if validate:
+            try:
+                from automation.validate import validate_summary_lenient
+                validated = validate_summary_lenient(summary)
+                if validated is None:
+                    logger.warning(f"Summary validation failed, writing anyway")
+            except Exception as e:
+                logger.warning(f"Could not validate summary: {e}")
+        
+        # Write and flush immediately for real-time updates
         with open(self.summary_path, 'w') as f:
             f.write(json.dumps(summary, indent=2))
+            f.flush()  # Ensure immediate write to disk
     
     def read_summary(self) -> Optional[Dict[str, Any]]:
         """

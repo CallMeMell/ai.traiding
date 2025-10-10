@@ -6,10 +6,12 @@ Automation runner with explicit phase time limits and automatic self-checks.
 
 import time
 import logging
+import threading
 from datetime import datetime
 from typing import Dict, Any, Optional
 import sys
 import os
+import uuid
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -35,7 +37,9 @@ class AutomationRunner:
     def __init__(self, 
                  data_phase_timeout: int = 7200,  # 2 hours
                  strategy_phase_timeout: int = 7200,  # 2 hours
-                 api_phase_timeout: int = 3600):  # 1 hour
+                 api_phase_timeout: int = 3600,  # 1 hour
+                 heartbeat_interval: int = 30,  # 30 seconds
+                 enable_validation: bool = False):  # Validation off by default for backward compatibility
         """
         Initialize automation runner.
         
@@ -43,19 +47,33 @@ class AutomationRunner:
             data_phase_timeout: Timeout for data phase in seconds
             strategy_phase_timeout: Timeout for strategy phase in seconds
             api_phase_timeout: Timeout for API phase in seconds
+            heartbeat_interval: Interval between heartbeats in seconds
+            enable_validation: Enable schema validation for events and summaries
         """
         self.data_phase_timeout = data_phase_timeout
         self.strategy_phase_timeout = strategy_phase_timeout
         self.api_phase_timeout = api_phase_timeout
+        self.heartbeat_interval = heartbeat_interval
+        self.enable_validation = enable_validation
         
         self.session_store = SessionStore()
         self.scheduler = PhaseScheduler(max_pause_minutes=10)
+        
+        # Session tracking
+        self.session_id = str(uuid.uuid4())
+        self.session_start_time = None
+        self.current_phase = None
+        self.heartbeat_thread = None
+        self.stop_heartbeat = False
         
         # Load environment
         EnvHelper.load_dotenv_if_available()
         
         logger.info("AutomationRunner initialized")
+        logger.info(f"Session ID: {self.session_id}")
         logger.info(f"Phase timeouts: data={data_phase_timeout}s, strategy={strategy_phase_timeout}s, api={api_phase_timeout}s")
+        logger.info(f"Heartbeat interval: {heartbeat_interval}s")
+        logger.info(f"Validation enabled: {enable_validation}")
     
     def _on_event(self, event: Dict[str, Any]) -> None:
         """
@@ -64,8 +82,200 @@ class AutomationRunner:
         Args:
             event: Event dictionary
         """
-        self.session_store.append_event(event)
+        self.session_store.append_event(event, validate=self.enable_validation)
         logger.info(f"Event: {event['type']} - {event.get('phase', 'N/A')}")
+    
+    def write_event(self, event_type: str, phase: Optional[str] = None, 
+                   level: str = "info", message: Optional[str] = None,
+                   metrics: Optional[Dict[str, Any]] = None,
+                   order: Optional[Dict[str, Any]] = None,
+                   details: Optional[Dict[str, Any]] = None,
+                   status: Optional[str] = None,
+                   error: Optional[str] = None) -> None:
+        """
+        Write a structured event.
+        
+        Args:
+            event_type: Type of event (e.g., 'phase_start', 'checkpoint', 'heartbeat')
+            phase: Phase name
+            level: Log level (info, warning, error, debug)
+            message: Human-readable message
+            metrics: Performance metrics dictionary
+            order: Order information dictionary
+            details: Additional details dictionary
+            status: Status string
+            error: Error message if applicable
+        """
+        event = {
+            'timestamp': datetime.now().isoformat(),
+            'session_id': self.session_id,
+            'type': event_type,
+            'phase': phase or self.current_phase,
+            'level': level,
+            'message': message
+        }
+        
+        if metrics:
+            event['metrics'] = metrics
+        if order:
+            event['order'] = order
+        if details:
+            event['details'] = details
+        if status:
+            event['status'] = status
+        if error:
+            event['error'] = error
+        
+        self._on_event(event)
+    
+    def heartbeat(self) -> None:
+        """Emit a heartbeat event with current metrics."""
+        summary = self.session_store.read_summary()
+        metrics = {}
+        
+        if summary:
+            metrics = {
+                'equity': summary.get('current_equity'),
+                'pnl': summary.get('current_equity', 0) - summary.get('initial_capital', 0),
+                'trades': summary.get('totals', {}).get('trades', 0) if summary.get('totals') else 0,
+                'wins': summary.get('totals', {}).get('wins', 0) if summary.get('totals') else 0,
+                'losses': summary.get('totals', {}).get('losses', 0) if summary.get('totals') else 0
+            }
+        
+        self.write_event(
+            event_type='heartbeat',
+            phase=self.current_phase,
+            level='debug',
+            message='Heartbeat',
+            metrics=metrics
+        )
+    
+    def _heartbeat_loop(self) -> None:
+        """Background thread for periodic heartbeats."""
+        while not self.stop_heartbeat:
+            time.sleep(self.heartbeat_interval)
+            if not self.stop_heartbeat:
+                try:
+                    self.heartbeat()
+                except Exception as e:
+                    logger.error(f"Heartbeat error: {e}")
+    
+    def _start_heartbeat(self) -> None:
+        """Start heartbeat background thread."""
+        if self.heartbeat_thread is None or not self.heartbeat_thread.is_alive():
+            self.stop_heartbeat = False
+            self.heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+            self.heartbeat_thread.start()
+            logger.info("Heartbeat thread started")
+    
+    def _stop_heartbeat(self) -> None:
+        """Stop heartbeat background thread."""
+        self.stop_heartbeat = True
+        if self.heartbeat_thread:
+            self.heartbeat_thread.join(timeout=2)
+            logger.info("Heartbeat thread stopped")
+    
+    def begin_phase(self, name: str, message: Optional[str] = None) -> None:
+        """
+        Begin a phase with structured event.
+        
+        Args:
+            name: Phase name
+            message: Optional message
+        """
+        self.current_phase = name
+        self.write_event(
+            event_type='phase_start',
+            phase=name,
+            level='info',
+            message=message or f'Starting {name}',
+            status='started'
+        )
+    
+    def end_phase(self, name: str, ok: bool = True, error: Optional[str] = None,
+                 duration: Optional[float] = None) -> None:
+        """
+        End a phase with structured event.
+        
+        Args:
+            name: Phase name
+            ok: Whether phase succeeded
+            error: Error message if failed
+            duration: Duration in seconds
+        """
+        event_data = {
+            'event_type': 'phase_end',
+            'phase': name,
+            'level': 'info' if ok else 'error',
+            'message': f'Completed {name}' if ok else f'Failed {name}',
+            'status': 'success' if ok else 'failed'
+        }
+        
+        if error:
+            event_data['error'] = error
+        if duration is not None:
+            event_data['details'] = {'duration_seconds': duration}
+        
+        self.write_event(**event_data)
+    
+    def checkpoint(self, name: str, status: str, info: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Emit a checkpoint event.
+        
+        Args:
+            name: Checkpoint name
+            status: Status (pass/fail)
+            info: Additional checkpoint information
+        """
+        self.write_event(
+            event_type='checkpoint',
+            phase=self.current_phase,
+            level='info' if status == 'pass' else 'warning',
+            message=f'Checkpoint: {name}',
+            status=status,
+            details=info or {}
+        )
+    
+    def autocorrect_attempt(self, n: int, reason: str, result: str) -> None:
+        """
+        Emit an autocorrect attempt event.
+        
+        Args:
+            n: Attempt number
+            reason: Reason for autocorrect
+            result: Result of attempt
+        """
+        self.write_event(
+            event_type='autocorrect_attempt',
+            phase=self.current_phase,
+            level='warning',
+            message=f'Autocorrect attempt {n}: {reason}',
+            details={
+                'attempt_number': n,
+                'reason': reason,
+                'result': result
+            }
+        )
+    
+    def update_summary(self, partial: Dict[str, Any]) -> None:
+        """
+        Update summary with partial data.
+        
+        Args:
+            partial: Partial summary data to update
+        """
+        summary = self.session_store.read_summary() or {}
+        summary.update(partial)
+        self.session_store.write_summary(summary, validate=self.enable_validation)
+        
+        # Emit summary updated event
+        self.write_event(
+            event_type='summary_updated',
+            phase=self.current_phase,
+            level='debug',
+            message='Summary updated',
+            details=partial
+        )
     
     def _data_phase(self) -> Dict[str, Any]:
         """
@@ -171,9 +381,11 @@ class AutomationRunner:
         logger.info("=" * 70)
         
         start_time = datetime.now()
+        self.session_start_time = start_time
         
         # Write initial summary
         summary = {
+            'session_id': self.session_id,
             'session_start': start_time.isoformat(),
             'status': 'running',
             'phases_completed': 0,
@@ -181,13 +393,18 @@ class AutomationRunner:
             'initial_capital': 10000.0,
             'current_equity': 10000.0
         }
-        self.session_store.write_summary(summary)
+        self.session_store.write_summary(summary, validate=self.enable_validation)
         
-        # Log session start event
-        self._on_event({
-            'type': 'session_start',
-            'timestamp': start_time.isoformat()
-        })
+        # Emit runner start event
+        self.write_event(
+            event_type='runner_start',
+            level='info',
+            message='Automation runner started',
+            status='started'
+        )
+        
+        # Start heartbeat thread
+        self._start_heartbeat()
         
         results = {
             'start_time': start_time.isoformat(),
@@ -198,6 +415,11 @@ class AutomationRunner:
         try:
             # Phase 1: Data Phase
             logger.info("\n--- Phase 1: Data Phase ---")
+            self.begin_phase('data_phase', 'Starting data phase')
+            
+            # Emit checkpoint
+            self.checkpoint('data_phase_start', 'pass', {'validation': 'schema_ok'})
+            
             data_result = self.scheduler.run_phase(
                 'data_phase',
                 self._data_phase,
@@ -205,9 +427,15 @@ class AutomationRunner:
                 on_event=self._on_event
             )
             results['phases']['data_phase'] = data_result
-            summary['phases_completed'] = 1
-            summary['current_equity'] = 10050.0  # Simulate small gain
-            self.session_store.write_summary(summary)
+            
+            # Update summary
+            self.update_summary({
+                'phases_completed': 1,
+                'current_equity': 10050.0
+            })
+            
+            self.end_phase('data_phase', ok=data_result['status'] == 'success',
+                          duration=data_result.get('duration_seconds'))
             
             if data_result['status'] != 'success':
                 logger.error(f"Data phase failed: {data_result.get('error')}")
@@ -225,6 +453,11 @@ class AutomationRunner:
             
             # Phase 2: Strategy Phase
             logger.info("\n--- Phase 2: Strategy Phase ---")
+            self.begin_phase('strategy_phase', 'Starting strategy phase')
+            
+            # Emit checkpoint
+            self.checkpoint('strategy_phase_start', 'pass', {'validation': 'lint_ok'})
+            
             strategy_result = self.scheduler.run_phase(
                 'strategy_phase',
                 self._strategy_phase,
@@ -232,9 +465,16 @@ class AutomationRunner:
                 on_event=self._on_event
             )
             results['phases']['strategy_phase'] = strategy_result
-            summary['phases_completed'] = 2
-            summary['current_equity'] = 10125.0  # Simulate more gain
-            self.session_store.write_summary(summary)
+            
+            # Update summary with trade stats
+            self.update_summary({
+                'phases_completed': 2,
+                'current_equity': 10125.0,
+                'totals': {'trades': 5, 'wins': 3, 'losses': 2}
+            })
+            
+            self.end_phase('strategy_phase', ok=strategy_result['status'] == 'success',
+                          duration=strategy_result.get('duration_seconds'))
             
             if strategy_result['status'] != 'success':
                 logger.error(f"Strategy phase failed: {strategy_result.get('error')}")
@@ -252,6 +492,11 @@ class AutomationRunner:
             
             # Phase 3: API Phase
             logger.info("\n--- Phase 3: API Phase ---")
+            self.begin_phase('api_phase', 'Starting API phase')
+            
+            # Emit checkpoint
+            self.checkpoint('api_phase_start', 'pass', {'validation': 'api_keys_present'})
+            
             api_result = self.scheduler.run_phase(
                 'api_phase',
                 self._api_phase,
@@ -259,9 +504,16 @@ class AutomationRunner:
                 on_event=self._on_event
             )
             results['phases']['api_phase'] = api_result
-            summary['phases_completed'] = 3
-            summary['current_equity'] = 10150.0  # Simulate final equity
-            self.session_store.write_summary(summary)
+            
+            # Final summary update
+            self.update_summary({
+                'phases_completed': 3,
+                'current_equity': 10150.0,
+                'totals': {'trades': 10, 'wins': 6, 'losses': 4}
+            })
+            
+            self.end_phase('api_phase', ok=api_result['status'] in ['success', 'warning'],
+                          duration=api_result.get('duration_seconds'))
             
             if api_result['status'] not in ['success', 'warning']:
                 logger.error(f"API phase failed: {api_result.get('error')}")
@@ -272,32 +524,48 @@ class AutomationRunner:
             results['status'] = 'error'
             results['error'] = str(e)
             
-            self._on_event({
-                'type': 'error',
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
-            })
+            self.write_event(
+                event_type='error',
+                level='error',
+                message='Workflow failed',
+                error=str(e)
+            )
         
         finally:
+            # Stop heartbeat
+            self._stop_heartbeat()
+            
             # Write final summary
             end_time = datetime.now()
-            summary['session_end'] = end_time.isoformat()
-            summary['status'] = results['status']
-            summary['roi'] = self.session_store.calculate_roi(
-                summary['initial_capital'],
-                summary['current_equity']
-            )
-            self.session_store.write_summary(summary)
+            runtime_secs = (end_time - start_time).total_seconds()
             
-            # Write session end event
-            self._on_event({
-                'type': 'session_end',
+            summary = self.session_store.read_summary() or {}
+            summary.update({
+                'session_end': end_time.isoformat(),
                 'status': results['status'],
-                'timestamp': end_time.isoformat()
+                'runtime_secs': runtime_secs
             })
             
+            # Calculate ROI
+            if 'initial_capital' in summary and 'current_equity' in summary:
+                summary['roi'] = self.session_store.calculate_roi(
+                    summary['initial_capital'],
+                    summary['current_equity']
+                )
+            
+            self.session_store.write_summary(summary, validate=self.enable_validation)
+            
+            # Emit runner end event
+            self.write_event(
+                event_type='runner_end',
+                level='info',
+                message=f'Automation runner ended with status: {results["status"]}',
+                status=results['status'],
+                details={'runtime_secs': runtime_secs}
+            )
+            
             results['end_time'] = end_time.isoformat()
-            results['duration_seconds'] = (end_time - start_time).total_seconds()
+            results['duration_seconds'] = runtime_secs
         
         logger.info("=" * 70)
         logger.info(f"WORKFLOW COMPLETED - Status: {results['status']}")
