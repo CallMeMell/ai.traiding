@@ -43,6 +43,14 @@ class ViewSessionApp:
             st.session_state.custom_start = None
         if 'custom_end' not in st.session_state:
             st.session_state.custom_end = None
+        if 'event_type_filter' not in st.session_state:
+            st.session_state.event_type_filter = 'all'
+        if 'phase_filter' not in st.session_state:
+            st.session_state.phase_filter = 'all'
+        if 'events_cache' not in st.session_state:
+            st.session_state.events_cache = []
+        if 'last_event_count' not in st.session_state:
+            st.session_state.last_event_count = 0
     
     def render_header(self):
         """Render page header."""
@@ -53,12 +61,12 @@ class ViewSessionApp:
         """Render filter controls."""
         st.sidebar.header("🔍 Filters")
         
-        # Time range filter
+        # Time range filter with more presets
         time_range = st.sidebar.selectbox(
             "Time Range",
-            ['all', 'last_1h', 'last_24h', 'last_7d', 'custom'],
+            ['all', '15min', '1h', '4h', 'today', 'custom'],
             index=0 if st.session_state.time_range == 'all' else 
-                  ['all', 'last_1h', 'last_24h', 'last_7d', 'custom'].index(st.session_state.time_range)
+                  ['all', '15min', '1h', '4h', 'today', 'custom'].index(st.session_state.time_range)
         )
         st.session_state.time_range = time_range
         
@@ -70,17 +78,30 @@ class ViewSessionApp:
             st.session_state.custom_start = start_date
             st.session_state.custom_end = end_date
         
-        # Strategy tag filter
-        strategy_tag = st.sidebar.selectbox(
-            "Strategy Tag",
+        # Phase filter
+        phase_filter = st.sidebar.selectbox(
+            "Phase Filter",
             ['all', 'data_phase', 'strategy_phase', 'api_phase'],
-            index=0 if st.session_state.strategy_tag == 'all' else
-                  ['all', 'data_phase', 'strategy_phase', 'api_phase'].index(st.session_state.strategy_tag)
+            index=0 if st.session_state.phase_filter == 'all' else
+                  ['all', 'data_phase', 'strategy_phase', 'api_phase'].index(st.session_state.phase_filter)
         )
-        st.session_state.strategy_tag = strategy_tag
+        st.session_state.phase_filter = phase_filter
+        
+        # Event type filter
+        event_type_filter = st.sidebar.selectbox(
+            "Event Type Filter",
+            ['all', 'runner_start', 'runner_end', 'phase_start', 'phase_end', 
+             'checkpoint', 'heartbeat', 'error', 'summary_updated'],
+            index=0
+        )
+        st.session_state.event_type_filter = event_type_filter
+        
+        # Manual refresh button
+        if st.sidebar.button("🔄 Refresh Now"):
+            st.rerun()
         
         # Auto-refresh
-        auto_refresh = st.sidebar.checkbox("Auto-refresh (every 5s)", value=True)
+        auto_refresh = st.sidebar.checkbox("Auto-refresh (every 10s)", value=True)
         if auto_refresh:
             st.sidebar.info("Page will refresh automatically")
     
@@ -101,14 +122,17 @@ class ViewSessionApp:
         
         # Time range filter
         now = datetime.now()
-        if st.session_state.time_range == 'last_1h':
+        if st.session_state.time_range == '15min':
+            cutoff = now - timedelta(minutes=15)
+            filtered = [e for e in filtered if datetime.fromisoformat(e['timestamp']) >= cutoff]
+        elif st.session_state.time_range == '1h':
             cutoff = now - timedelta(hours=1)
             filtered = [e for e in filtered if datetime.fromisoformat(e['timestamp']) >= cutoff]
-        elif st.session_state.time_range == 'last_24h':
-            cutoff = now - timedelta(hours=24)
+        elif st.session_state.time_range == '4h':
+            cutoff = now - timedelta(hours=4)
             filtered = [e for e in filtered if datetime.fromisoformat(e['timestamp']) >= cutoff]
-        elif st.session_state.time_range == 'last_7d':
-            cutoff = now - timedelta(days=7)
+        elif st.session_state.time_range == 'today':
+            cutoff = datetime.combine(now.date(), datetime.min.time())
             filtered = [e for e in filtered if datetime.fromisoformat(e['timestamp']) >= cutoff]
         elif st.session_state.time_range == 'custom':
             if st.session_state.custom_start and st.session_state.custom_end:
@@ -117,12 +141,78 @@ class ViewSessionApp:
                 filtered = [e for e in filtered 
                            if start <= datetime.fromisoformat(e['timestamp']) <= end]
         
-        # Strategy tag filter
-        if st.session_state.strategy_tag != 'all':
+        # Phase filter
+        if st.session_state.phase_filter != 'all':
             filtered = [e for e in filtered 
-                       if e.get('phase') == st.session_state.strategy_tag]
+                       if e.get('phase') == st.session_state.phase_filter]
+        
+        # Event type filter
+        if st.session_state.event_type_filter != 'all':
+            filtered = [e for e in filtered 
+                       if e.get('type') == st.session_state.event_type_filter]
         
         return filtered
+    
+    def render_current_status(self, summary: Optional[Dict[str, Any]], events: List[Dict[str, Any]]):
+        """
+        Render current status panel with live information.
+        
+        Args:
+            summary: Summary dictionary
+            events: List of events
+        """
+        st.subheader("📡 Current Status")
+        
+        if not summary and not events:
+            st.info("No status data available")
+            return
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        # Find current phase from latest events
+        current_phase = "N/A"
+        for event in reversed(events):
+            if event.get('phase'):
+                current_phase = event.get('phase')
+                break
+        
+        # Find last heartbeat
+        last_heartbeat_time = None
+        for event in reversed(events):
+            if event.get('type') == 'heartbeat':
+                last_heartbeat_time = datetime.fromisoformat(event['timestamp'])
+                break
+        
+        # Calculate uptime
+        uptime_str = "N/A"
+        if summary and summary.get('session_start'):
+            start_time = datetime.fromisoformat(summary['session_start'])
+            if summary.get('session_end'):
+                end_time = datetime.fromisoformat(summary['session_end'])
+                uptime_seconds = (end_time - start_time).total_seconds()
+            else:
+                uptime_seconds = (datetime.now() - start_time).total_seconds()
+            uptime_minutes = int(uptime_seconds / 60)
+            uptime_str = f"{uptime_minutes}m {int(uptime_seconds % 60)}s"
+        
+        # Last heartbeat age
+        heartbeat_age_str = "N/A"
+        if last_heartbeat_time:
+            heartbeat_age = (datetime.now() - last_heartbeat_time).total_seconds()
+            heartbeat_age_str = f"{int(heartbeat_age)}s ago"
+        
+        with col1:
+            st.metric("Current Phase", current_phase.replace('_', ' ').title())
+        
+        with col2:
+            st.metric("Session Uptime", uptime_str)
+        
+        with col3:
+            st.metric("Last Heartbeat", heartbeat_age_str)
+        
+        with col4:
+            status = summary.get('status', 'unknown') if summary else 'unknown'
+            st.metric("Session Status", status.upper())
     
     def render_summary_metrics(self, summary: Optional[Dict[str, Any]]):
         """
@@ -162,13 +252,24 @@ class ViewSessionApp:
             )
         
         with col4:
-            phases_completed = summary.get('phases_completed', 0)
-            phases_total = summary.get('phases_total', 0)
-            st.metric(
-                "Progress",
-                f"{phases_completed}/{phases_total}",
-                delta=f"{(phases_completed/phases_total*100):.0f}%" if phases_total > 0 else "0%"
-            )
+            totals = summary.get('totals', {})
+            if totals:
+                trades = totals.get('trades', 0)
+                wins = totals.get('wins', 0)
+                win_rate = (wins / trades * 100) if trades > 0 else 0
+                st.metric(
+                    "Win Rate",
+                    f"{win_rate:.1f}%",
+                    delta=f"{wins}/{trades} wins"
+                )
+            else:
+                phases_completed = summary.get('phases_completed', 0)
+                phases_total = summary.get('phases_total', 0)
+                st.metric(
+                    "Progress",
+                    f"{phases_completed}/{phases_total}",
+                    delta=f"{(phases_completed/phases_total*100):.0f}%" if phases_total > 0 else "0%"
+                )
     
     def render_pnl_chart(self, summary: Optional[Dict[str, Any]]):
         """
@@ -263,6 +364,67 @@ class ViewSessionApp:
         
         st.plotly_chart(fig, use_container_width=True)
     
+    def render_activity_feed(self, events: List[Dict[str, Any]]):
+        """
+        Render activity feed with latest events.
+        
+        Args:
+            events: List of events
+        """
+        st.subheader("📰 Activity Feed (Latest 100 Events)")
+        
+        if not events:
+            st.info("No events available")
+            return
+        
+        # Show last 100 events
+        recent_events = events[-100:]
+        
+        # Create formatted feed
+        feed_data = []
+        for event in reversed(recent_events):
+            # Format timestamp
+            try:
+                ts = datetime.fromisoformat(event['timestamp'])
+                time_str = ts.strftime('%H:%M:%S')
+            except:
+                time_str = event.get('timestamp', 'N/A')
+            
+            # Get event details
+            event_type = event.get('type', 'N/A')
+            phase = event.get('phase', 'N/A')
+            level = event.get('level', 'info')
+            message = event.get('message', '')
+            status = event.get('status', '')
+            
+            # Create emoji based on level/type
+            emoji = '🔵'
+            if level == 'error' or event_type == 'error':
+                emoji = '🔴'
+            elif level == 'warning':
+                emoji = '🟡'
+            elif event_type == 'checkpoint':
+                emoji = '✅' if status == 'pass' else '❌'
+            elif event_type == 'heartbeat':
+                emoji = '💓'
+            elif event_type == 'phase_start':
+                emoji = '🚀'
+            elif event_type == 'phase_end':
+                emoji = '🏁'
+            
+            feed_data.append({
+                '': emoji,
+                'Time': time_str,
+                'Type': event_type,
+                'Phase': phase,
+                'Level': level.upper(),
+                'Message': message or f"{event_type} event",
+                'Status': status
+            })
+        
+        # Display as dataframe with color coding
+        st.dataframe(feed_data, use_container_width=True, height=400)
+    
     def render_events_table(self, events: List[Dict[str, Any]]):
         """
         Render events table.
@@ -296,14 +458,37 @@ class ViewSessionApp:
         st.info("🔄 No session data available yet. Run the automation runner to generate data.")
         st.code("python automation/runner.py", language="bash")
     
+    def load_data_with_cache(self):
+        """
+        Load data with incremental caching for performance.
+        
+        Returns:
+            Tuple of (summary, events)
+        """
+        summary = self.store.read_summary()
+        
+        # Read all events (can be optimized with tail reading)
+        all_events = self.store.read_events()
+        
+        # Update cache if needed
+        if len(all_events) != st.session_state.last_event_count:
+            st.session_state.events_cache = all_events
+            st.session_state.last_event_count = len(all_events)
+        
+        return summary, st.session_state.events_cache
+    
     def run(self):
         """Run the Streamlit app."""
         self.render_header()
         self.render_filters()
         
-        # Load data
-        summary = self.store.read_summary()
-        events = self.store.read_events()
+        # Load data with caching
+        try:
+            summary, events = self.load_data_with_cache()
+        except Exception as e:
+            st.error(f"Error loading data: {e}")
+            st.info("💡 Hint: Make sure the automation runner has been executed.")
+            return
         
         # Filter events
         filtered_events = self.filter_events(events)
@@ -315,10 +500,17 @@ class ViewSessionApp:
         
         # Render content
         with st.spinner("Loading data..."):
+            # Current Status Panel
+            self.render_current_status(summary, events)
+            
+            st.markdown("---")
+            
+            # Summary Metrics
             self.render_summary_metrics(summary)
             
             st.markdown("---")
             
+            # Charts
             col1, col2 = st.columns(2)
             
             with col1:
@@ -329,17 +521,27 @@ class ViewSessionApp:
             
             st.markdown("---")
             
-            self.render_events_table(filtered_events)
+            # Activity Feed
+            self.render_activity_feed(filtered_events)
+            
+            st.markdown("---")
+            
+            # Detailed Events Table
+            with st.expander("📊 Detailed Event History", expanded=False):
+                self.render_events_table(filtered_events)
         
-        # Auto-refresh
-        if st.sidebar.checkbox("Auto-refresh (every 5s)", value=False):
+        # Auto-refresh with configurable interval
+        if st.sidebar.checkbox("Auto-refresh (every 10s)", value=False):
             import time
-            time.sleep(5)
+            time.sleep(10)
             st.rerun()
         
         # Last updated
         st.sidebar.markdown("---")
         st.sidebar.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        st.sidebar.caption(f"Total events: {len(events)}")
+        if summary:
+            st.sidebar.caption(f"Session: {summary.get('session_id', 'N/A')[:8]}...")
 
 
 def main():
