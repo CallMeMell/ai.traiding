@@ -665,39 +665,19 @@ const Features = {
         return card;
     },
     
-    // Removed detailed session view - simplified for progress monitoring only
-    // View session details functionality has been removed to streamline the interface
-    
     /* 
      * Removed detailed session analytics functions for simplified progress monitoring:
+     * - viewSessionDetails() - Removed detailed session view modal
      * - getSessionDetailContent() - Removed detailed trade filters and charts
      * - getUniqueSymbols() - No longer needed without trade filtering
      * - filterTrades() - No longer needed without trade filtering  
-     * - renderSessionCharts() - Removed complex chart rendering
+     * - renderSessionCharts() - Removed complex chart rendering (4 chart types)
      * - exportSession() - Export functionality removed for simplification
+     * - convertSessionToCSV() - CSV conversion removed with export functionality
      * 
      * These functions were part of the extensive trading analytics features
      * that have been removed to focus on project progress monitoring only.
      */
-            window.URL.revokeObjectURL(url);
-            
-        } catch (error) {
-            console.error('Error exporting session:', error);
-            alert('Error exporting session');
-        }
-    },
-    
-    // Convert session to CSV
-    convertSessionToCSV(sessionData) {
-        const trades = sessionData.trades || [];
-        let csv = 'Order ID,Symbol,Side,Quantity,Execution Price,Status\n';
-        
-        trades.forEach(trade => {
-            csv += `${trade.order_id || ''},${trade.symbol || ''},${trade.side || ''},${trade.quantity || trade.filled_quantity || ''},${trade.execution_price || ''},${trade.status || ''}\n`;
-        });
-        
-        return csv;
-    },
     
     // Get broker connection content
     getBrokerConnectionContent() {
