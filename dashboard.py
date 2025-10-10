@@ -612,7 +612,7 @@ def create_dashboard(trades_file: str = "data/trades.csv",
 # ==================== FLASK WEB DASHBOARD ====================
 
 try:
-    from flask import Flask, render_template, jsonify
+    from flask import Flask, render_template, jsonify, request
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
@@ -1098,6 +1098,50 @@ if FLASK_AVAILABLE:
             })
         except Exception as e:
             logger.error(f"Error fetching active tasks: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/active-tasks/add', methods=['POST'])
+    def api_add_task():
+        """API endpoint to add a new task (for testing/demo purposes)"""
+        try:
+            data = request.get_json()
+            task_id = _add_active_task(
+                task_name=data.get('name', 'Unnamed Task'),
+                task_type=data.get('type', 'general'),
+                details=data.get('details', '')
+            )
+            return jsonify({
+                'success': True,
+                'task_id': task_id,
+                'message': 'Task added successfully'
+            })
+        except Exception as e:
+            logger.error(f"Error adding task: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/active-tasks/<int:task_id>/update', methods=['POST'])
+    def api_update_task(task_id):
+        """API endpoint to update a task (for testing/demo purposes)"""
+        try:
+            data = request.get_json()
+            result = _update_active_task(
+                task_id=task_id,
+                progress=data.get('progress'),
+                status=data.get('status'),
+                details=data.get('details')
+            )
+            if result:
+                return jsonify({
+                    'success': True,
+                    'message': 'Task updated successfully'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Task not found'
+                }), 404
+        except Exception as e:
+            logger.error(f"Error updating task {task_id}: {e}")
             return jsonify({'error': str(e)}), 500
     
     def start_web_dashboard(host: str = '0.0.0.0', port: int = 5000, 
