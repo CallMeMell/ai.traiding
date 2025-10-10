@@ -272,34 +272,86 @@ class SystemOrchestrator:
     
     def _attempt_recovery(self, phase: SystemPhase, error: Exception) -> Dict[str, Any]:
         """
-        Attempt to recover from phase failure.
+        Attempt to recover from phase failure with exponential backoff.
         
         Args:
             phase: Failed phase
             error: Exception that occurred
             
         Returns:
-            Recovery result
+            Recovery result with retry attempts
         """
         logger.warning(f"🔄 Attempting recovery for {phase.value}")
         
-        # Simple recovery: retry once
-        try:
-            time.sleep(5)  # Brief pause before retry
-            logger.info(f"Retrying {phase.value}...")
-            # In production, implement actual recovery logic
-            return {
-                'attempted': True,
-                'success': False,
-                'message': 'Recovery not implemented yet'
-            }
-        except Exception as e:
-            logger.error(f"Recovery failed: {e}")
-            return {
-                'attempted': True,
-                'success': False,
-                'error': str(e)
-            }
+        # Retry configuration
+        max_retries = 3
+        base_delay = 2  # seconds
+        max_delay = 30  # seconds
+        
+        result = {
+            'attempted': True,
+            'success': False,
+            'attempts': [],
+            'error': str(error)
+        }
+        
+        for attempt in range(1, max_retries + 1):
+            # Calculate exponential backoff delay
+            delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+            
+            logger.info(f"Retry attempt {attempt}/{max_retries} after {delay}s delay...")
+            time.sleep(delay)
+            
+            try:
+                # Get the phase function mapping
+                phase_funcs = {
+                    SystemPhase.INIT: self._phase_initialization,
+                    SystemPhase.DATA: self._phase_data_preparation,
+                    SystemPhase.STRATEGY: self._phase_strategy_execution,
+                    SystemPhase.API: self._phase_api_integration,
+                    SystemPhase.MONITORING: self._phase_monitoring,
+                    SystemPhase.CLEANUP: self._phase_cleanup
+                }
+                
+                # Retry the phase function
+                phase_func = phase_funcs.get(phase)
+                if phase_func:
+                    retry_result = phase_func()
+                    
+                    result['attempts'].append({
+                        'attempt': attempt,
+                        'delay': delay,
+                        'status': 'success',
+                        'result': retry_result
+                    })
+                    
+                    if retry_result.get('status') == 'success':
+                        result['success'] = True
+                        result['message'] = f'Recovery successful on attempt {attempt}'
+                        logger.info(f"✅ Recovery successful on attempt {attempt}")
+                        break
+                else:
+                    result['attempts'].append({
+                        'attempt': attempt,
+                        'delay': delay,
+                        'status': 'error',
+                        'error': 'No phase function found'
+                    })
+                    
+            except Exception as retry_error:
+                logger.warning(f"Retry attempt {attempt} failed: {retry_error}")
+                result['attempts'].append({
+                    'attempt': attempt,
+                    'delay': delay,
+                    'status': 'error',
+                    'error': str(retry_error)
+                })
+        
+        if not result['success']:
+            result['message'] = f'Recovery failed after {max_retries} attempts'
+            logger.error(f"❌ Recovery failed after {max_retries} attempts")
+        
+        return result
     
     # Phase implementations
     
