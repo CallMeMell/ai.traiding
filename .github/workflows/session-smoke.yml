@@ -216,7 +216,7 @@ jobs:
           echo "- Duration: ${{ github.event.inputs.duration_secs || '60' }} seconds" >> $GITHUB_STEP_SUMMARY
           echo "- Workflow: [\#${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ -f data/session/summary.json ]; then
             echo "**Session Summary:**" >> $GITHUB_STEP_SUMMARY
             python -c "
@@ -237,14 +237,14 @@ jobs:
           else
             echo "⚠️ No summary.json found" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ -f data/session/events.jsonl ]; then
             EVENT_COUNT=$(wc -l < data/session/events.jsonl)
             echo "**Events:**" >> $GITHUB_STEP_SUMMARY
             echo "- Total events: ${EVENT_COUNT}" >> $GITHUB_STEP_SUMMARY
-            
+
             # Count event types
             echo "- Event types:" >> $GITHUB_STEP_SUMMARY
             python -c "
@@ -261,7 +261,7 @@ jobs:
           else
             echo "⚠️ No events.jsonl found" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Artifacts:**" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 [Download session-data](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
@@ -278,7 +278,7 @@ jobs:
             let comment = '## 🔬 Session Smoke Test Results\n\n';
             comment += `**Mode:** \`${{ github.event.inputs.mode || 'dry_run' }}\`\n`;
             comment += `**Duration:** ${{ github.event.inputs.duration_secs || '60' }}s\n\n`;
-            
+
             try {
               const summary = JSON.parse(fs.readFileSync('data/session/summary.json', 'utf8'));
               comment += `**Status:** ${summary.status}\n`;
@@ -289,9 +289,9 @@ jobs:
             } catch (e) {
               comment += '⚠️ Could not read summary\n';
             }
-            
+
             comment += `\n[View full results](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
