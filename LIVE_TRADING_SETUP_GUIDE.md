@@ -125,22 +125,59 @@ BINANCE_API_KEY: pk_test_51ABC...xyz789
 BINANCE_API_SECRET (hidden): ********
 ```
 
-### Step 3: Configure Risk Parameters
+### Step 3: Automatic Strategy Selection (Optional)
+
+The wizard will offer to analyze all available strategies and recommend the best one:
+
+```
+🎯 Automatische Strategie-Auswahl
+================================================================
+
+Analysiere alle Strategien mittels Backtest...
+Dies kann einige Minuten dauern.
+
+Strategie-Auswahl durchführen? (j/n) [j]:
+```
+
+**What happens:**
+- Runs backtest for all strategies with same historical data
+- Analyzes ROI, Sharpe Ratio, Calmar Ratio, Max Drawdown, Win Rate
+- Calculates weighted score for each strategy
+- Recommends the best performing strategy
+
+**You can:**
+- ✅ Accept recommendation: Just press Enter
+- ✅ Skip analysis: Enter `n` and select strategy manually
+- ✅ Override recommendation: Enter different strategy name
+
+**Available Strategies:**
+- Golden Cross (50/200) - Long-term trend following
+- MA Crossover (20/50) - Medium-term trend following
+- RSI Mean Reversion - Oversold/overbought strategy
+- EMA Crossover (9/21) - Fast EMA crossover
+- Bollinger Bands - Volatility-based strategy
+
+📖 **See [STRATEGY_SELECTION_GUIDE.md](STRATEGY_SELECTION_GUIDE.md) for detailed documentation**
+
+### Step 4: Configure Risk Parameters
 
 The wizard will prompt for risk management settings:
 
-1. **Trading Pairs**: Which symbols to trade (default: `BTCUSDT`)
-2. **Max Risk Per Trade**: Risk limit per trade (default: `0.005` = 0.5%)
-3. **Daily Loss Limit**: Stop trading if this loss is reached (default: `0.01` = 1%)
-4. **Max Open Exposure**: Total open positions limit (default: `0.05` = 5%)
-5. **Order Types**: `LIMIT_ONLY` (safer) or `LIMIT_AND_MARKET` (faster)
-6. **Max Slippage**: Reject orders with higher slippage (default: `0.003` = 0.3%)
+1. **Strategy**: Trading strategy to use (auto-selected or manual)
+2. **Trading Pairs**: Which symbols to trade (default: `BTCUSDT`)
+3. **Max Risk Per Trade**: Risk limit per trade (default: `0.005` = 0.5%)
+4. **Daily Loss Limit**: Stop trading if this loss is reached (default: `0.01` = 1%)
+5. **Max Open Exposure**: Total open positions limit (default: `0.05` = 5%)
+6. **Order Types**: `LIMIT_ONLY` (safer) or `LIMIT_AND_MARKET` (faster)
+7. **Max Slippage**: Reject orders with higher slippage (default: `0.003` = 0.3%)
 
 **Example:**
 ```
 📊 Configure Risk Management Parameters
    (Press Enter to accept defaults)
 
+💡 Empfohlene Strategie: RSI Mean Reversion
+Strategie [RSI Mean Reversion]:
 Trading pairs [BTCUSDT]: 
 Max risk per trade (0.005 = 0.5%) [0.005]: 
 Daily loss limit (0.01 = 1%) [0.01]: 
@@ -152,12 +189,13 @@ Choose [1]: 1
 Max slippage (0.003 = 0.3%) [0.003]: 
 ```
 
-### Step 4: Review Configuration
+### Step 5: Review Configuration
 
 After setup, review the generated `config/live_risk.yaml`:
 
 ```yaml
 pairs: BTCUSDT
+strategy: RSI Mean Reversion
 max_risk_per_trade: 0.005
 daily_loss_limit: 0.01
 max_open_exposure: 0.05
