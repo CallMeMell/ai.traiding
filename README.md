@@ -629,6 +629,39 @@ pip install -r requirements.txt
 
 ---
 
+## 👨‍💻 Developer Workflow
+
+### VS Code Setup für Entwickler
+
+Dieses Projekt enthält vorkonfigurierte VS Code-Einstellungen für optimale Entwicklungserfahrung:
+
+**Empfohlene Extensions** (automatische Installation-Prompts):
+- **GitHub Pull Requests and Issues**: Direkte Integration von Issues und PRs
+- **GitLens**: Erweiterte Git-Funktionen und Code-Historie
+- **Markdown All in One**: Markdown-Bearbeitung mit Vorschau
+
+**GitHub Issues-Ansicht nutzen**:
+1. Installiere die empfohlenen Extensions
+2. Öffne die GitHub-Seitenleiste (Sidebar → GitHub-Icon)
+3. Melde dich mit deinem GitHub-Account an
+4. Vordefinierte Queries sind bereits konfiguriert:
+   - **Open: View Session (#42)**: Aktuelle Arbeiten an View Session Features
+   - **Open: Echtgeld-Automatisierung (#44)**: Echtgeld-Trading Automatisierung
+   - **Open PRs (me)**: Deine offenen Pull Requests
+
+**Live-Progress verfolgen**:
+- Öffne `PROGRESS.md` und pinne den Tab (Rechtsklick → "Pin Tab")
+- Dort findest du detaillierte Checklisten für aktuelle Issues
+- Aktualisiere die Checklisten während der Entwicklung
+
+**Aktuelle Arbeiten**:
+- [Issue #42](https://github.com/CallMeMell/ai.traiding/issues/42): View Session Visualisierung & Filter
+- [Issue #44](https://github.com/CallMeMell/ai.traiding/issues/44): Echtgeld-Automatisierung
+
+Siehe `PROGRESS.md` für detaillierte Checklisten und Workflow-Beschreibung.
+
+---
+
 ## ⚠️ Disclaimer
 
 **Dieses Projekt dient ausschließlich zu Bildungszwecken.**
