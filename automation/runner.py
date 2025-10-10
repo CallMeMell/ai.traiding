@@ -277,6 +277,63 @@ class AutomationRunner:
             details=partial
         )
     
+    def _retry_with_backoff(self, func, max_retries: int = 3, base_delay: float = 1.0, 
+                           max_delay: float = 30.0, operation_name: str = "operation") -> Any:
+        """
+        Retry a function with exponential backoff.
+        
+        Args:
+            func: Function to retry
+            max_retries: Maximum number of retry attempts
+            base_delay: Initial delay between retries in seconds
+            max_delay: Maximum delay between retries in seconds
+            operation_name: Name of operation for logging
+            
+        Returns:
+            Result of the function
+            
+        Raises:
+            Exception: If all retries fail
+        """
+        last_error = None
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                logger.info(f"Attempt {attempt}/{max_retries} for {operation_name}")
+                result = func()
+                
+                if attempt > 1:
+                    # Log successful retry
+                    self.autocorrect_attempt(
+                        attempt, 
+                        f"Retry for {operation_name}", 
+                        "success"
+                    )
+                
+                return result
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Attempt {attempt}/{max_retries} failed for {operation_name}: {e}")
+                
+                # Log retry attempt
+                self.autocorrect_attempt(
+                    attempt,
+                    f"Error in {operation_name}: {str(e)}",
+                    f"failed" if attempt == max_retries else "retrying"
+                )
+                
+                if attempt < max_retries:
+                    # Calculate exponential backoff delay
+                    delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+                    logger.info(f"Waiting {delay}s before retry...")
+                    time.sleep(delay)
+                else:
+                    logger.error(f"All {max_retries} attempts failed for {operation_name}")
+        
+        # All retries failed
+        raise last_error
+    
     def _data_phase(self) -> Dict[str, Any]:
         """
         Data phase: Load and validate data.
