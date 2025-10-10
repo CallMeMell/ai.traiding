@@ -45,15 +45,32 @@ if (Test-Path "requirements.txt") {
 Write-Host "📦 Installing Streamlit and visualization packages..." -ForegroundColor Yellow
 python -m pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema --quiet
 
-# Set environment variables for DRY_RUN
-$env:DRY_RUN = "true"
-$env:BROKER_NAME = "binance"
-$env:BINANCE_BASE_URL = "https://testnet.binance.vision"
+# Load environment variables from .env file (if exists)
+if (Test-Path ".env") {
+    Write-Host "🔧 Loading environment variables from .env file..." -ForegroundColor Yellow
+    Get-Content ".env" | ForEach-Object {
+        if ($_ -match '^([^#][^=]+)=(.+)$') {
+            $name = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            Set-Item -Path "env:$name" -Value $value
+        }
+    }
+}
+
+# Set default environment variables for DRY_RUN (if not set in .env)
+if (-not $env:DRY_RUN) { $env:DRY_RUN = "true" }
+if (-not $env:BROKER_NAME) { $env:BROKER_NAME = "binance" }
+if (-not $env:BINANCE_BASE_URL) { $env:BINANCE_BASE_URL = "https://testnet.binance.vision" }
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "✅ Setup complete!" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Configuration:" -ForegroundColor Cyan
+Write-Host "  DRY_RUN: $env:DRY_RUN" -ForegroundColor White
+Write-Host "  BROKER_NAME: $env:BROKER_NAME" -ForegroundColor White
+Write-Host "  BINANCE_BASE_URL: $env:BINANCE_BASE_URL" -ForegroundColor White
 Write-Host ""
 Write-Host "Starting processes in parallel..." -ForegroundColor Yellow
 Write-Host "- Automation Runner (Dry-Run mode)" -ForegroundColor White
@@ -77,14 +94,14 @@ try {
     # Start Automation Runner in background
     Write-Host "🤖 Starting Automation Runner..." -ForegroundColor Green
     $runnerJob = Start-Job -ScriptBlock {
-        param($projectRoot)
+        param($projectRoot, $dryRun, $brokerName, $baseUrl)
         Set-Location $projectRoot
         & ".\venv\Scripts\Activate.ps1"
-        $env:DRY_RUN = "true"
-        $env:BROKER_NAME = "binance"
-        $env:BINANCE_BASE_URL = "https://testnet.binance.vision"
+        $env:DRY_RUN = $dryRun
+        $env:BROKER_NAME = $brokerName
+        $env:BINANCE_BASE_URL = $baseUrl
         python automation/runner.py
-    } -ArgumentList $projectRoot
+    } -ArgumentList $projectRoot, $env:DRY_RUN, $env:BROKER_NAME, $env:BINANCE_BASE_URL
 
     # Wait a moment for runner to start
     Start-Sleep -Seconds 2

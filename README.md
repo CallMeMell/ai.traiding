@@ -224,7 +224,51 @@ Starte den kompletten Dev-Workflow mit nur einem Klick: Automation Runner (Dry-R
 - ✅ **Cross-Platform**: Windows, macOS, Linux, Codespaces
 - ✅ **Reproduzierbar**: Funktioniert immer, ohne Datenbeschädigung
 
-### 🚀 Schnellstart - VS Code
+---
+
+## 🚀 QUICKSTART - Live Session außerhalb von VS Code
+
+**🎯 Ziel: Live-Session mit einem Befehl starten - ohne VS Code!**
+
+### ⚡ Schnellstart (3 Schritte)
+
+**1️⃣ Repository klonen:**
+```bash
+git clone https://github.com/CallMeMell/ai.traiding.git
+cd ai.traiding
+```
+
+**2️⃣ Optional: .env Datei erstellen (für eigene Konfiguration):**
+```bash
+# Kopiere die Beispiel-Datei
+cp .env.example .env
+
+# Bearbeite .env nach Bedarf (Standard: DRY_RUN=true)
+```
+
+**3️⃣ Live-Session starten:**
+
+**Linux/macOS:**
+```bash
+./scripts/start_live.sh
+```
+
+**Windows PowerShell:**
+```powershell
+.\scripts\start_live.ps1
+```
+
+**Das war's!** 🎉 Die Skripte machen alles automatisch:
+- ✅ Virtual Environment anlegen
+- ✅ Dependencies installieren
+- ✅ Automation Runner starten (DRY_RUN Modus)
+- ✅ Streamlit Dashboard starten (http://localhost:8501)
+
+Nach dem Start öffne deinen Browser: **http://localhost:8501**
+
+---
+
+### 🚀 Schnellstart - VS Code (Alternative)
 
 **Option 1: Über Command Palette (empfohlen)**
 1. Drücke `Ctrl+Shift+P` (Windows/Linux) oder `Cmd+Shift+P` (macOS)
@@ -269,6 +313,8 @@ Aber das ist **nicht nötig** - der Task "Install Dev Deps" macht das automatisc
 
 ### 🖥️ Außerhalb von VS Code (Shell-Skripte)
 
+**Schnellstart mit einem Befehl:**
+
 **Linux/macOS:**
 ```bash
 ./scripts/start_live.sh
@@ -279,12 +325,38 @@ Aber das ist **nicht nötig** - der Task "Install Dev Deps" macht das automatisc
 .\scripts\start_live.ps1
 ```
 
-Die Skripte machen:
-1. venv anlegen (falls nicht vorhanden)
-2. Dependencies installieren
-3. Automation Runner starten (DRY_RUN=true)
-4. Streamlit View Session starten (Port 8501)
-5. Beide laufen parallel, Ctrl+C stoppt alle
+**Was die Skripte machen:**
+1. ✅ venv anlegen (falls nicht vorhanden)
+2. ✅ Dependencies automatisch installieren
+3. ✅ `.env` Datei laden (falls vorhanden)
+4. ✅ Automation Runner starten (mit DRY_RUN Einstellungen)
+5. ✅ Streamlit View Session starten (Port 8501)
+6. ✅ Beide Prozesse laufen parallel, Ctrl+C stoppt alle
+
+**⚙️ Konfiguration über .env Datei:**
+
+Die Skripte respektieren deine `.env` Datei. Erstelle eine `.env` Datei im Projekt-Root:
+
+```bash
+# .env - Beispielkonfiguration
+DRY_RUN=true                                    # false für echtes Trading
+BROKER_NAME=binance
+BINANCE_BASE_URL=https://testnet.binance.vision
+
+# Optional: API-Keys für echtes Trading (nur wenn DRY_RUN=false)
+# BINANCE_API_KEY=your_api_key
+# BINANCE_SECRET_KEY=your_secret_key
+```
+
+**Standard-Werte (wenn keine .env existiert):**
+- `DRY_RUN=true` (sicherer Modus ohne echte API-Calls)
+- `BROKER_NAME=binance`
+- `BINANCE_BASE_URL=https://testnet.binance.vision`
+
+Du kannst auch die `.env.example` als Vorlage kopieren:
+```bash
+cp .env.example .env
+```
 
 ### 🌐 Zugriff auf View Session
 
@@ -302,6 +374,18 @@ Nach dem Start ist das Dashboard erreichbar unter:
 - ✅ Perfekt zum Testen und Entwickeln
 
 ### 🐛 Troubleshooting
+
+**Problem: "Python not found" oder "python3: command not found"**
+```bash
+# Installiere Python 3.8 oder höher
+# Ubuntu/Debian:
+sudo apt update && sudo apt install python3 python3-venv python3-pip
+
+# macOS (mit Homebrew):
+brew install python3
+
+# Windows: Lade Python von python.org herunter
+```
 
 **Problem: "streamlit: command not found"**
 ```bash
@@ -330,21 +414,46 @@ taskkill /F /IM streamlit.exe
 # Stelle sicher, dass du im Projekt-Root bist
 cd /pfad/zu/ai.traiding
 
-# Python path setzen
+# Python path setzen (falls nötig)
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"  # Linux/Mac
 $env:PYTHONPATH = "$(pwd)"                # Windows PowerShell
 ```
 
 **Problem: View Session zeigt "No data available"**
-- Runner muss zuerst laufen und Events generieren
-- Warte ein paar Sekunden nach Runner-Start
-- Drücke "Refresh Now" im View Session Dashboard
+- ✅ Der Automation Runner muss zuerst laufen und Events generieren
+- ✅ Warte 5-10 Sekunden nach Runner-Start
+- ✅ Drücke "Refresh Now" im View Session Dashboard
+- ✅ Prüfe ob `data/session/events.jsonl` existiert und Daten enthält
 
 **Problem: venv-Aktivierung schlägt fehl (Windows)**
 ```powershell
 # PowerShell Execution Policy anpassen
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
+
+**Problem: Script-Ausführung nicht erlaubt (Linux/macOS)**
+```bash
+# Script ausführbar machen
+chmod +x scripts/start_live.sh
+./scripts/start_live.sh
+```
+
+**Problem: "ModuleNotFoundError" bei Dependencies**
+```bash
+# Lösche venv und installiere neu
+rm -rf venv  # Linux/Mac
+rmdir /s venv  # Windows
+
+# Dann Script erneut ausführen (erstellt venv automatisch)
+./scripts/start_live.sh  # Linux/Mac
+.\scripts\start_live.ps1  # Windows
+```
+
+**Problem: DRY_RUN Modus wird nicht respektiert**
+- ✅ Prüfe ob `.env` Datei im Projekt-Root existiert
+- ✅ Prüfe Syntax: `DRY_RUN=true` (ohne Leerzeichen um `=`)
+- ✅ Die Skripte zeigen die aktuelle Konfiguration beim Start
+- ✅ Konsolen-Output zeigt: "Configuration: DRY_RUN: true"
 
 ### 📚 Weitere Dokumentation
 
