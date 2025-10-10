@@ -1,0 +1,46 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Dashboard Demo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/dashboard.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Web Dashboard",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/dashboard.py",
+            "args": ["--web"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Main Trading Bot",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Generate Sample Trades",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/generate_sample_trades.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: System Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_system.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
