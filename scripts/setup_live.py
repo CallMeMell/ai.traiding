@@ -13,6 +13,7 @@ import os
 import keyring
 import yaml
 from getpass import getpass
+from typing import Optional
 
 # Service name for keyring
 SERVICE_NAME = "ai.traiding"
@@ -82,9 +83,78 @@ def store_credentials(api_key, api_secret):
         print(f"❌ Failed to store credentials: {e}")
         return False
 
-def prompt_risk_params():
+def run_strategy_selection() -> Optional[str]:
+    """
+    Führe automatische Strategie-Auswahl durch
+    
+    Returns:
+        Name der empfohlenen Strategie oder None bei Fehler
+    """
+    print()
+    print("=" * 60)
+    print("🎯 Automatische Strategie-Auswahl")
+    print("=" * 60)
+    print()
+    print("Analysiere alle Strategien mittels Backtest...")
+    print("Dies kann einige Minuten dauern.")
+    print()
+    
+    choice = input("Strategie-Auswahl durchführen? (j/n) [j]: ").strip().lower()
+    if choice == 'n':
+        print("⏭️  Strategie-Auswahl übersprungen")
+        return None
+    
+    try:
+        # Import hier um Startup zu beschleunigen
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from strategy_selector import StrategySelector
+        from utils import generate_sample_data
+        
+        # Generiere Test-Daten
+        print("✓ Generiere historische Daten...")
+        data = generate_sample_data(n_bars=2000, start_price=30000)
+        
+        # Erstelle Selector
+        selector = StrategySelector(
+            initial_capital=10000.0,
+            trade_size=100.0,
+            min_trades=10
+        )
+        
+        # Führe Auswahl durch
+        print("✓ Führe Backtest für alle Strategien durch...")
+        best_name, best_score = selector.run_selection(data)
+        
+        # Export Ranking
+        selector.export_ranking("data/strategy_ranking.csv")
+        
+        print()
+        print("=" * 60)
+        print("🏆 Empfohlene Strategie")
+        print("=" * 60)
+        print(f"  {best_name}")
+        print(f"  Score: {best_score.score:.2f}/100")
+        print(f"  ROI:   {best_score.roi:+.2f}%")
+        print("=" * 60)
+        
+        return best_name
+    
+    except ImportError as e:
+        print(f"⚠️  Fehler beim Import: {e}")
+        print("   Strategie-Auswahl nicht verfügbar")
+        return None
+    except Exception as e:
+        print(f"⚠️  Fehler bei Strategie-Auswahl: {e}")
+        print("   Sie können die Strategie später manuell auswählen")
+        return None
+
+
+def prompt_risk_params(recommended_strategy: Optional[str] = None):
     """
     Prompt user for risk management parameters.
+    
+    Args:
+        recommended_strategy: Empfohlene Strategie (optional)
     
     Returns:
         Dictionary of risk parameters or None if cancelled
@@ -97,6 +167,23 @@ def prompt_risk_params():
     # Trading pairs
     pairs_input = input("Trading pairs [BTCUSDT]: ").strip()
     pairs = pairs_input if pairs_input else "BTCUSDT"
+    
+    # Strategy selection
+    if recommended_strategy:
+        print()
+        print(f"💡 Empfohlene Strategie: {recommended_strategy}")
+        strategy_input = input(f"Strategie [{recommended_strategy}]: ").strip()
+        strategy = strategy_input if strategy_input else recommended_strategy
+    else:
+        print()
+        print("Verfügbare Strategien:")
+        print("  - Golden Cross (50/200)")
+        print("  - MA Crossover (20/50)")
+        print("  - RSI Mean Reversion")
+        print("  - EMA Crossover (9/21)")
+        print("  - Bollinger Bands")
+        strategy_input = input("Strategie [Golden Cross (50/200)]: ").strip()
+        strategy = strategy_input if strategy_input else "Golden Cross (50/200)"
     
     # Max risk per trade
     max_risk_input = input("Max risk per trade (0.005 = 0.5%) [0.005]: ").strip()
@@ -152,6 +239,7 @@ def prompt_risk_params():
     
     return {
         "pairs": pairs,
+        "strategy": strategy,
         "max_risk_per_trade": max_risk,
         "daily_loss_limit": daily_loss,
         "max_open_exposure": max_exposure,
@@ -224,8 +312,11 @@ def main():
     if not verify_storage():
         return 1
     
+    # Run strategy selection
+    recommended_strategy = run_strategy_selection()
+    
     # Prompt for risk parameters
-    risk_params = prompt_risk_params()
+    risk_params = prompt_risk_params(recommended_strategy)
     if not risk_params:
         print("❌ Setup cancelled")
         return 1
