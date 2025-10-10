@@ -4,6 +4,14 @@
 
 Diese Master-Version konsolidiert die besten Features aus vier Evolutionsstufen in eine produktionsreife, modulare Anwendung.
 
+> **🚀 NEU: Ein-Klick Dev Live Session!**
+> Starte die komplette Dev-Umgebung mit einem einzigen Klick - keine manuelle Konfiguration nötig!
+> 
+> **VS Code:** `Ctrl+Shift+P` → "Tasks: Run Task" → "Dev: Live Session"  
+> **Shell:** `./scripts/start_live.sh` (Linux/Mac) oder `.\scripts\start_live.ps1` (Windows)
+>
+> 👉 [Zur detaillierten Anleitung](#-ein-klick-dev-live-session-neu-)
+
 ## 🔥 Now with Binance API Integration!
 
 The bot now uses **Binance API** as the primary trading platform:
@@ -249,12 +257,23 @@ Starte den kompletten Dev-Workflow mit nur einem Klick: Automation Runner (Dry-R
 ```
 
 **Was passiert beim ersten Start?**
-- ✅ Virtual Environment wird erstellt (venv/)
-- ✅ Alle Dependencies werden installiert
-- ✅ data/session/ Verzeichnis wird angelegt
-- ✅ Automation Runner startet im DRY_RUN-Modus
-- ✅ Streamlit Dashboard startet auf Port 8501
-- ⏱️ Erster Start dauert 1-2 Minuten (Dependencies-Installation)
+1. 🔍 **Pre-flight Checks** (5 Sekunden)
+   - Python-Version wird geprüft
+   - Projektstruktur wird validiert
+2. 📦 **Setup Phase** (1-2 Minuten beim ersten Mal)
+   - Virtual Environment wird erstellt (venv/)
+   - pip wird aktualisiert
+   - Alle Dependencies werden installiert
+   - data/session/ Verzeichnis wird angelegt
+3. 🚀 **Start Phase** (5-10 Sekunden)
+   - Automation Runner startet im DRY_RUN-Modus
+   - Streamlit Dashboard startet auf Port 8501
+4. ✅ **Ready!**
+   - Browser öffnet sich automatisch mit Dashboard
+   - Events werden live angezeigt
+   - Beide Prozesse laufen parallel
+
+**Nachfolgende Starts:** Nur noch 5-10 Sekunden (Setup wird übersprungen)
 
 ### 🛠️ Manuelle Installation (einmalig)
 
@@ -317,6 +336,31 @@ Nach dem Start ist das Dashboard erreichbar unter:
 - ✅ Events werden generiert und gespeichert
 - ✅ View Session zeigt Live-Updates
 - ✅ Perfekt zum Testen und Entwickeln
+- ✅ Keine API-Keys erforderlich
+- ✅ Risikofrei - kein echtes Geld involviert
+
+### 💡 Empfohlener Workflow
+
+**Für neue Entwickler:**
+1. Setup validieren: `./scripts/validate_setup.sh` (oder `.ps1` für Windows)
+2. Dev Live Session starten: VS Code Task "Dev: Live Session"
+3. Im Browser http://localhost:8501 öffnen
+4. Code-Änderungen vornehmen
+5. Prozesse mit Ctrl+C stoppen
+6. Bei Bedarf neu starten (idempotent)
+
+**Für fortgeschrittene Entwickler:**
+- Nutze VS Code Tasks für einzelne Komponenten
+- "Install Dev Deps" nur einmal beim ersten Setup
+- "Run: Automation Runner (Dry-Run)" für Backend-Tests
+- "Run: View Session (Streamlit)" für Frontend-Tests
+- "Stop: All Sessions" um aufzuräumen
+
+**Für CI/CD und Automatisierung:**
+- Skripte sind vollständig automatisiert
+- Keine Benutzerinteraktion erforderlich
+- Exit-Codes zeigen Erfolg/Fehler an
+- Logs werden in stdout/stderr ausgegeben
 
 ### 🐛 Troubleshooting
 
@@ -417,6 +461,11 @@ pip install -r requirements.txt --verbose
 - ⚙️ VS Code Settings: `.vscode/settings.json`
 
 ### 📚 Weitere Dokumentation
+
+**Ein-Klick Dev Live Session:**
+- 📘 [LIVE_SESSION_SETUP_GUIDE.md](LIVE_SESSION_SETUP_GUIDE.md) - Vollständige Anleitung für Dev Live Session
+
+**Weitere Guides:**
 
 - [AUTOMATION_RUNNER_GUIDE.md](AUTOMATION_RUNNER_GUIDE.md) - Automation Runner Details
 - [VIEW_SESSION_GUIDE.md](VIEW_SESSION_GUIDE.md) - View Session Features
