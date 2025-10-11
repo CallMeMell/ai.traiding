@@ -70,3 +70,6 @@ config/live_risk.yaml
 dist/
 build/
 *.egg-info/
+
+# Git installation folder (should not be in repository)
+Git/
