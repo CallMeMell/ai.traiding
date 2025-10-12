@@ -360,9 +360,9 @@ class TestEnhancedBaseStrategy:
         strategy = VideoBasedStrategy({})
         df = generate_sample_data(n_bars=100)
         
-        # Generate multiple signals
+        # Generate multiple signals with context (which tracks performance)
         for _ in range(5):
-            strategy.generate_signal(df)
+            strategy.generate_signal_with_context(df)
         
         metrics = strategy.performance_metrics
         
