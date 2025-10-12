@@ -1,0 +1,107 @@
+name: PR Hygiene Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-empty-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check for changed files
+        id: check_files
+        run: |
+          # Get the base and head commits
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          
+          # Count changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | wc -l)
+          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "Changed files count: $CHANGED_FILES"
+      
+      - name: Comment on empty PR
+        if: steps.check_files.outputs.changed_files == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const comment = `## ⚠️ Empty Pull Request Detected
+            
+            This PR appears to have **no changed files**. This means:
+            
+            - 🤖 **GitHub Copilot review will be skipped** (nothing to review)
+            - 👥 **Human reviewers** won't be able to provide meaningful feedback
+            - ✅ The PR may need to be updated with actual code changes
+            
+            ### 📋 Possible reasons:
+            
+            1. **Branch is up-to-date with base**: Your branch might already contain all commits from the base branch
+            2. **Changes were reverted**: File changes might have been undone
+            3. **Wrong base branch**: You might be comparing against the wrong branch
+            
+            ### 🔧 How to fix:
+            
+            1. Make sure you have committed changes to your branch
+            2. Verify your branch has commits that aren't in the base branch:
+               \`\`\`bash
+               git log origin/${{ github.event.pull_request.base.ref }}..HEAD
+               \`\`\`
+            3. If needed, add your changes and push:
+               \`\`\`bash
+               git add .
+               git commit -m "Your commit message"
+               git push
+               \`\`\`
+            
+            ---
+            
+            💡 **Tip**: Once you push changes, this PR will automatically update and Copilot will be able to review it.
+            `;
+            
+            // Check if we already commented
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Empty Pull Request Detected')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+              console.log('Updated existing empty PR comment');
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment
+              });
+              console.log('Created new empty PR comment');
+            }
+      
+      - name: Success message
+        if: steps.check_files.outputs.changed_files != '0'
+        run: |
+          echo "✅ PR has ${{ steps.check_files.outputs.changed_files }} changed file(s)"
+          echo "PR hygiene check passed!"

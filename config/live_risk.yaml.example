@@ -1,0 +1,34 @@
+# live_risk.yaml.example - Example Live Trading Risk Configuration
+# Copy this file to live_risk.yaml and customize for your needs
+# NOTE: This file contains NO secrets - API keys are stored in Windows Credential Manager
+
+# Trading pairs (comma-separated for multiple pairs)
+pairs: BTCUSDT
+
+# Trading strategy (automatically selected by setup wizard)
+# Available strategies:
+#   - Golden Cross (50/200)
+#   - MA Crossover (20/50)
+#   - RSI Mean Reversion
+#   - EMA Crossover (9/21)
+#   - Bollinger Bands
+strategy: Golden Cross (50/200)
+
+# Maximum risk per trade (as decimal, e.g., 0.005 = 0.5%)
+max_risk_per_trade: 0.005
+
+# Daily loss limit (as decimal, e.g., 0.01 = 1%)
+# Trading stops for the day if this limit is reached
+daily_loss_limit: 0.01
+
+# Maximum open exposure (as decimal, e.g., 0.05 = 5%)
+# Total value of open positions as percentage of account
+max_open_exposure: 0.05
+
+# Allowed order types
+# Options: "LIMIT_ONLY" (safer) or "LIMIT_AND_MARKET" (faster execution)
+allowed_order_types: LIMIT_ONLY
+
+# Maximum slippage (as decimal, e.g., 0.003 = 0.3%)
+# Orders with higher slippage will be rejected
+max_slippage: 0.003

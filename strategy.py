@@ -16,6 +16,15 @@ logger = logging.getLogger(__name__)
 LSOB_AVAILABLE = False
 LSOBStrategy = None
 
+# Enhanced base strategy support
+try:
+    from base_strategy import EnhancedBaseStrategy, VideoBasedStrategy
+    ENHANCED_BASE_AVAILABLE = True
+    logger.debug("✓ Enhanced base strategy module loaded")
+except ImportError as e:
+    ENHANCED_BASE_AVAILABLE = False
+    logger.debug(f"Enhanced base strategy not available: {e}")
+
 
 # ========== BASE STRATEGY CLASS ==========
 
@@ -293,6 +302,11 @@ class StrategyManager:
             logger.debug("✓ LSOB strategy loaded")
         except ImportError as e:
             logger.debug(f"LSOB strategy not available: {e}")
+        
+        # Add enhanced base strategy (video-based strategy)
+        if ENHANCED_BASE_AVAILABLE:
+            self.STRATEGY_MAP['video_based'] = VideoBasedStrategy
+            logger.debug("✓ Video-based strategy loaded")
         
         self.config = config
         self.strategies = {}

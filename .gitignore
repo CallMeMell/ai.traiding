@@ -35,6 +35,9 @@ data/genetic_algorithm_*.csv
 data/genetic_algorithm_*.txt
 data/session/events.jsonl
 data/session/summary.json
+data/strategy_ranking.csv
+data/demo_strategy_ranking.csv
+data/strategy_comparison.csv
 
 # Environment
 .env
@@ -46,6 +49,7 @@ keys.env
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/extensions.json
+!.vscode/launch.json
 .idea/
 *.swp
 *.swo
@@ -57,6 +61,7 @@ Thumbs.db
 
 # Config (optional - wenn du deine persönlichen Configs nicht teilen willst)
 # config/trading_config.json
+config/live_risk.yaml
 
 # Jupyter Notebooks (falls du welche erstellst)
 *.ipynb_checkpoints/
@@ -65,3 +70,8 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Git installation folder (should not be in repository)
+# Note: If you accidentally committed a Git/ folder, it needs to be removed from history
+# Use: git rm -r --cached Git/ (then commit and push)
+Git/

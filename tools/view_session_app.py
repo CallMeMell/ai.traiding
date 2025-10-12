@@ -17,6 +17,7 @@ from typing import Dict, Any, List, Optional
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.session_store import SessionStore
+from automation.validate import validate_event_lenient, validate_summary_lenient
 
 
 # Page config
@@ -461,19 +462,39 @@ class ViewSessionApp:
     def load_data_with_cache(self):
         """
         Load data with incremental caching for performance.
+        Validates data and filters out invalid entries.
         
         Returns:
             Tuple of (summary, events)
         """
         summary = self.store.read_summary()
         
+        # Validate summary
+        if summary:
+            validated_summary = validate_summary_lenient(summary)
+            if validated_summary is None:
+                st.warning("⚠️ Summary data failed validation - displaying raw data")
+        
         # Read all events (can be optimized with tail reading)
         all_events = self.store.read_events()
         
+        # Validate and filter events
+        valid_events = []
+        invalid_count = 0
+        for event in all_events:
+            validated = validate_event_lenient(event)
+            if validated:
+                valid_events.append(event)
+            else:
+                invalid_count += 1
+        
+        if invalid_count > 0:
+            st.sidebar.warning(f"⚠️ Filtered out {invalid_count} invalid event(s)")
+        
         # Update cache if needed
-        if len(all_events) != st.session_state.last_event_count:
-            st.session_state.events_cache = all_events
-            st.session_state.last_event_count = len(all_events)
+        if len(valid_events) != st.session_state.last_event_count:
+            st.session_state.events_cache = valid_events
+            st.session_state.last_event_count = len(valid_events)
         
         return summary, st.session_state.events_cache
     

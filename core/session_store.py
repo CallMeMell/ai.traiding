@@ -37,13 +37,13 @@ class SessionStore:
         os.makedirs(os.path.dirname(self.events_path), exist_ok=True)
         os.makedirs(os.path.dirname(self.summary_path), exist_ok=True)
     
-    def append_event(self, event: Dict[str, Any], validate: bool = False) -> None:
+    def append_event(self, event: Dict[str, Any], validate: bool = True) -> None:
         """
         Append an event to the JSONL file.
         
         Args:
             event: Event dictionary with timestamp, type, and data
-            validate: Whether to validate against schema (optional, defaults to False for backward compatibility)
+            validate: Whether to validate against schema (defaults to True for strict schema compliance)
         """
         # Add timestamp if not present
         if 'timestamp' not in event:
@@ -92,13 +92,13 @@ class SessionStore:
             return events[-tail:]
         return events
     
-    def write_summary(self, summary: Dict[str, Any], validate: bool = False) -> None:
+    def write_summary(self, summary: Dict[str, Any], validate: bool = True) -> None:
         """
         Write summary to JSON file (overwrites).
         
         Args:
             summary: Summary dictionary
-            validate: Whether to validate against schema (optional, defaults to False for backward compatibility)
+            validate: Whether to validate against schema (defaults to True for strict schema compliance)
         """
         # Add last_updated timestamp
         summary['last_updated'] = datetime.now().isoformat()

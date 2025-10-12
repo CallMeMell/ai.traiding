@@ -4,10 +4,18 @@
     {
       "label": "Install Dev Deps",
       "type": "shell",
-      "command": "python3 -m venv venv && venv/bin/python -m pip install --upgrade pip && (venv/bin/python -m pip install -r requirements.txt || true) && venv/bin/python -m pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema",
+      "command": "python -m venv venv && venv/bin/python -m pip install --upgrade pip && venv/bin/python -m pip install -r requirements.txt || true && venv/bin/python -m pip install streamlit plotly pandas",
       "windows": {
-        "command": "python -m venv venv && venv\\Scripts\\python.exe -m pip install --upgrade pip && (venv\\Scripts\\python.exe -m pip install -r requirements.txt || echo Continuing with individual packages) && venv\\Scripts\\python.exe -m pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema"
-      },
+        "command": "if ($LASTEXITCODE -eq 0 -or (Test-Path venv)) { .\\venv\\Scripts\\python.exe -m pip install --upgrade pip; if (Test-Path requirements.txt) { .\\venv\\Scripts\\python.exe -m pip install -r requirements.txt; } .\\venv\\Scripts\\python.exe -m pip install streamlit plotly pandas }",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
+        }
+      }
+    },
+    {
       "group": "build",
       "presentation": {
         "reveal": "always",
@@ -21,73 +29,14 @@
       "type": "shell",
       "command": "test -f .env && venv/bin/python -m dotenv -f .env run --override -- venv/bin/python automation/runner.py || venv/bin/python automation/runner.py",
       "windows": {
-        "command": "if exist .env (venv\\Scripts\\python.exe -m dotenv -f .env run --override -- venv\\Scripts\\python.exe automation/runner.py) else (venv\\Scripts\\python.exe automation/runner.py)"
-      },
-      "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "showReuseMessage": false
-      },
-      "problemMatcher": [],
-      "detail": "Runs automation runner in DRY_RUN mode (loads .env if present, no API keys required)",
-      "options": {
-        "env": {
-          "DRY_RUN": "true",
-          "BROKER_NAME": "binance",
-          "BINANCE_BASE_URL": "https://testnet.binance.vision"
+        "command": "if (Test-Path .env) { .\\venv\\Scripts\\python.exe -m dotenv -f .env run --override -- .\\venv\\Scripts\\python.exe automation/runner.py } else { .\\venv\\Scripts\\python.exe automation/runner.py }",
+        "options": {
+          "shell": {
+            "executable": "powershell.exe",
+            "args": ["-Command"]
+          }
         }
       }
-    },
-    {
-      "label": "Run: View Session (Streamlit)",
-      "type": "shell",
-      "command": "venv/bin/python -m streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true",
-      "windows": {
-        "command": "venv\\Scripts\\python.exe -m streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true"
-      },
-      "group": "test",
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "showReuseMessage": false
-      },
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^.*$"
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": ".*",
-          "endsPattern": ".*(You can now view|Network URL).*"
-        }
-      },
-      "detail": "Starts Streamlit View Session on port 8501"
-    },
-    {
-      "label": "Dev: Live Session",
-      "dependsOn": [
-        "Run: Automation Runner (Dry-Run)",
-        "Run: View Session (Streamlit)"
-      ],
-      "dependsOrder": "parallel",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      },
-      "detail": "🚀 ONE-CLICK: Start Automation Runner + View Session in parallel"
-    },
-    {
-      "label": "Stop: All Sessions",
-      "type": "shell",
-      "command": "pkill -f 'streamlit run' || true",
-      "windows": {
-        "command": "taskkill /F /IM streamlit.exe /T || echo No Streamlit processes found"
-      },
-      "problemMatcher": [],
-      "detail": "Stop all running Streamlit sessions"
     }
   ]
 }

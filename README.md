@@ -58,12 +58,13 @@ MASTER_VERSION/
 - **Legacy Support**: Alpaca API still available
 
 ### ✅ Multi-Strategy System
-- **5 professionelle Strategien:**
+- **6+ professionelle Strategien:**
   - **MA Crossover**: Trend-Following mit Moving Averages (mittel- bis langfristig)
   - **RSI Mean Reversion**: Überverkauft/Überkauft Strategie (Seitwärtsmärkte)
   - **Bollinger Bands**: Volatilitäts-Breakout Strategie
   - **EMA Crossover**: Schnelle Trend-Strategie für Daytrading
   - **LSOB (Long-Short On Breakout)**: Advanced volatility breakout strategy
+  - **Video-Based Strategy**: Enhanced base framework for implementing strategies from tutorials/videos
 
 ### ✅ Signal-Aggregation
 - **AND Logic**: Konservativ - Alle Strategien müssen zustimmen
@@ -73,6 +74,16 @@ MASTER_VERSION/
 - Historische Datenanalyse
 - Detaillierte Performance-Metriken
 - Win Rate, ROI, Profit Factor, etc.
+
+### ✅ Automatische Strategie-Auswahl 🆕
+- **Intelligente Optimierung**: Analysiert alle Strategien mittels Backtest und wählt automatisch die beste
+- **Multi-Kriterien-Bewertung**: ROI, Sharpe Ratio, Calmar Ratio, Drawdown, Win Rate
+- **Automatische Konfiguration**: Beste Strategie wird direkt in Live-Config gesetzt
+- **Vollständig dokumentiert**: Logs und CSV-Export für Nachvollziehbarkeit
+- **Flexible Integration**: Standalone-Script oder Teil des Setup-Wizards
+- **CI/CD Ready**: Quiet Mode für Automatisierung und Cron-Jobs
+
+📖 **[Read the Auto Strategy Selection Guide](AUTO_STRATEGY_SELECTION_GUIDE.md)** für vollständige Dokumentation und Beispiele.
 
 ### ✅ Robuste Architektur
 - **Modular & OOP**: Saubere Klassenstruktur
@@ -133,6 +144,42 @@ MASTER_VERSION/
 - **Fehlerbehandlung**: Retry-Mechanismus mit Backoff bei transienten Fehlern
 - **Live-Monitoring**: Heartbeat und Metriken werden in Session-Events geschrieben
 - **API-Sicherheit**: Sichere Verwaltung von API-Keys aus Umgebungsvariablen
+
+### ✅ Daten-Lifecycle & Aufräumen 🆕
+- **Log-Rotation**: Automatische Archivierung alter Log-Dateien mit Kompression
+- **PII-Maskierung**: Schutz sensibler Daten (E-Mails, API-Keys, Passwörter, Telefonnummern)
+- **Integritätsprüfung**: Checksum-basierte Verifizierung aller Archive
+
+### ✅ Enhanced Base Strategy Framework 🆕
+- **Video-Based Strategy Support**: Framework zum Implementieren von Strategien aus YouTube-Videos und Tutorials
+- **Multi-Timeframe Analysis**: Unterstützung für mehrere Zeitrahmen-Datenfeeds
+- **State Management**: Persistente Zustandsspeicherung und -wiederherstellung
+- **Performance Tracking**: Automatische Metriken für Execution Time, Signale, Win Rate
+- **Position Lifecycle**: Callbacks für Position-Events (Öffnen/Schließen)
+- **Confidence Scoring**: Bewertung der Signal-Qualität (0-1)
+- **Exchange Connection Utilities**: Vorbereitung für erweiterte Exchange-Integration
+
+📖 **[Read the Base Strategy Guide](docs/BASE_STRATEGY_GUIDE.md)** für vollständige Dokumentation und Implementierungsbeispiele.
+- **Konfigurierbare Retention**: Anpassbare Aufbewahrungsfristen (Standard: 30 Tage)
+- **Automatische Kompression**: Gzip-Kompression für Platzersparnis
+- **Metadata-Tracking**: Vollständige Nachverfolgbarkeit archivierter Dateien
+
+```python
+from automation.data_lifecycle import rotate_logs, mask_pii, check_archive
+
+# Log-Rotation durchführen
+result = rotate_logs()
+print(f"Archiviert: {result['archived_count']} Dateien")
+
+# Sensible Daten maskieren
+data = {"user": "Max Mustermann", "email": "max@example.com"}
+masked = mask_pii(data)
+# Ausgabe: {"user": "Ma**********nn", "email": "ma***********om"}
+
+# Archive-Integrität prüfen
+integrity_ok = check_archive()
+assert integrity_ok is True
+```
 
 ### ✅ View Session Dashboard (NEU) 🆕
 - **Echtzeit-Visualisierung**: Streamlit-basiertes Dashboard mit Plotly-Charts
@@ -226,36 +273,45 @@ Starte den kompletten Dev-Workflow mit nur einem Klick: Automation Runner (Dry-R
 
 ---
 
-## 🚀 QUICKSTART - Live Session außerhalb von VS Code
+## 🚀 QUICKSTART - Windows (PowerShell) ⭐
 
-**🎯 Ziel: Live-Session mit einem Befehl starten - ohne VS Code!**
+**🎯 Ziel: Live-Session mit einem Befehl starten - Windows-optimiert!**
 
-### ⚡ Schnellstart (3 Schritte)
+### ⚡ Schnellstart für Windows (3 Schritte)
 
 **1️⃣ Repository klonen:**
-```bash
+```powershell
 git clone https://github.com/CallMeMell/ai.traiding.git
 cd ai.traiding
 ```
 
 **2️⃣ Optional: .env Datei erstellen (für eigene Konfiguration):**
-```bash
+```powershell
 # Kopiere die Beispiel-Datei
-cp .env.example .env
+Copy-Item .env.example .env
 
 # Bearbeite .env nach Bedarf (Standard: DRY_RUN=true)
 ```
 
 **3️⃣ Live-Session starten:**
 
-**Linux/macOS:**
-```bash
-./scripts/start_live.sh
-```
-
 **Windows PowerShell:**
 ```powershell
 .\scripts\start_live.ps1
+```
+
+**💡 Tipp: Bei ExecutionPolicy-Fehler**
+Falls PowerShell die Skript-Ausführung blockiert:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\start_live.ps1
+```
+
+### ⚡ Schnellstart für Linux/macOS
+
+**Live-Session starten:**
+```bash
+./scripts/start_live.sh
 ```
 
 **Das war's!** 🎉 Die Skripte machen alles automatisch:
@@ -265,6 +321,30 @@ cp .env.example .env
 - ✅ Streamlit Dashboard starten (http://localhost:8501)
 
 Nach dem Start öffne deinen Browser: **http://localhost:8501**
+
+---
+
+### 🎯 Automatische Strategie-Auswahl (Bonus)
+
+Finde automatisch die beste Strategie für maximalen ROI:
+
+**Windows:**
+```powershell
+# Vollautomatisch - wählt beste Strategie und aktualisiert Config
+.\scripts\auto_select_strategy.ps1
+
+# Mit benutzerdefinierten Parametern
+.\scripts\auto_select_strategy.ps1 --min-trades 15 --initial-capital 50000
+```
+
+**Linux/macOS:**
+```bash
+python scripts/auto_select_strategy.py
+```
+
+**Ergebnis**: Die beste Strategie wird automatisch in `config/live_risk.yaml` gesetzt! 🏆
+
+📖 Siehe **[AUTO_STRATEGY_SELECTION_GUIDE.md](AUTO_STRATEGY_SELECTION_GUIDE.md)** für Details.
 
 ---
 
@@ -375,36 +455,58 @@ Nach dem Start ist das Dashboard erreichbar unter:
 
 ### 🐛 Troubleshooting
 
-**Problem: "Python not found" oder "python3: command not found"**
+#### Windows-Spezifisch
+
+**Problem: "ExecutionPolicy" - Skript kann nicht ausgeführt werden**
+```powershell
+# Temporär für aktuelle PowerShell-Session
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Oder dauerhaft für aktuellen Benutzer
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+**Problem: "Python not found" (Windows)**
+```powershell
+# Installiere Python von python.org (3.8 oder höher)
+# Stelle sicher, dass "Add Python to PATH" aktiviert ist
+# Nach Installation PowerShell neu starten
+
+# Prüfen ob Python verfügbar ist:
+python --version
+```
+
+**Problem: "Port 8501 already in use" (Windows)**
+```powershell
+# Stoppe alte Streamlit-Prozesse
+taskkill /F /IM python.exe /FI "WINDOWTITLE eq *streamlit*"
+# Oder:
+taskkill /F /IM streamlit.exe
+
+# Oder nutze den VS Code Task "Stop: All Sessions"
+```
+
+**Problem: "python-dotenv not found" (Windows)**
+```powershell
+# Installiere python-dotenv im venv
+.\venv\Scripts\python.exe -m pip install python-dotenv
+```
+
+#### Allgemein (alle Plattformen)
+
+**Problem: "Python not found" (Linux/macOS)**
 ```bash
-# Installiere Python 3.8 oder höher
 # Ubuntu/Debian:
 sudo apt update && sudo apt install python3 python3-venv python3-pip
 
 # macOS (mit Homebrew):
 brew install python3
-
-# Windows: Lade Python von python.org herunter
 ```
 
-**Problem: "streamlit: command not found"**
-```bash
-# Stelle sicher, dass venv aktiviert ist
-source venv/bin/activate  # Linux/Mac
-.\venv\Scripts\activate   # Windows
-
-# Streamlit neu installieren
-pip install streamlit
-```
-
-**Problem: "Port 8501 already in use"**
+**Problem: "Port 8501 already in use" (Linux/macOS)**
 ```bash
 # Stoppe alte Streamlit-Prozesse
-# Linux/Mac:
 pkill -f streamlit
-
-# Windows:
-taskkill /F /IM streamlit.exe
 
 # Oder nutze den VS Code Task "Stop: All Sessions"
 ```
@@ -424,12 +526,6 @@ $env:PYTHONPATH = "$(pwd)"                # Windows PowerShell
 - ✅ Warte 5-10 Sekunden nach Runner-Start
 - ✅ Drücke "Refresh Now" im View Session Dashboard
 - ✅ Prüfe ob `data/session/events.jsonl` existiert und Daten enthält
-
-**Problem: venv-Aktivierung schlägt fehl (Windows)**
-```powershell
-# PowerShell Execution Policy anpassen
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
 
 **Problem: Script-Ausführung nicht erlaubt (Linux/macOS)**
 ```bash
@@ -460,6 +556,416 @@ rmdir /s venv  # Windows
 - [AUTOMATION_RUNNER_GUIDE.md](AUTOMATION_RUNNER_GUIDE.md) - Automation Runner Details
 - [VIEW_SESSION_GUIDE.md](VIEW_SESSION_GUIDE.md) - View Session Features
 - [VIEW_SESSION_STREAMLIT_GUIDE.md](VIEW_SESSION_STREAMLIT_GUIDE.md) - Streamlit Dashboard
+
+---
+
+## ⚙️ Umgebungsvariablen (ENV) - Vollständige Referenz
+
+Alle Umgebungsvariablen können in der `.env` Datei im Projekt-Root gesetzt werden. Verwende `.env.example` als Vorlage.
+
+### 🔧 Grundlegende Konfiguration
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `DRY_RUN` | Aktiviert sicheren Trockenlauf ohne echte API-Calls | `true` / `false` | `true` | ✅ |
+| `BROKER_NAME` | Trading-Platform Auswahl | `binance` / `alpaca` | `binance` | ✅ |
+| `LOG_LEVEL` | Logging-Detailgrad | `DEBUG` / `INFO` / `WARNING` / `ERROR` | `INFO` | ❌ |
+
+### 🔐 Binance API Credentials (Haupt-Plattform)
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `BINANCE_API_KEY` | Binance API-Schlüssel für Live-Trading | `xyz123abc...` | - | ⚠️ Nur für Live |
+| `BINANCE_SECRET_KEY` | Binance Secret Key für Live-Trading | `secret789...` | - | ⚠️ Nur für Live |
+| `BINANCE_BASE_URL` | Binance API Endpoint | `https://api.binance.com` (Live)<br>`https://testnet.binance.vision` (Test) | `https://testnet.binance.vision` | ❌ |
+
+### 🧪 Binance Testnet Credentials (Paper Trading)
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `BINANCE_TESTNET_API_KEY` | Testnet API-Schlüssel (Papierhandel) | `testkey123...` | - | ❌ |
+| `BINANCE_TESTNET_SECRET_KEY` | Testnet Secret Key (Papierhandel) | `testsecret...` | - | ❌ |
+
+### 🚨 Live-Trading Flags (DANGER ZONE)
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `LIVE_TRADING` | Aktiviert echtes Trading (erfordert API-Keys) | `true` / `false` | `false` | ⚠️ Nur für Live |
+| `LIVE_ACK` | Bestätigung für Live-Trading (Sicherheitscheck) | `I_UNDERSTAND` | - | ⚠️ Nur für Live |
+| `KILL_SWITCH` | Notfall-Stopp: Blockiert alle Live-Orders sofort | `true` / `false` | `false` | ❌ |
+
+### 🤖 Optional: OpenAI Integration
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `OPENAI_API_KEY` | OpenAI API-Key für KI-Features | `sk-proj-...` | - | ❌ |
+
+### 💰 Trading-Parameter (Optional - überschreibt config.py)
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `INITIAL_CAPITAL` | Startkapital für Backtests und Simulationen | `10000` | `10000` | ❌ |
+| `TRADE_SIZE` | Handelsvolumen pro Trade | `100` | `100` | ❌ |
+| `UPDATE_INTERVAL` | Update-Intervall in Sekunden | `60` | `60` | ❌ |
+
+### 🛡️ Risk-Management Parameter
+
+| Variable | Zweck | Beispielwert | Standard | Pflicht |
+|----------|-------|--------------|----------|---------|
+| `STOP_LOSS_PERCENT` | Stop-Loss in Prozent | `10` | `10` | ❌ |
+| `TAKE_PROFIT_PERCENT` | Take-Profit in Prozent | `20` | `20` | ❌ |
+| `MAX_DAILY_LOSS` | Maximaler Tagesverlust in Prozent | `5` | `5` | ❌ |
+
+### 📋 Beispiel: Komplette .env Datei
+
+**Für DRY_RUN / Testnet (Standard - sicher):**
+```bash
+# Safe Mode Configuration
+DRY_RUN=true
+BROKER_NAME=binance
+BINANCE_BASE_URL=https://testnet.binance.vision
+
+# Optional: Testnet Keys für Paper Trading
+BINANCE_TESTNET_API_KEY=your_testnet_api_key
+BINANCE_TESTNET_SECRET_KEY=your_testnet_secret_key
+
+# Logging
+LOG_LEVEL=INFO
+
+# Risk Management
+STOP_LOSS_PERCENT=10
+TAKE_PROFIT_PERCENT=20
+MAX_DAILY_LOSS=5
+```
+
+**Für Live-Trading (DANGER - nur mit echten Keys):**
+```bash
+# ⚠️ ACHTUNG: Live-Trading mit echtem Geld
+DRY_RUN=false
+LIVE_TRADING=true
+LIVE_ACK=I_UNDERSTAND
+
+# Binance Live API (NIEMALS committen!)
+BINANCE_API_KEY=your_real_api_key_here
+BINANCE_SECRET_KEY=your_real_secret_key_here
+BINANCE_BASE_URL=https://api.binance.com
+
+# Broker Configuration
+BROKER_NAME=binance
+
+# Risk Management (wichtig für Live!)
+STOP_LOSS_PERCENT=5
+TAKE_PROFIT_PERCENT=10
+MAX_DAILY_LOSS=2
+
+# Emergency Kill Switch (auf false lassen)
+KILL_SWITCH=false
+```
+
+### 🔒 Sicherheitshinweise
+
+**✅ Best Practices:**
+- Verwende **Windows Credential Manager** für Live-Trading Keys (siehe Setup-Guide)
+- Nutze `.env` nur für DRY_RUN und Testnet
+- Stelle sicher, dass `.env` in `.gitignore` steht (ist standardmäßig der Fall)
+- Rotiere API-Keys regelmäßig
+
+**❌ Niemals:**
+- API-Keys in Git committen
+- `.env` mit echten Keys teilen oder in Chat posten
+- Withdrawals-Permission auf API-Keys aktivieren
+- Ohne IP-Einschränkungen handeln
+
+**📖 Weitere Informationen:**
+- [SECURITY.md](SECURITY.md) - Vollständige Sicherheitsrichtlinien
+- [LIVE_TRADING_SETUP_GUIDE.md](LIVE_TRADING_SETUP_GUIDE.md) - Setup für Live-Trading
+- [.env.example](.env.example) - Komplette ENV-Template-Datei
+
+---
+
+## 🚨 GEFAHRZONE: Live-Trading
+
+**⚠️ ACHTUNG: Live-Trading mit echtem Geld - Nur für erfahrene Trader!**
+
+### 🔐 Sicherer Setup-Prozess (Windows-First)
+
+Diese Anleitung zeigt, wie du **sicher** Live-Trading aktivierst ohne deine API-Keys im Dateisystem zu speichern.
+
+#### 🛡️ Sicherheits-Prinzipien
+
+1. **✅ Windows Credential Manager**: API-Keys werden sicher im Windows Credential Manager gespeichert
+2. **✅ Keine Secrets in Dateien**: API-Keys werden nie in `.env` oder anderen Dateien gespeichert
+3. **✅ Preflight Checks**: Automatische Validierung vor jedem Live-Trading-Start
+4. **✅ Explizite Bestätigung**: `LIVE_ACK=I_UNDERSTAND` muss gesetzt sein
+5. **✅ Kill Switch**: Notfall-Abschaltung mit `KILL_SWITCH=true`
+
+#### 📋 Voraussetzungen
+
+**BEVOR du anfängst:**
+
+- [ ] ⚠️ **API-Keys widerrufen**: Falls du API-Keys versehentlich geteilt hast, widerrufe sie SOFORT auf Binance
+- [ ] ✅ **Neue Keys erstellen**: Erstelle neue API-Keys auf Binance mit folgenden Einstellungen:
+  - **Nur Reading + Spot Trading aktivieren**
+  - **NIEMALS Withdrawals aktivieren**
+  - **IP-Einschränkungen setzen** (nur deine IP)
+  - **2FA aktivieren** auf deinem Binance-Account
+- [ ] ✅ **Minimales Kapital**: Verwende nur Geld, das du dir leisten kannst zu verlieren
+- [ ] ✅ **Testing abgeschlossen**: Habe ausreichend mit DRY_RUN und Testnet getestet
+
+#### 🔧 Schritt 1: Setup-Wizard ausführen
+
+Der Setup-Wizard fragt deine API-Keys ab und speichert sie sicher im Windows Credential Manager:
+
+**Windows PowerShell:**
+```powershell
+# Führe den Setup-Wizard aus
+.\scripts\setup_live.ps1
+```
+
+**Was der Wizard macht:**
+1. ✅ Fragt Binance API-Key und Secret ab (sichere Eingabe ohne Anzeige)
+2. ✅ Speichert Keys im Windows Credential Manager (nicht auf Disk!)
+3. ✅ Fragt Risk-Management-Parameter ab (Trading-Pairs, Risk-Limits, Order-Types)
+4. ✅ Erstellt `config/live_risk.yaml` (enthält KEINE Secrets, nur Risk-Config)
+
+**VS Code Task Alternative:**
+```
+Ctrl+Shift+P → "Tasks: Run Task" → "Live: Setup"
+```
+
+#### 🔍 Schritt 2: Risk-Config überprüfen
+
+Nach dem Setup überprüfe die generierte `config/live_risk.yaml`:
+
+```yaml
+pairs: BTCUSDT
+max_risk_per_trade: 0.005    # 0.5% Risk pro Trade
+daily_loss_limit: 0.01       # 1% maximaler Tagesverlust
+max_open_exposure: 0.05      # 5% maximales offenes Exposure
+allowed_order_types: LIMIT_ONLY  # Nur Limit-Orders (sicherer)
+max_slippage: 0.003          # 0.3% maximales Slippage
+```
+
+**Empfohlene Anfangs-Einstellungen:**
+- **Pairs**: Starte mit `BTCUSDT` (hohes Volumen, niedrige Spreads)
+- **Order Types**: `LIMIT_ONLY` (sicherer, weniger Slippage)
+- **Risk per Trade**: `0.005` (0.5%) oder weniger
+- **Daily Loss Limit**: `0.01` (1%) als Circuit-Breaker
+
+#### 🚀 Schritt 3: Live-Trading starten
+
+**Windows PowerShell:**
+```powershell
+# Setze LIVE_ACK (explizite Bestätigung)
+$env:LIVE_ACK = "I_UNDERSTAND"
+
+# Starte Live-Trading
+.\scripts\start_live_prod.ps1
+```
+
+**VS Code Task Alternative:**
+```
+# In PowerShell Terminal:
+$env:LIVE_ACK = "I_UNDERSTAND"
+
+# Dann:
+Ctrl+Shift+P → "Tasks: Run Task" → "Live: Runner"
+```
+
+**Was beim Start passiert:**
+1. ✅ Lädt API-Keys aus Windows Credential Manager (nicht aus Dateien!)
+2. ✅ Setzt Production-Flags (`DRY_RUN=false`, `LIVE_TRADING=true`)
+3. ✅ Überprüft `LIVE_ACK=I_UNDERSTAND`
+4. ✅ Führt Preflight-Checks aus:
+   - Environment-Variablen validieren
+   - Production-Endpoint überprüfen (`https://api.binance.com`)
+   - Zeit-Synchronisation mit Binance-Server (max 1000ms Abweichung)
+   - Exchange-Info validieren (Trading-Pairs, Filter, Limits)
+   - Account-Balance überprüfen (mindestens 10 USDT)
+5. ✅ Startet Live-Trading Runner (`automation/runner.py` mit Production-Flags)
+
+**Bei Preflight-Fehler:**
+- ❌ Trading wird NICHT gestartet
+- 📋 Fehlermeldungen werden angezeigt
+- 🔧 Behebe die Fehler und versuche es erneut
+
+#### 🔄 Alternative: Live-Umschaltung mit live_switch.py
+
+**Sichere Umschaltung zwischen Modi:**
+
+Die neue `automation/live_switch.py` bietet eine einfache, sichere Methode zum Wechseln zwischen DRY_RUN und LIVE Modi:
+
+**Option 1: PowerShell-Script (empfohlen):**
+```powershell
+# Aktuellen Status prüfen
+.\scripts\live_switch.ps1 -Status
+
+# Zu DRY_RUN wechseln
+.\scripts\live_switch.ps1 -DryRun
+
+# Zu Live-Modus wechseln (mit Bestätigung)
+.\scripts\live_switch.ps1 -Live
+```
+
+**Option 2: Direkter Python-Aufruf:**
+```powershell
+# Windows PowerShell (venv\Scripts verwenden)
+.\venv\Scripts\python.exe -m automation.live_switch --status
+.\venv\Scripts\python.exe -m automation.live_switch --dry-run
+.\venv\Scripts\python.exe -m automation.live_switch --live
+```
+
+**Python API Verwendung:**
+```python
+from automation.live_switch import switch_to_live, switch_to_dry_run, check_api_key
+
+# Prüfe API-Key vor Umschaltung
+if not check_api_key()[0]:
+    raise Exception("API-Key fehlt oder ungültig")
+
+# Wechsel zu Live-Modus (mit Bestätigung)
+result = switch_to_live()
+
+# Wechsel zurück zu DRY_RUN
+switch_to_dry_run()
+```
+
+**Was live_switch macht:**
+1. ✅ Validiert API-Keys und Secrets
+2. ✅ Prüft Umgebung (KILL_SWITCH, Base-URL)
+3. ✅ Fordert explizite Bestätigung ("LIVE_TRADING_BESTÄTIGT")
+4. ✅ Führt Preflight-Checks aus
+5. ✅ Setzt Environment-Variablen (DRY_RUN, LIVE_TRADING)
+
+#### 🛑 Notfall-Abschaltung: Kill Switch
+
+Falls du sofort alle Live-Orders stoppen möchtest:
+
+```powershell
+# Setze Kill Switch
+$env:KILL_SWITCH = "true"
+
+# Preflight läuft durch, aber keine neuen Orders
+# Offene Orders werden gecancelt (falls implementiert)
+```
+
+**Kill Switch deaktivieren:**
+```powershell
+$env:KILL_SWITCH = "false"
+# Oder entfernen:
+Remove-Item Env:KILL_SWITCH
+```
+
+#### 📊 Live-Trading überwachen
+
+**View Session Dashboard parallel starten:**
+```powershell
+# In separater PowerShell-Session:
+.\venv\Scripts\python.exe -m streamlit run tools/view_session_app.py --server.port 8501
+```
+
+Öffne Browser: `http://localhost:8501`
+
+**Was zu überwachen ist:**
+- 📈 **P&L**: Gewinn/Verlust in Echtzeit
+- 📊 **Open Positions**: Aktuell offene Positionen
+- 🎯 **Win Rate**: Erfolgsquote deiner Trades
+- 🚨 **Daily Loss**: Tagesverlust (sollte unter `daily_loss_limit` bleiben)
+- 💸 **Exposure**: Offenes Exposure (sollte unter `max_open_exposure` bleiben)
+
+#### ⚠️ Wichtige Sicherheitshinweise
+
+**🚫 NIEMALS:**
+- ❌ API-Keys in `.env`, Git oder Chat teilen
+- ❌ Withdrawals-Permission aktivieren
+- ❌ Ohne IP-Einschränkungen handeln
+- ❌ Mit mehr Kapital starten als du verlieren kannst
+- ❌ Unbeaufsichtigt laufen lassen (erste Sessions)
+
+**✅ IMMER:**
+- ✅ API-Keys regelmäßig rotieren (neue Keys erstellen)
+- ✅ Logs überwachen (`logs/trading_bot.log`)
+- ✅ Alerts für große Verluste einrichten
+- ✅ Mit minimalem Kapital testen (z.B. 50-100 USDT)
+- ✅ Binance-Account regelmäßig überprüfen
+- ✅ 2FA aktiviert lassen
+
+#### 🔒 Secrets Management
+
+**Wie Keys gespeichert werden:**
+```
+Windows Credential Manager
+└── Service: "ai.traiding"
+    ├── binance_api_key: [DEIN_API_KEY]
+    └── binance_api_secret: [DEIN_SECRET]
+```
+
+**Keys anzeigen (Windows):**
+```powershell
+# Credential Manager öffnen
+control keymgr.dll
+
+# Oder via Python:
+.\venv\Scripts\python.exe -c "import keyring; print('Key exists:', keyring.get_password('ai.traiding', 'binance_api_key') is not None)"
+```
+
+**Keys löschen:**
+```powershell
+.\venv\Scripts\python.exe -c "import keyring; keyring.delete_password('ai.traiding', 'binance_api_key'); keyring.delete_password('ai.traiding', 'binance_api_secret'); print('Keys deleted')"
+```
+
+#### 📝 Checkliste vor dem ersten Live-Trade
+
+- [ ] Setup-Wizard erfolgreich durchgeführt (`.\scripts\setup_live.ps1`)
+- [ ] `config/live_risk.yaml` überprüft und angepasst
+- [ ] API-Keys im Windows Credential Manager gespeichert (nicht in Dateien!)
+- [ ] Binance API-Keys haben NUR "Reading + Spot Trading" (KEINE Withdrawals)
+- [ ] IP-Einschränkungen auf Binance-Keys gesetzt
+- [ ] 2FA auf Binance-Account aktiviert
+- [ ] Minimales Test-Kapital aufgeladen (z.B. 50-100 USDT)
+- [ ] `LIVE_ACK=I_UNDERSTAND` gesetzt
+- [ ] Preflight-Checks erfolgreich durchlaufen
+- [ ] View Session Dashboard läuft für Monitoring
+- [ ] Notfall-Plan bereit (Kill Switch, manuelles Order-Cancel auf Binance)
+
+#### 🚨 Was tun bei Problemen?
+
+**Problem: Preflight Check failed**
+```
+❌ [ERR] Time drift too large: 1500ms (max 1000ms)
+```
+**Lösung:** Synchronisiere deine System-Zeit mit einem Zeitserver.
+
+**Problem: Authentication failed**
+```
+❌ [ERR] Authentication failed - check API keys
+```
+**Lösung:**
+1. Überprüfe Keys im Credential Manager
+2. Prüfe ob Keys auf Binance gültig sind
+3. Prüfe IP-Einschränkungen (deine IP muss erlaubt sein)
+
+**Problem: Balance too low**
+```
+❌ [ERR] USDT balance too low: 5.00 (minimum: 10)
+```
+**Lösung:** Lade mindestens 10 USDT auf deinen Binance Spot-Account.
+
+**Problem: Keys nicht gefunden**
+```
+❌ Error: Credentials not found in Windows Credential Manager
+```
+**Lösung:** Führe Setup-Wizard erneut aus: `.\scripts\setup_live.ps1`
+
+#### 📚 Weiterführende Dokumentation
+
+- **[LIVE_TRADING_SETUP_GUIDE.md](LIVE_TRADING_SETUP_GUIDE.md)** - Vollständige Setup-Anleitung für Live-Trading
+- **[SECURE_LIVE_TRADING_IMPLEMENTATION_SUMMARY.md](SECURE_LIVE_TRADING_IMPLEMENTATION_SUMMARY.md)** - Implementation Summary
+- **[LIVE_TRADING_MANUAL_TEST_GUIDE.md](LIVE_TRADING_MANUAL_TEST_GUIDE.md)** - 🧪 **NEU:** Schritt-für-Schritt Manuelle Test-Anleitung
+- **[LIVE_TRADING_TEST_CHECKLIST.md](LIVE_TRADING_TEST_CHECKLIST.md)** - ✅ **NEU:** Schnell-Checkliste für Tests
+- [BINANCE_INTEGRATION_SUMMARY.md](BINANCE_INTEGRATION_SUMMARY.md) - Binance API Details
+- [BINANCE_MIGRATION_GUIDE.md](BINANCE_MIGRATION_GUIDE.md) - Binance Setup Guide
+- [AUTOMATION_RUNNER_GUIDE.md](AUTOMATION_RUNNER_GUIDE.md) - Automation Runner
 
 ---
 
@@ -819,6 +1325,51 @@ STRATEGY_MAP = {
 ```python
 active_strategies: list = ["my_custom"]
 ```
+
+### Neue Strategie mit Enhanced Base Framework (Video-basiert)
+
+Für komplexere Strategien aus YouTube-Videos oder Tutorials verwende das Enhanced Base Framework:
+
+1. Erstelle neue Klasse mit `EnhancedBaseStrategy`:
+```python
+from base_strategy import EnhancedBaseStrategy
+
+class MyVideoStrategy(EnhancedBaseStrategy):
+    def __init__(self, params: Dict[str, Any]):
+        super().__init__("MyVideoStrategy", params)
+        # Deine Parameter
+        self.indicator1 = params.get('indicator1', 14)
+        self.indicator2 = params.get('indicator2', 20)
+    
+    def generate_signal(self, df: pd.DataFrame) -> int:
+        if not self.validate_data(df):
+            return 0
+        
+        # Implementiere Video-Strategie-Logik
+        # ... berechne Indikatoren
+        # ... generiere Signal
+        
+        return 0  # 1=BUY, 0=HOLD, -1=SELL
+```
+
+2. Nutze erweiterte Features:
+```python
+# Multi-Timeframe Analysis
+strategy.add_data_feed('BTC/USDT', '1h', df_1h)
+strategy.add_data_feed('BTC/USDT', '4h', df_4h)
+
+# Signal mit Kontext
+signal, context = strategy.generate_signal_with_context(df)
+print(f"Confidence: {context['confidence']}")
+
+# State Management
+strategy.update_state(custom_value=42)
+strategy.export_state('data/strategy_state.json')
+```
+
+3. Registriere und aktiviere wie normale Strategie
+
+📖 **[Vollständige Dokumentation](docs/BASE_STRATEGY_GUIDE.md)** mit Beispielen und Best Practices
 
 ---
 
