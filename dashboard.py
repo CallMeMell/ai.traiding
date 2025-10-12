@@ -410,6 +410,19 @@ class VisualDashboard:
         
         return generated_files
     
+    def display_api_key_warning(self, message: str):
+        """
+        Display API key warning in console format
+        
+        Args:
+            message: Warning message to display
+        """
+        print("\n" + "=" * 60)
+        print("⚠️  API-KEY WARNUNG")
+        print("=" * 60)
+        print(message)
+        print("=" * 60)
+    
     def display_metrics_console(self):
         """Display metrics in console format"""
         metrics = self.get_metrics()

@@ -6,6 +6,7 @@ Enhanced version of main.py with integrated dashboard functionality
 import sys
 import time
 import signal
+import os
 from typing import Optional
 import pandas as pd
 import numpy as np
@@ -20,6 +21,32 @@ from dashboard import create_dashboard, DashboardModal
 # Globale Variablen
 logger = None
 is_running = False
+
+
+def validate_api_keys_for_live_trading() -> tuple[bool, str]:
+    """
+    Validiert API-Keys vor Live-Trading Start.
+    
+    Returns:
+        Tuple[bool, str]: (success, message)
+    """
+    api_key = os.getenv("BINANCE_API_KEY", "") or config.BINANCE_API_KEY
+    api_secret = os.getenv("BINANCE_API_SECRET", "") or config.BINANCE_SECRET_KEY
+    
+    if not api_key:
+        return False, "BINANCE_API_KEY fehlt - Live-Trading nicht möglich"
+    
+    if not api_secret:
+        return False, "BINANCE_API_SECRET fehlt - Live-Trading nicht möglich"
+    
+    # Validiere Länge (Binance API Keys sind typischerweise 64 Zeichen)
+    if len(api_key) < 10:
+        return False, "BINANCE_API_KEY erscheint ungültig (zu kurz) - Live-Trading nicht möglich"
+    
+    if len(api_secret) < 10:
+        return False, "BINANCE_API_SECRET erscheint ungültig (zu kurz) - Live-Trading nicht möglich"
+    
+    return True, "API-Keys validiert und bereit für Live-Trading"
 
 
 class LiveTradingBotWithDashboard:
@@ -54,6 +81,54 @@ class LiveTradingBotWithDashboard:
         )
         self.dashboard_modal = DashboardModal(self.dashboard)
         logger.info("✓ Dashboard initialized")
+        
+        # Validiere API-Keys vor Live-Trading Start
+        is_dry_run = os.getenv('DRY_RUN', 'true').lower() == 'true'
+        
+        if not is_dry_run:
+            # Live-Trading mit echtem Geld - API-Keys MÜSSEN gültig sein
+            logger.info("\n⚠️  LIVE-TRADING MODUS ERKANNT - Validiere API-Keys...")
+            api_valid, api_msg = validate_api_keys_for_live_trading()
+            
+            if not api_valid:
+                logger.critical("=" * 70)
+                logger.critical("🚨 API-KEY VALIDIERUNG FEHLGESCHLAGEN! 🚨")
+                logger.critical("=" * 70)
+                logger.critical(api_msg)
+                logger.critical("Live-Trading kann NICHT gestartet werden!")
+                logger.critical("Bitte konfiguriere gültige API-Keys oder aktiviere DRY_RUN=true")
+                logger.critical("=" * 70)
+                # Display warning on dashboard
+                self.dashboard.display_api_key_warning(
+                    f"🚨 KRITISCHER FEHLER: {api_msg}\n"
+                    f"Live-Trading kann nicht gestartet werden!\n"
+                    f"Bitte konfiguriere gültige API-Keys oder aktiviere DRY_RUN=true"
+                )
+                raise Exception(f"API-Key Validierung fehlgeschlagen: {api_msg}")
+            
+            logger.info(f"✅ {api_msg}")
+            logger.warning("⚠️  ACHTUNG: Live-Trading mit echtem Geld aktiviert!")
+        else:
+            # DRY_RUN aktiviert - Warnung aber kein Abbruch
+            logger.info("\n📊 DRY_RUN Modus aktiviert - API-Keys werden geprüft...")
+            api_valid, api_msg = validate_api_keys_for_live_trading()
+            
+            if not api_valid:
+                logger.warning("=" * 70)
+                logger.warning("⚠️  API-KEY WARNUNG")
+                logger.warning("=" * 70)
+                logger.warning(api_msg)
+                logger.warning("DRY_RUN ist aktiviert - Trading läuft weiter im Simulationsmodus")
+                logger.warning("Für Live-Trading müssen gültige API-Keys konfiguriert werden")
+                logger.warning("=" * 70)
+                # Display warning on dashboard
+                self.dashboard.display_api_key_warning(
+                    f"{api_msg}\n"
+                    f"DRY_RUN ist aktiviert - Trading läuft im Simulationsmodus\n"
+                    f"Für Live-Trading müssen gültige API-Keys konfiguriert werden"
+                )
+            else:
+                logger.info(f"✅ {api_msg}")
         
         # Trading State
         self.current_position = 0  # 0=keine Position, 1=long, -1=short
