@@ -9,6 +9,11 @@ env/
 ENV/
 .venv
 
+# Git installation directory (should not be in repo)
+Git/
+*.exe
+*.dll
+
 # Logs
 logs/
 *.log
