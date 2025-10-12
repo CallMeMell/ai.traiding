@@ -47,6 +47,12 @@ class TradingConfig:
     max_daily_loss: float = 0.05  # 5% maximaler Tagesverlust
     max_drawdown_limit: float = 0.20  # 20% maximaler Drawdown - Circuit Breaker
     
+    # Kelly Criterion Position Sizing
+    enable_kelly_criterion: bool = False  # Kelly Criterion für Positionsgrößen
+    kelly_fraction: float = 0.5  # Fraktionaler Kelly (0.5 = Half Kelly, konservativ)
+    kelly_max_position_pct: float = 0.25  # Max 25% des Kapitals pro Position
+    kelly_lookback_trades: int = 20  # Anzahl vergangener Trades für Berechnung
+    
     # Stop-Loss & Take-Profit
     enable_stop_loss: bool = True
     stop_loss_percent: float = 10.0
@@ -179,6 +185,14 @@ class TradingConfig:
         
         if self.max_drawdown_limit <= 0 or self.max_drawdown_limit > 1:
             return False, "max_drawdown_limit muss zwischen 0 und 1 liegen"
+        
+        if self.enable_kelly_criterion:
+            if self.kelly_fraction <= 0 or self.kelly_fraction > 1:
+                return False, "kelly_fraction muss zwischen 0 und 1 liegen"
+            if self.kelly_max_position_pct <= 0 or self.kelly_max_position_pct > 1:
+                return False, "kelly_max_position_pct muss zwischen 0 und 1 liegen"
+            if self.kelly_lookback_trades < 5:
+                return False, "kelly_lookback_trades muss mindestens 5 sein"
         
         return True, None
     
