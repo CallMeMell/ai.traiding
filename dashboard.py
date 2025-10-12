@@ -644,7 +644,7 @@ if FLASK_AVAILABLE:
         Returns:
             Task ID
         """
-        global _active_tasks, _task_id_counter
+        global _task_id_counter
         _task_id_counter += 1
         
         task = {
@@ -671,7 +671,6 @@ if FLASK_AVAILABLE:
             status: Task status (running, completed, failed)
             details: Updated details
         """
-        global _active_tasks
         for task in _active_tasks:
             if task['id'] == task_id:
                 if progress is not None:
