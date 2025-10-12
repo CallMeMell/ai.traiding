@@ -102,7 +102,9 @@ def test_utils():
             validate_ohlcv_data,
             calculate_performance_metrics,
             format_currency,
-            format_percentage
+            format_percentage,
+            calculate_kelly_criterion,
+            calculate_kelly_position_size
         )
         
         # Sample Data
@@ -129,6 +131,15 @@ def test_utils():
         # Formatting
         print(f"  ✅ format_currency: {format_currency(1234.56)}")
         print(f"  ✅ format_percentage: {format_percentage(12.34)}")
+        
+        # Kelly Criterion
+        kelly = calculate_kelly_criterion(win_rate=0.6, avg_win=150, avg_loss=100)
+        print(f"  ✅ calculate_kelly_criterion: {kelly:.2%}")
+        
+        position = calculate_kelly_position_size(
+            capital=10000, win_rate=0.6, avg_win=150, avg_loss=100
+        )
+        print(f"  ✅ calculate_kelly_position_size: ${position:.2f}")
         
         return True
     except Exception as e:

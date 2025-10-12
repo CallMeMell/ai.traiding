@@ -10,6 +10,9 @@ from datetime import datetime
 from typing import Optional
 import pandas as pd
 
+# Module-level logger
+logger = logging.getLogger(__name__)
+
 
 def setup_logging(
     log_level: str = "INFO",
@@ -346,6 +349,126 @@ def calculate_profit_factor(trades: list) -> float:
         return float('inf') if gross_profit > 0 else 0.0
     
     return gross_profit / gross_loss
+
+
+def calculate_kelly_criterion(win_rate: float, avg_win: float, avg_loss: float, 
+                              kelly_fraction: float = 1.0) -> float:
+    """
+    Berechne optimale Positionsgröße nach Kelly Criterion
+    
+    Das Kelly Criterion maximiert das geometrische Wachstum des Kapitals langfristig.
+    Formel: f* = (p * b - q) / b
+    wobei:
+    - p = Gewinnwahrscheinlichkeit (win_rate)
+    - q = Verlustwahrscheinlichkeit (1 - win_rate)
+    - b = Verhältnis von durchschnittlichem Gewinn zu durchschnittlichem Verlust
+    
+    Args:
+        win_rate: Gewinnwahrscheinlichkeit (0.0 bis 1.0, z.B. 0.55 für 55%)
+        avg_win: Durchschnittlicher Gewinn pro Trade (absolut, z.B. 100)
+        avg_loss: Durchschnittlicher Verlust pro Trade (positiv, z.B. 50)
+        kelly_fraction: Fraktionaler Kelly (0.0 bis 1.0, Standard 1.0)
+                       Werte < 1.0 sind konservativer (z.B. 0.5 für "Half Kelly")
+    
+    Returns:
+        Optimale Positionsgröße als Bruchteil des Kapitals (0.0 bis 1.0)
+        Bei negativem Kelly wird 0.0 zurückgegeben (kein Trade)
+    
+    Example:
+        >>> # 60% Gewinnrate, avg_win=150, avg_loss=100
+        >>> kelly = calculate_kelly_criterion(0.6, 150, 100)
+        >>> print(f"Kelly empfiehlt: {kelly*100:.2f}% des Kapitals")
+        Kelly empfiehlt: 30.00% des Kapitals
+    """
+    # Validierung
+    if win_rate < 0 or win_rate > 1:
+        logger.warning(f"Ungültige win_rate: {win_rate}. Muss zwischen 0 und 1 liegen.")
+        return 0.0
+    
+    if avg_win <= 0:
+        logger.warning(f"Ungültiger avg_win: {avg_win}. Muss positiv sein.")
+        return 0.0
+    
+    if avg_loss <= 0:
+        logger.warning(f"Ungültiger avg_loss: {avg_loss}. Muss positiv sein.")
+        return 0.0
+    
+    if kelly_fraction <= 0 or kelly_fraction > 1:
+        logger.warning(f"Ungültiger kelly_fraction: {kelly_fraction}. Muss zwischen 0 und 1 liegen.")
+        kelly_fraction = 1.0
+    
+    # Berechne Kelly Criterion
+    # q = Verlustwahrscheinlichkeit
+    loss_rate = 1.0 - win_rate
+    
+    # b = Verhältnis Gewinn/Verlust (Win/Loss Ratio)
+    win_loss_ratio = avg_win / avg_loss
+    
+    # Kelly Formel: f* = (p * b - q) / b
+    # Alternative Schreibweise: f* = p - (q / b)
+    kelly_percentage = (win_rate * win_loss_ratio - loss_rate) / win_loss_ratio
+    
+    # Anwende Kelly-Fraktion (z.B. Half Kelly = 0.5)
+    kelly_percentage *= kelly_fraction
+    
+    # Begrenze auf [0, 1] - negative Kelly bedeutet "kein Trade"
+    kelly_percentage = max(0.0, min(1.0, kelly_percentage))
+    
+    logger.debug(
+        f"Kelly Criterion: win_rate={win_rate:.2%}, "
+        f"win/loss_ratio={win_loss_ratio:.2f}, "
+        f"kelly={kelly_percentage:.2%} (fraction={kelly_fraction})"
+    )
+    
+    return kelly_percentage
+
+
+def calculate_kelly_position_size(capital: float, win_rate: float, 
+                                  avg_win: float, avg_loss: float,
+                                  kelly_fraction: float = 0.5,
+                                  max_position_pct: float = 0.25) -> float:
+    """
+    Berechne konkrete Positionsgröße basierend auf Kelly Criterion
+    
+    Diese Funktion kombiniert Kelly Criterion mit praktischen Risikogrenzen.
+    Standardmäßig wird "Half Kelly" (50%) verwendet, was konservativer ist.
+    
+    Args:
+        capital: Verfügbares Kapital
+        win_rate: Gewinnwahrscheinlichkeit (0.0 bis 1.0)
+        avg_win: Durchschnittlicher Gewinn pro Trade
+        avg_loss: Durchschnittlicher Verlust pro Trade (positiv)
+        kelly_fraction: Fraktionaler Kelly (Standard 0.5 für Half Kelly)
+        max_position_pct: Maximale Positionsgröße in Prozent (Standard 0.25 = 25%)
+    
+    Returns:
+        Positionsgröße in Währungseinheiten (z.B. USD)
+    
+    Example:
+        >>> # Kapital: 10000, Win-Rate: 60%, Avg Win: 150, Avg Loss: 100
+        >>> position = calculate_kelly_position_size(10000, 0.6, 150, 100)
+        >>> print(f"Positionsgröße: ${position:.2f}")
+        Positionsgröße: $1500.00
+    """
+    if capital <= 0:
+        logger.warning(f"Ungültiges capital: {capital}. Muss positiv sein.")
+        return 0.0
+    
+    # Berechne Kelly-Prozentsatz
+    kelly_pct = calculate_kelly_criterion(win_rate, avg_win, avg_loss, kelly_fraction)
+    
+    # Begrenze auf Maximum
+    kelly_pct = min(kelly_pct, max_position_pct)
+    
+    # Berechne Positionsgröße
+    position_size = capital * kelly_pct
+    
+    logger.info(
+        f"Kelly Position Size: capital=${capital:.2f}, "
+        f"kelly={kelly_pct:.2%}, position=${position_size:.2f}"
+    )
+    
+    return position_size
 
 
 def calculate_performance_metrics(trades: list, equity_curve: list = None, initial_capital: float = 10000.0) -> dict:

@@ -248,7 +248,8 @@ class LSOBStrategy(BaseStrategy):
             return 0
     
     def calculate_position_size(self, capital: float, current_price: float,
-                               atr: float) -> float:
+                               atr: float, use_kelly: bool = False,
+                               trade_history: list = None) -> float:
         """
         Calculate position size based on risk management
         
@@ -256,27 +257,80 @@ class LSOBStrategy(BaseStrategy):
             capital: Available capital
             current_price: Current asset price
             atr: Current ATR value
+            use_kelly: Use Kelly Criterion for position sizing (default: False)
+            trade_history: List of past trades for Kelly calculation (optional)
         
         Returns:
             Position size (number of shares/contracts)
         """
-        # Risk 1% of capital per trade
-        risk_amount = capital * 0.01
+        # Default: Risk 1% of capital per trade (ATR-based method)
+        if not use_kelly or trade_history is None or len(trade_history) < 10:
+            # Standard ATR-based position sizing
+            risk_amount = capital * 0.01
+            
+            # Stop loss distance
+            stop_loss_distance = atr * self.stop_loss_atr_mult
+            
+            if stop_loss_distance == 0:
+                return 0
+            
+            # Position size = Risk Amount / Stop Loss Distance
+            position_size = risk_amount / stop_loss_distance
+            
+            # Ensure we can afford the position
+            max_shares = capital / current_price
+            position_size = min(position_size, max_shares * 0.5)  # Max 50% of capital
+            
+            return max(1, int(position_size))
         
-        # Stop loss distance
-        stop_loss_distance = atr * self.stop_loss_atr_mult
-        
-        if stop_loss_distance == 0:
-            return 0
-        
-        # Position size = Risk Amount / Stop Loss Distance
-        position_size = risk_amount / stop_loss_distance
-        
-        # Ensure we can afford the position
-        max_shares = capital / current_price
-        position_size = min(position_size, max_shares * 0.5)  # Max 50% of capital
-        
-        return max(1, int(position_size))
+        # Kelly Criterion position sizing
+        try:
+            from utils import calculate_kelly_position_size
+            from config import config
+            
+            # Calculate statistics from trade history
+            pnls = [float(t.get('pnl', 0)) for t in trade_history[-config.kelly_lookback_trades:] 
+                   if t.get('pnl', '0') != '0.00']
+            
+            if not pnls or len(pnls) < 5:
+                # Fall back to standard method if not enough data
+                logger.debug("Insufficient trade history for Kelly, using standard sizing")
+                return self.calculate_position_size(capital, current_price, atr, 
+                                                   use_kelly=False, trade_history=None)
+            
+            # Calculate win rate and average win/loss
+            wins = [p for p in pnls if p > 0]
+            losses = [abs(p) for p in pnls if p < 0]
+            
+            win_rate = len(wins) / len(pnls) if pnls else 0
+            avg_win = sum(wins) / len(wins) if wins else 1
+            avg_loss = sum(losses) / len(losses) if losses else 1
+            
+            # Calculate Kelly position size
+            kelly_position_value = calculate_kelly_position_size(
+                capital=capital,
+                win_rate=win_rate,
+                avg_win=avg_win,
+                avg_loss=avg_loss,
+                kelly_fraction=config.kelly_fraction,
+                max_position_pct=config.kelly_max_position_pct
+            )
+            
+            # Convert to number of shares
+            kelly_shares = kelly_position_value / current_price if current_price > 0 else 0
+            
+            logger.info(
+                f"Kelly sizing: win_rate={win_rate:.2%}, "
+                f"avg_win=${avg_win:.2f}, avg_loss=${avg_loss:.2f}, "
+                f"position=${kelly_position_value:.2f} ({kelly_shares:.2f} shares)"
+            )
+            
+            return max(1, int(kelly_shares))
+            
+        except Exception as e:
+            logger.warning(f"Kelly calculation failed: {e}, using standard sizing")
+            return self.calculate_position_size(capital, current_price, atr, 
+                                               use_kelly=False, trade_history=None)
     
     def calculate_stop_loss(self, entry_price: float, atr: float, side: str) -> float:
         """
