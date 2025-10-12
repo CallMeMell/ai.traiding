@@ -1,6 +1,4 @@
----
-title: Fehler im CI-Workflow: "undefined name 'os'" beim Zugriff auf Umgebungsvariable
----
+# Fehler im CI-Workflow: "undefined name 'os'" beim Zugriff auf Umgebungsvariable
 
 **Beschreibung:**
 Im CI-Workflow tritt folgender Fehler auf:
