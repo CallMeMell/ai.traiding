@@ -1,8 +1,7 @@
----
-title: Fehler im CI-Workflow: "undefined name 'os'" beim Zugriff auf Umgebungsvariable
----
+# Fehler im CI-Workflow: "undefined name 'os'" beim Zugriff auf Umgebungsvariable
 
-**Beschreibung:**
+## Beschreibung
+
 Im CI-Workflow tritt folgender Fehler auf:
 ```
 self.is_dry_run = os.getenv('DRY_RUN', 'true').lower() == 'true'
@@ -10,7 +9,8 @@ F821 undefined name 'os'
 ```
 Das Modul `os` wird verwendet, aber nicht importiert. Dadurch schlägt der Build fehl.
 
-**Lösungsvorschlag:**
+## Lösungsvorschlag
+
 Füge am Anfang der betroffenen Python-Datei folgende Zeile hinzu:
 ```python
 import os
