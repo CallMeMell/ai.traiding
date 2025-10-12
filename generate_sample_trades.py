@@ -65,22 +65,35 @@ def generate_sample_trades(filename="data/trades.csv", num_trades=50):
             position_price = None
             position_quantity = None
         
+        # Randomly assign some trades as real money (20% chance for demo purposes)
+        is_real_money = random.random() < 0.2
+        
+        # Calculate metrics for this trade (simplified for demo)
+        # In real implementation, these would be calculated from all previous trades
+        current_profit_factor = abs(current_capital / initial_capital) if initial_capital > 0 else 1.0
+        current_win_rate = 0.0
+        current_sharpe_ratio = 0.0
+        
         trade = {
             'timestamp': timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'symbol': 'BTC/USDT',
             'order_type': order_type,
             'price': f'{current_price:.2f}',
             'quantity': f'{quantity:.6f}',
             'pnl': f'{pnl:.2f}',
             'capital': f'{current_capital:.2f}',
             'triggering_strategies': triggering_strategies,
-            'strategy_signals': 'test_signals'
+            'is_real_money': is_real_money,
+            'profit_factor': f'{current_profit_factor:.2f}',
+            'win_rate': f'{current_win_rate:.2f}',
+            'sharpe_ratio': f'{current_sharpe_ratio:.2f}'
         }
         
         trades.append(trade)
     
     # Write to CSV
-    fieldnames = ['timestamp', 'order_type', 'price', 'quantity', 'pnl', 'capital', 
-                  'triggering_strategies', 'strategy_signals']
+    fieldnames = ['timestamp', 'symbol', 'order_type', 'price', 'quantity', 'triggering_strategies',
+                  'capital', 'pnl', 'is_real_money', 'profit_factor', 'win_rate', 'sharpe_ratio']
     
     with open(filename, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

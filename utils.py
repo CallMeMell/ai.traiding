@@ -506,14 +506,17 @@ class TradeLogger:
             
             df = pd.DataFrame(columns=[
                 'timestamp', 'symbol', 'order_type', 'price',
-                'quantity', 'triggering_strategies', 'capital', 'pnl'
+                'quantity', 'triggering_strategies', 'capital', 'pnl',
+                'is_real_money', 'profit_factor', 'win_rate', 'sharpe_ratio'
             ])
             df.to_csv(self.filepath, index=False, encoding='utf-8')
             logging.info(f"✓ Trade-Log erstellt: {self.filepath}")
     
     def log_trade(self, order_type: str, price: float, quantity: float,
                   strategies: list, capital: float, pnl: float = 0.0,
-                  symbol: str = "BTC/USDT"):
+                  symbol: str = "BTC/USDT", is_real_money: bool = False,
+                  profit_factor: float = 0.0, win_rate: float = 0.0,
+                  sharpe_ratio: float = 0.0):
         """
         Protokolliere Trade
         
@@ -525,6 +528,10 @@ class TradeLogger:
             capital: Aktuelles Kapital
             pnl: Profit/Loss
             symbol: Trading-Symbol
+            is_real_money: Flag ob Echtgeld-Trade (default: False für Sicherheit)
+            profit_factor: Profit Factor Metrik
+            win_rate: Win Rate Metrik (in Prozent)
+            sharpe_ratio: Sharpe Ratio Metrik
         """
         trade = {
             'timestamp': datetime.now().isoformat(),
@@ -534,14 +541,20 @@ class TradeLogger:
             'quantity': quantity,
             'triggering_strategies': ', '.join(strategies),
             'capital': f"{capital:.2f}",
-            'pnl': f"{pnl:.2f}"
+            'pnl': f"{pnl:.2f}",
+            'is_real_money': is_real_money,
+            'profit_factor': f"{profit_factor:.2f}",
+            'win_rate': f"{win_rate:.2f}",
+            'sharpe_ratio': f"{sharpe_ratio:.2f}"
         }
         
         # Append to CSV
         df = pd.DataFrame([trade])
         df.to_csv(self.filepath, mode='a', header=False, index=False, encoding='utf-8')
         
-        logging.info(f"✓ Trade protokolliert: {order_type} @ ${price:.2f}")
+        # Logging mit Echtgeld-Flag
+        real_money_indicator = "💰 ECHTGELD" if is_real_money else "🧪 DRY-RUN"
+        logging.info(f"✓ Trade protokolliert: {real_money_indicator} {order_type} @ ${price:.2f}")
     
     def get_all_trades(self) -> list:
         """Hole alle Trades"""
