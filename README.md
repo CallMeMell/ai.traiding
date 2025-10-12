@@ -751,6 +751,7 @@ daily_loss_limit: 0.01       # 1% maximaler Tagesverlust
 max_open_exposure: 0.05      # 5% maximales offenes Exposure
 allowed_order_types: LIMIT_ONLY  # Nur Limit-Orders (sicherer)
 max_slippage: 0.003          # 0.3% maximales Slippage
+max_drawdown_limit: 0.20     # 20% Circuit Breaker (stoppt Trading automatisch)
 ```
 
 **Empfohlene Anfangs-Einstellungen:**
@@ -758,6 +759,7 @@ max_slippage: 0.003          # 0.3% maximales Slippage
 - **Order Types**: `LIMIT_ONLY` (sicherer, weniger Slippage)
 - **Risk per Trade**: `0.005` (0.5%) oder weniger
 - **Daily Loss Limit**: `0.01` (1%) als Circuit-Breaker
+- **Drawdown Limit**: `0.20` (20%) - stoppt automatisch bei größerem Verlust
 
 #### 🚀 Schritt 3: Live-Trading starten
 

@@ -195,6 +195,38 @@ def calculate_max_drawdown(equity_curve: list) -> tuple:
     return max_dd_percent, max_dd_value, peak_value, trough_value
 
 
+def calculate_current_drawdown(equity_curve: list) -> float:
+    """
+    Berechne aktuellen Drawdown (vom Peak bis zum letzten Wert)
+    
+    Args:
+        equity_curve: Liste von Kapitalwerten
+    
+    Returns:
+        Current drawdown in Prozent (negative Zahl)
+    """
+    import numpy as np
+    
+    if not equity_curve or len(equity_curve) < 1:
+        return 0.0
+    
+    equity_array = np.array(equity_curve)
+    
+    # Finde das Maximum bis jetzt
+    peak_value = np.max(equity_array)
+    
+    # Aktueller Wert
+    current_value = equity_array[-1]
+    
+    # Berechne aktuellen Drawdown
+    if peak_value == 0:
+        return 0.0
+    
+    current_drawdown = ((current_value - peak_value) / peak_value) * 100
+    
+    return current_drawdown
+
+
 def calculate_calmar_ratio(total_return: float, max_drawdown_percent: float) -> float:
     """
     Berechne Calmar Ratio (Return / Max Drawdown)

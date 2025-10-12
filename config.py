@@ -45,6 +45,7 @@ class TradingConfig:
     max_positions: int = 10
     risk_per_trade: float = 0.02  # 2% pro Trade
     max_daily_loss: float = 0.05  # 5% maximaler Tagesverlust
+    max_drawdown_limit: float = 0.20  # 20% maximaler Drawdown - Circuit Breaker
     
     # Stop-Loss & Take-Profit
     enable_stop_loss: bool = True
@@ -175,6 +176,9 @@ class TradingConfig:
         
         if self.enable_stop_loss and (self.stop_loss_percent <= 0 or self.stop_loss_percent > 50):
             return False, "stop_loss_percent muss zwischen 0 und 50 liegen"
+        
+        if self.max_drawdown_limit <= 0 or self.max_drawdown_limit > 1:
+            return False, "max_drawdown_limit muss zwischen 0 und 1 liegen"
         
         return True, None
     

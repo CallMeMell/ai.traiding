@@ -10,6 +10,7 @@
 - [Prerequisites](#prerequisites)
 - [Security Model](#security-model)
 - [Step-by-Step Setup](#step-by-step-setup)
+- [Circuit Breaker (Drawdown-Limit)](#-circuit-breaker-drawdown-limit)
 - [File Structure](#file-structure)
 - [Scripts Reference](#scripts-reference)
 - [Troubleshooting](#troubleshooting)
@@ -201,6 +202,7 @@ daily_loss_limit: 0.01
 max_open_exposure: 0.05
 allowed_order_types: LIMIT_ONLY
 max_slippage: 0.003
+max_drawdown_limit: 0.20
 ```
 
 **Recommended Starter Settings:**
@@ -208,6 +210,7 @@ max_slippage: 0.003
 - **Order Types**: `LIMIT_ONLY` (safer, less slippage risk)
 - **Risk Per Trade**: `0.005` or lower (0.5%)
 - **Daily Loss**: `0.01` as circuit breaker (1%)
+- **Drawdown Limit**: `0.20` (20%) - automatic stop on large losses
 
 ### Step 5: Start Live Trading
 
@@ -253,6 +256,74 @@ Open View Session dashboard in a separate terminal/tab:
 ```
 
 Visit: `http://localhost:8501`
+
+---
+
+## 🚨 Circuit Breaker (Drawdown-Limit)
+
+### What is the Circuit Breaker?
+
+The Circuit Breaker is an automatic safety mechanism that **stops trading immediately** when losses exceed a configured threshold. This prevents catastrophic losses during adverse market conditions or strategy failures.
+
+### How it Works
+
+1. **Tracks Equity Curve**: Monitors your account balance in real-time
+2. **Calculates Drawdown**: Measures the percentage drop from the highest account value
+3. **Triggers on Limit**: Stops all trading when drawdown exceeds `max_drawdown_limit`
+4. **Logs Critical Event**: Records the event with detailed metrics
+5. **Prevents New Orders**: No new trades will be executed after trigger
+
+### Configuration
+
+In `config/live_risk.yaml`:
+
+```yaml
+# Maximum drawdown limit (as decimal, e.g., 0.20 = 20%)
+# Circuit breaker: Trading stops automatically if drawdown exceeds this limit
+# Only active in production mode (not DRY_RUN)
+max_drawdown_limit: 0.20
+```
+
+**Recommended Settings:**
+- **Conservative**: `0.10` (10% max drawdown)
+- **Moderate**: `0.20` (20% max drawdown) - **DEFAULT**
+- **Aggressive**: `0.30` (30% max drawdown)
+
+### Important Notes
+
+⚠️ **Production Mode Only**: Circuit Breaker is **ONLY active** when `DRY_RUN=false`. This is by design to protect real money.
+
+✅ **Automatic Shutdown**: When triggered, the trading bot will:
+- Stop accepting new signals
+- Log critical messages to console and log file
+- Display final report with drawdown statistics
+- Exit gracefully
+
+### Example Log Output
+
+When Circuit Breaker triggers:
+
+```
+======================================================================
+🚨 CIRCUIT BREAKER AUSGELÖST! 🚨
+======================================================================
+Aktueller Drawdown: -22.50%
+Drawdown-Limit: 20.00%
+Initial Capital: $10,000.00
+Current Capital: $7,750.00
+Verlust: $-2,250.00
+Trading wird SOFORT gestoppt!
+======================================================================
+```
+
+### Testing Circuit Breaker
+
+To test without risking money:
+
+1. Set `DRY_RUN=false` temporarily in test environment
+2. Use testnet API keys
+3. Set low `max_drawdown_limit` (e.g., 0.05 = 5%)
+4. Monitor logs for circuit breaker messages
 
 ---
 
