@@ -77,6 +77,13 @@ class TradingConfig:
             "short_window": 9,
             "long_window": 21
         },
+        "video_based": {
+            "ma_short": 10,
+            "ma_long": 50,
+            "rsi_period": 14,
+            "rsi_oversold": 30,
+            "rsi_overbought": 70
+        },
         "lsob": {
             "bb_window": 20,
             "bb_std": 2.0,

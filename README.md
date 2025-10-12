@@ -58,12 +58,13 @@ MASTER_VERSION/
 - **Legacy Support**: Alpaca API still available
 
 ### ✅ Multi-Strategy System
-- **5 professionelle Strategien:**
+- **6+ professionelle Strategien:**
   - **MA Crossover**: Trend-Following mit Moving Averages (mittel- bis langfristig)
   - **RSI Mean Reversion**: Überverkauft/Überkauft Strategie (Seitwärtsmärkte)
   - **Bollinger Bands**: Volatilitäts-Breakout Strategie
   - **EMA Crossover**: Schnelle Trend-Strategie für Daytrading
   - **LSOB (Long-Short On Breakout)**: Advanced volatility breakout strategy
+  - **Video-Based Strategy**: Enhanced base framework for implementing strategies from tutorials/videos
 
 ### ✅ Signal-Aggregation
 - **AND Logic**: Konservativ - Alle Strategien müssen zustimmen
@@ -148,6 +149,17 @@ MASTER_VERSION/
 - **Log-Rotation**: Automatische Archivierung alter Log-Dateien mit Kompression
 - **PII-Maskierung**: Schutz sensibler Daten (E-Mails, API-Keys, Passwörter, Telefonnummern)
 - **Integritätsprüfung**: Checksum-basierte Verifizierung aller Archive
+
+### ✅ Enhanced Base Strategy Framework 🆕
+- **Video-Based Strategy Support**: Framework zum Implementieren von Strategien aus YouTube-Videos und Tutorials
+- **Multi-Timeframe Analysis**: Unterstützung für mehrere Zeitrahmen-Datenfeeds
+- **State Management**: Persistente Zustandsspeicherung und -wiederherstellung
+- **Performance Tracking**: Automatische Metriken für Execution Time, Signale, Win Rate
+- **Position Lifecycle**: Callbacks für Position-Events (Öffnen/Schließen)
+- **Confidence Scoring**: Bewertung der Signal-Qualität (0-1)
+- **Exchange Connection Utilities**: Vorbereitung für erweiterte Exchange-Integration
+
+📖 **[Read the Base Strategy Guide](docs/BASE_STRATEGY_GUIDE.md)** für vollständige Dokumentation und Implementierungsbeispiele.
 - **Konfigurierbare Retention**: Anpassbare Aufbewahrungsfristen (Standard: 30 Tage)
 - **Automatische Kompression**: Gzip-Kompression für Platzersparnis
 - **Metadata-Tracking**: Vollständige Nachverfolgbarkeit archivierter Dateien
@@ -1313,6 +1325,51 @@ STRATEGY_MAP = {
 ```python
 active_strategies: list = ["my_custom"]
 ```
+
+### Neue Strategie mit Enhanced Base Framework (Video-basiert)
+
+Für komplexere Strategien aus YouTube-Videos oder Tutorials verwende das Enhanced Base Framework:
+
+1. Erstelle neue Klasse mit `EnhancedBaseStrategy`:
+```python
+from base_strategy import EnhancedBaseStrategy
+
+class MyVideoStrategy(EnhancedBaseStrategy):
+    def __init__(self, params: Dict[str, Any]):
+        super().__init__("MyVideoStrategy", params)
+        # Deine Parameter
+        self.indicator1 = params.get('indicator1', 14)
+        self.indicator2 = params.get('indicator2', 20)
+    
+    def generate_signal(self, df: pd.DataFrame) -> int:
+        if not self.validate_data(df):
+            return 0
+        
+        # Implementiere Video-Strategie-Logik
+        # ... berechne Indikatoren
+        # ... generiere Signal
+        
+        return 0  # 1=BUY, 0=HOLD, -1=SELL
+```
+
+2. Nutze erweiterte Features:
+```python
+# Multi-Timeframe Analysis
+strategy.add_data_feed('BTC/USDT', '1h', df_1h)
+strategy.add_data_feed('BTC/USDT', '4h', df_4h)
+
+# Signal mit Kontext
+signal, context = strategy.generate_signal_with_context(df)
+print(f"Confidence: {context['confidence']}")
+
+# State Management
+strategy.update_state(custom_value=42)
+strategy.export_state('data/strategy_state.json')
+```
+
+3. Registriere und aktiviere wie normale Strategie
+
+📖 **[Vollständige Dokumentation](docs/BASE_STRATEGY_GUIDE.md)** mit Beispielen und Best Practices
 
 ---
 
