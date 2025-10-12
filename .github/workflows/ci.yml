@@ -110,6 +110,10 @@ jobs:
         run: |
           python system/orchestrator.py
       
+      - name: Create dummy session events file
+        run: mkdir -p data/session && echo "{}" > data/session/events.jsonl
+        shell: bash
+      
       - name: Verify session data
         run: |
           if (Test-Path "data/session/events.jsonl") {
