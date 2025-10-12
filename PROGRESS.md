@@ -315,3 +315,44 @@ streamlit run tools/view_session_app.py
 3. Beide Issues: Regelmäßig dieses Dokument aktualisieren
 
 **Refs #42 #44**
+
+---
+
+## 📝 Backlog & Offene Issues (aus SCHLUSS.md)
+
+**Status:** Dokumentiert in SCHLUSS.md (2025-10-10)
+
+### Hohe Priorität
+
+1. **SLO/Monitoring System** (Step 10 vervollständigen)
+   - Aufwand: M (5-8h)
+   - `system/monitoring/` Modul implementieren
+
+2. **Issue #44 vervollständigen** (Echtgeld-Automatisierung)
+   - Aufwand: L (12-16h)
+   - Telegram/Email Alerts, Emergency Stop, Testnet-Validierung
+
+3. **Performance Optimierung**
+   - Aufwand: M (8-12h)
+   - Caching, Database-Performance, Event Processing
+
+### Mittlere Priorität
+
+4. **Erweiterte Charts & Visualisierung** (Issue #42 Restarbeiten)
+5. **API Health Monitoring**
+6. **Dokumentations-Konsolidierung** (80+ MD Dateien reviewen)
+
+### Release-Vorbereitung
+
+**Version 1.1.0 Zieldatum:** 2025-10-20
+
+- [x] Alle Tests passing (44+ Tests)
+- [x] Dokumentation aktualisiert
+- [x] CHANGELOG.md vorbereitet
+- [ ] Beta-Testing (Testnet, 1 Woche)
+- [ ] Performance-Tests
+- [ ] Security Audit
+
+Vollständige Details siehe **SCHLUSS.md**
+
+**Refs SCHLUSS.md**
