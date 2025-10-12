@@ -44,7 +44,11 @@ class DashboardConfig:
         'best_trade',
         'worst_trade',
         'avg_pnl',
-        'current_capital'
+        'current_capital',
+        'profit_factor',
+        'sharpe_ratio',
+        'real_money_trades',
+        'dry_run_trades'
     ]
     
     DEFAULT_CHARTS = [
@@ -158,6 +162,22 @@ class VisualDashboard:
                 all_metrics['current_capital'] = 0.0
         else:
             all_metrics['current_capital'] = 0.0
+        
+        # Count real money vs dry run trades
+        real_money_count = 0
+        dry_run_count = 0
+        for trade in trades:
+            is_real = trade.get('is_real_money', False)
+            # Handle string representations of boolean
+            if isinstance(is_real, str):
+                is_real = is_real.lower() in ('true', '1', 'yes')
+            if is_real:
+                real_money_count += 1
+            else:
+                dry_run_count += 1
+        
+        all_metrics['real_money_trades'] = real_money_count
+        all_metrics['dry_run_trades'] = dry_run_count
         
         # Filter to only configured metrics
         return {k: v for k, v in all_metrics.items() if k in self.config.metrics}
@@ -400,11 +420,19 @@ class VisualDashboard:
         
         for key, value in metrics.items():
             label = key.replace('_', ' ').title()
-            if 'pnl' in key or 'trade' in key.lower():
+            
+            # Special formatting for specific metrics
+            if key in ('real_money_trades', 'dry_run_trades', 'total_trades'):
+                # Display as count
+                print(f"{label:.<30} {value}")
+            elif 'pnl' in key or 'capital' in key:
+                # Display as currency
                 print(f"{label:.<30} ${value:,.2f}")
-            elif 'rate' in key:
-                print(f"{label:.<30} {value:.2f}%")
+            elif 'rate' in key or 'ratio' in key or 'factor' in key:
+                # Display as number with 2 decimals
+                print(f"{label:.<30} {value:.2f}")
             else:
+                # Default display
                 print(f"{label:.<30} {value}")
         
         print("=" * 60)
@@ -485,15 +513,29 @@ class VisualDashboard:
         
         for key, value in metrics.items():
             label = key.replace('_', ' ').title()
-            if 'pnl' in key or 'trade' in key.lower():
+            
+            # Special formatting and styling
+            if key == 'real_money_trades':
+                formatted_value = f"💰 {value}"
+                card_style = 'border-left-color: #dc3545;'  # Red for real money
+            elif key == 'dry_run_trades':
+                formatted_value = f"🧪 {value}"
+                card_style = 'border-left-color: #28a745;'  # Green for dry run
+            elif key in ('total_trades',):
+                formatted_value = str(value)
+                card_style = ''
+            elif 'pnl' in key or 'capital' in key:
                 formatted_value = f"${value:,.2f}"
-            elif 'rate' in key:
-                formatted_value = f"{value:.2f}%"
+                card_style = ''
+            elif 'rate' in key or 'ratio' in key or 'factor' in key:
+                formatted_value = f"{value:.2f}"
+                card_style = ''
             else:
                 formatted_value = str(value)
+                card_style = ''
             
             html += f"""
-            <div class="metric-card">
+            <div class="metric-card" style="{card_style}">
                 <div class="metric-label">{label}</div>
                 <div class="metric-value">{formatted_value}</div>
             </div>
