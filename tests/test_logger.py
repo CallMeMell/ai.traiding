@@ -100,7 +100,31 @@ class TestConfigureLogging:
         """Create temporary log directory."""
         temp_dir = tempfile.mkdtemp()
         yield temp_dir
+        # Close all handlers before cleanup to avoid PermissionError on Windows
+        self._cleanup_logging_handlers()
         shutil.rmtree(temp_dir, ignore_errors=True)
+    
+    def _cleanup_logging_handlers(self):
+        """Close and remove all logging handlers."""
+        # Get root logger and all other loggers
+        loggers = [logging.getLogger()] + [
+            logging.getLogger(name) for name in logging.root.manager.loggerDict
+        ]
+        
+        for logger in loggers:
+            # Close and remove all handlers
+            for handler in logger.handlers[:]:  # Use slice to avoid modification during iteration
+                try:
+                    handler.close()
+                except Exception:
+                    pass  # Ignore errors during cleanup
+                try:
+                    logger.removeHandler(handler)
+                except Exception:
+                    pass  # Ignore errors during cleanup
+        
+        # Clear handler list completely
+        logging.getLogger().handlers.clear()
     
     def test_configure_logging_creates_directory(self, temp_log_dir):
         """Test logging configuration creates log directory."""
@@ -240,7 +264,31 @@ class TestLoggingIntegration:
         """Create temporary log directory."""
         temp_dir = tempfile.mkdtemp()
         yield temp_dir
+        # Close all handlers before cleanup to avoid PermissionError on Windows
+        self._cleanup_logging_handlers()
         shutil.rmtree(temp_dir, ignore_errors=True)
+    
+    def _cleanup_logging_handlers(self):
+        """Close and remove all logging handlers."""
+        # Get root logger and all other loggers
+        loggers = [logging.getLogger()] + [
+            logging.getLogger(name) for name in logging.root.manager.loggerDict
+        ]
+        
+        for logger in loggers:
+            # Close and remove all handlers
+            for handler in logger.handlers[:]:  # Use slice to avoid modification during iteration
+                try:
+                    handler.close()
+                except Exception:
+                    pass  # Ignore errors during cleanup
+                try:
+                    logger.removeHandler(handler)
+                except Exception:
+                    pass  # Ignore errors during cleanup
+        
+        # Clear handler list completely
+        logging.getLogger().handlers.clear()
     
     def test_multiple_loggers_write_to_same_file(self, temp_log_dir):
         """Test multiple loggers write to the same log file."""

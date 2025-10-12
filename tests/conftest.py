@@ -9,6 +9,7 @@ import os
 import sys
 import tempfile
 import shutil
+import logging
 from pathlib import Path
 
 # Add project root to path
@@ -92,3 +93,33 @@ def mock_adapter():
             return self.status == AdapterStatus.CONNECTED
     
     return MockAdapter(testnet=True)
+
+
+@pytest.fixture(autouse=True)
+def cleanup_logging():
+    """
+    Auto-use fixture to clean up logging handlers after each test.
+    
+    This prevents PermissionError on Windows when trying to delete
+    log files that are still open by FileHandler objects.
+    """
+    yield
+    
+    # Close and remove all logging handlers after each test
+    loggers = [logging.getLogger()] + [
+        logging.getLogger(name) for name in logging.root.manager.loggerDict
+    ]
+    
+    for logger in loggers:
+        for handler in logger.handlers[:]:  # Use slice to avoid modification during iteration
+            try:
+                handler.close()
+            except Exception:
+                pass  # Ignore errors during cleanup
+            try:
+                logger.removeHandler(handler)
+            except Exception:
+                pass  # Ignore errors during cleanup
+    
+    # Clear root logger handler list
+    logging.getLogger().handlers.clear()
