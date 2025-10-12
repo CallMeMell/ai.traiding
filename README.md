@@ -553,6 +553,13 @@ rmdir /s venv  # Windows
 
 ### 📚 Weitere Dokumentation
 
+**Projekt-Status & Planung:**
+- [REPOSITORY_ANALYSIS.md](REPOSITORY_ANALYSIS.md) - 📊 Vollständige Repository-Analyse mit Status, Gaps und Optimierungspotenzial
+- [EPIC_REPOSITORY_ANALYSIS_SUMMARY.md](EPIC_REPOSITORY_ANALYSIS_SUMMARY.md) - 🎯 Epic Summary mit empfohlenen Sub-Issues und Aktionsplan
+- [ROADMAP.md](ROADMAP.md) - 🗺️ Projekt-Roadmap und Milestones
+- [PROGRESS.md](PROGRESS.md) - 📊 Laufende Arbeiten und Issue-Tracking
+
+**Feature-Guides:**
 - [AUTOMATION_RUNNER_GUIDE.md](AUTOMATION_RUNNER_GUIDE.md) - Automation Runner Details
 - [VIEW_SESSION_GUIDE.md](VIEW_SESSION_GUIDE.md) - View Session Features
 - [VIEW_SESSION_STREAMLIT_GUIDE.md](VIEW_SESSION_STREAMLIT_GUIDE.md) - Streamlit Dashboard
