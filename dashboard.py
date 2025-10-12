@@ -671,7 +671,6 @@ if FLASK_AVAILABLE:
             status: Task status (running, completed, failed)
             details: Updated details
         """
-        global _active_tasks
         for task in _active_tasks:
             if task['id'] == task_id:
                 if progress is not None:
