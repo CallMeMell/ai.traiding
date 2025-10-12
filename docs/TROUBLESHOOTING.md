@@ -166,6 +166,11 @@ ValidationError: Event does not match schema
    .\venv\Scripts\python.exe -m pip install -r requirements.txt --upgrade
    ```
 
+4. **Windows-spezifische PermissionErrors in Tests:**
+   - Siehe `WINDOWS_PERMISSION_ERROR_FIX.md` für Details
+   - Siehe `CI_WINDOWS_FAILURES_ANALYSIS.md` für CI-Fehleranalyse
+   - Logging-Handler müssen vor Dateilöschung geschlossen werden
+
 ---
 
 ### 9. Nightly Job schlägt fehl
