@@ -383,12 +383,6 @@ Bei Fragen oder Problemen:
 2. Prüfe Session-Dateien: `data/session/`
 3. Öffne ein Issue auf GitHub
 
-## See Also
-
-- **[SLO_MONITOR_GUIDE.md](SLO_MONITOR_GUIDE.md)** - SLO Monitoring mit Error-Rate und Render-Time Überwachung
-- **[VIEW_SESSION_GUIDE.md](VIEW_SESSION_GUIDE.md)** - Live Monitoring Dashboard
-- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Testing und Validation
-
 ---
 
 **Version**: 1.0.0  
