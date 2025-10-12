@@ -644,7 +644,7 @@ if FLASK_AVAILABLE:
         Returns:
             Task ID
         """
-        global _active_tasks, _task_id_counter
+        global _task_id_counter
         _task_id_counter += 1
         
         task = {
@@ -690,6 +690,7 @@ if FLASK_AVAILABLE:
         Returns:
             List of active tasks
         """
+        global _active_tasks
         # Clean up old completed/failed tasks (older than 1 hour)
         current_time = datetime.now()
         cleaned_tasks = []
