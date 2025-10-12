@@ -39,7 +39,8 @@ class AutomationRunner:
                  strategy_phase_timeout: int = 7200,  # 2 hours
                  api_phase_timeout: int = 3600,  # 1 hour
                  heartbeat_interval: int = 30,  # 30 seconds
-                 enable_validation: bool = True):  # Validation enabled by default for strict schema compliance
+                 enable_validation: bool = True,  # Validation enabled by default for strict schema compliance
+                 max_drawdown_limit: float = 0.20):  # Circuit Breaker: 20% max drawdown
         """
         Initialize automation runner.
         
@@ -49,12 +50,14 @@ class AutomationRunner:
             api_phase_timeout: Timeout for API phase in seconds
             heartbeat_interval: Interval between heartbeats in seconds
             enable_validation: Enable schema validation for events and summaries
+            max_drawdown_limit: Maximum drawdown limit (0.20 = 20%) before circuit breaker triggers
         """
         self.data_phase_timeout = data_phase_timeout
         self.strategy_phase_timeout = strategy_phase_timeout
         self.api_phase_timeout = api_phase_timeout
         self.heartbeat_interval = heartbeat_interval
         self.enable_validation = enable_validation
+        self.max_drawdown_limit = max_drawdown_limit
         
         self.session_store = SessionStore()
         self.scheduler = PhaseScheduler(max_pause_minutes=10)
@@ -66,6 +69,11 @@ class AutomationRunner:
         self.heartbeat_thread = None
         self.stop_heartbeat = False
         
+        # Circuit Breaker tracking
+        self.equity_curve = []
+        self.circuit_breaker_triggered = False
+        self.is_dry_run = os.getenv('DRY_RUN', 'true').lower() == 'true'
+        
         # Load environment
         EnvHelper.load_dotenv_if_available()
         
@@ -74,6 +82,8 @@ class AutomationRunner:
         logger.info(f"Phase timeouts: data={data_phase_timeout}s, strategy={strategy_phase_timeout}s, api={api_phase_timeout}s")
         logger.info(f"Heartbeat interval: {heartbeat_interval}s")
         logger.info(f"Validation enabled: {enable_validation}")
+        logger.info(f"Circuit Breaker: {'AKTIV (Production)' if not self.is_dry_run else 'INAKTIV (DRY_RUN)'}")
+        logger.info(f"Drawdown-Limit: {max_drawdown_limit * 100:.1f}%")
     
     def _on_event(self, event: Dict[str, Any]) -> None:
         """
@@ -276,6 +286,72 @@ class AutomationRunner:
             message='Summary updated',
             details=partial
         )
+    
+    def check_circuit_breaker(self, current_equity: float) -> bool:
+        """
+        Prüfe Circuit Breaker (Drawdown-Limit)
+        
+        Args:
+            current_equity: Aktuelles Kapital
+            
+        Returns:
+            True wenn Circuit Breaker ausgelöst wurde
+        """
+        # Circuit Breaker nur im Production-Modus (nicht DRY_RUN)
+        if self.is_dry_run:
+            return False
+        
+        # Update equity curve
+        self.equity_curve.append(current_equity)
+        
+        if len(self.equity_curve) < 2:
+            return False
+        
+        # Berechne aktuellen Drawdown
+        import numpy as np
+        equity_array = np.array(self.equity_curve)
+        peak_value = np.max(equity_array)
+        current_value = equity_array[-1]
+        
+        if peak_value == 0:
+            return False
+        
+        current_drawdown = ((current_value - peak_value) / peak_value) * 100
+        drawdown_limit_percent = self.max_drawdown_limit * 100
+        
+        if current_drawdown < -drawdown_limit_percent:
+            self.circuit_breaker_triggered = True
+            
+            # Emit critical circuit breaker event
+            self.write_event(
+                event_type='circuit_breaker',
+                phase=self.current_phase,
+                level='critical',
+                message='Circuit Breaker ausgelöst! Drawdown-Limit überschritten',
+                status='triggered',
+                details={
+                    'current_drawdown_percent': current_drawdown,
+                    'drawdown_limit_percent': drawdown_limit_percent,
+                    'peak_value': float(peak_value),
+                    'current_value': float(current_value),
+                    'loss': float(current_value - peak_value)
+                }
+            )
+            
+            logger.critical("=" * 70)
+            logger.critical("🚨 CIRCUIT BREAKER AUSGELÖST! 🚨")
+            logger.critical("=" * 70)
+            logger.critical(f"Aktueller Drawdown: {current_drawdown:.2f}%")
+            logger.critical(f"Drawdown-Limit: {drawdown_limit_percent:.2f}%")
+            logger.critical(f"Peak Value: ${peak_value:,.2f}")
+            logger.critical(f"Current Value: ${current_value:,.2f}")
+            logger.critical(f"Verlust: ${current_value - peak_value:,.2f}")
+            logger.critical("Workflow wird SOFORT gestoppt!")
+            logger.critical("=" * 70)
+            
+            return True
+        
+        return False
     
     def _retry_with_backoff(self, func, max_retries: int = 3, base_delay: float = 1.0, 
                            max_delay: float = 30.0, operation_name: str = "operation") -> Any:
@@ -486,10 +562,17 @@ class AutomationRunner:
             results['phases']['data_phase'] = data_result
             
             # Update summary
+            current_equity = 10050.0
             self.update_summary({
                 'phases_completed': 1,
-                'current_equity': 10050.0
+                'current_equity': current_equity
             })
+            
+            # Check circuit breaker
+            if self.check_circuit_breaker(current_equity):
+                results['status'] = 'circuit_breaker'
+                results['circuit_breaker_triggered'] = True
+                return results
             
             self.end_phase('data_phase', ok=data_result['status'] == 'success',
                           duration=data_result.get('duration_seconds'))
@@ -524,11 +607,18 @@ class AutomationRunner:
             results['phases']['strategy_phase'] = strategy_result
             
             # Update summary with trade stats
+            current_equity = 10125.0
             self.update_summary({
                 'phases_completed': 2,
-                'current_equity': 10125.0,
+                'current_equity': current_equity,
                 'totals': {'trades': 5, 'wins': 3, 'losses': 2}
             })
+            
+            # Check circuit breaker
+            if self.check_circuit_breaker(current_equity):
+                results['status'] = 'circuit_breaker'
+                results['circuit_breaker_triggered'] = True
+                return results
             
             self.end_phase('strategy_phase', ok=strategy_result['status'] == 'success',
                           duration=strategy_result.get('duration_seconds'))
@@ -563,11 +653,18 @@ class AutomationRunner:
             results['phases']['api_phase'] = api_result
             
             # Final summary update
+            current_equity = 10150.0
             self.update_summary({
                 'phases_completed': 3,
-                'current_equity': 10150.0,
+                'current_equity': current_equity,
                 'totals': {'trades': 10, 'wins': 6, 'losses': 4}
             })
+            
+            # Check circuit breaker
+            if self.check_circuit_breaker(current_equity):
+                results['status'] = 'circuit_breaker'
+                results['circuit_breaker_triggered'] = True
+                return results
             
             self.end_phase('api_phase', ok=api_result['status'] in ['success', 'warning'],
                           duration=api_result.get('duration_seconds'))
@@ -603,12 +700,27 @@ class AutomationRunner:
                 'runtime_secs': runtime_secs
             })
             
-            # Calculate ROI
+            # Add circuit breaker info
+            if self.circuit_breaker_triggered:
+                summary['circuit_breaker_triggered'] = True
+                summary['circuit_breaker_reason'] = f'Drawdown exceeded {self.max_drawdown_limit * 100:.1f}%'
+            
+            # Calculate ROI and drawdown
             if 'initial_capital' in summary and 'current_equity' in summary:
                 summary['roi'] = self.session_store.calculate_roi(
                     summary['initial_capital'],
                     summary['current_equity']
                 )
+            
+            # Calculate max drawdown if equity curve available
+            if len(self.equity_curve) > 1:
+                import numpy as np
+                equity_array = np.array(self.equity_curve)
+                running_max = np.maximum.accumulate(equity_array)
+                drawdown = (equity_array - running_max) / running_max
+                max_dd_idx = np.argmin(drawdown)
+                max_dd_percent = drawdown[max_dd_idx] * 100
+                summary['max_drawdown_percent'] = float(max_dd_percent)
             
             self.session_store.write_summary(summary, validate=self.enable_validation)
             

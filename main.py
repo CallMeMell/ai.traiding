@@ -14,7 +14,7 @@ from datetime import datetime
 # Imports
 from config import config
 from strategy import TradingStrategy
-from utils import setup_logging, TradeLogger, generate_sample_data, validate_ohlcv_data
+from utils import setup_logging, TradeLogger, generate_sample_data, validate_ohlcv_data, calculate_current_drawdown
 
 # Try to import Binance integration (Primary)
 try:
@@ -138,6 +138,11 @@ class LiveTradingBot:
         self.capital = config.initial_capital
         self.initial_capital = self.capital
         
+        # Circuit Breaker - Drawdown Tracking
+        self.equity_curve = [self.initial_capital]
+        self.circuit_breaker_triggered = False
+        self.is_dry_run = os.getenv('DRY_RUN', 'true').lower() == 'true'
+        
         # Data (Simulation mode)
         self.data: Optional[pd.DataFrame] = None
         self.current_index = 0
@@ -239,6 +244,42 @@ class LiveTradingBot:
         self.data = pd.concat([self.data, new_candle], ignore_index=True)
         self.current_index = len(self.data) - 1
     
+    def check_circuit_breaker(self) -> bool:
+        """
+        Prüfe Circuit Breaker (Drawdown-Limit)
+        
+        Returns:
+            True wenn Circuit Breaker ausgelöst wurde
+        """
+        # Circuit Breaker nur im Production-Modus (nicht DRY_RUN)
+        if self.is_dry_run:
+            return False
+        
+        # Update equity curve
+        self.equity_curve.append(self.capital)
+        
+        # Berechne aktuellen Drawdown
+        current_drawdown = calculate_current_drawdown(self.equity_curve)
+        
+        # Prüfe ob Limit überschritten
+        drawdown_limit_percent = config.max_drawdown_limit * 100
+        
+        if current_drawdown < -drawdown_limit_percent:
+            self.circuit_breaker_triggered = True
+            logger.critical("=" * 70)
+            logger.critical("🚨 CIRCUIT BREAKER AUSGELÖST! 🚨")
+            logger.critical("=" * 70)
+            logger.critical(f"Aktueller Drawdown: {current_drawdown:.2f}%")
+            logger.critical(f"Drawdown-Limit: {drawdown_limit_percent:.2f}%")
+            logger.critical(f"Initial Capital: ${self.initial_capital:,.2f}")
+            logger.critical(f"Current Capital: ${self.capital:,.2f}")
+            logger.critical(f"Verlust: ${self.capital - self.initial_capital:,.2f}")
+            logger.critical("Trading wird SOFORT gestoppt!")
+            logger.critical("=" * 70)
+            return True
+        
+        return False
+    
     def process_signal(self, analysis: dict):
         """
         Verarbeite Trading-Signal
@@ -246,6 +287,11 @@ class LiveTradingBot:
         Args:
             analysis: Signal-Dictionary von Strategy
         """
+        # Prüfe Circuit Breaker vor Trade-Ausführung
+        if self.check_circuit_breaker():
+            logger.warning("⚠️ Trading gestoppt - Circuit Breaker aktiv")
+            return
+        
         signal = analysis['signal']
         current_price = analysis['current_price']
         strategies = analysis['triggering_strategies']
@@ -272,6 +318,9 @@ class LiveTradingBot:
             self.capital += pnl
             self.current_position = 0
             
+            # Update equity curve nach Trade
+            self.equity_curve.append(self.capital)
+            
             self.trade_logger.log_trade(
                 order_type='SELL',
                 price=current_price,
@@ -289,6 +338,12 @@ class LiveTradingBot:
                 f"Capital: ${self.capital:.2f} | "
                 f"Strategien: {strategies}"
             )
+            
+            # Prüfe Circuit Breaker nach Trade
+            if self.check_circuit_breaker():
+                logger.error("⚠️ Circuit Breaker nach Trade ausgelöst!")
+                global is_running
+                is_running = False
     
     def run(self):
         """Haupt-Trading-Loop"""
@@ -299,10 +354,12 @@ class LiveTradingBot:
         self.initialize_data()
         
         logger.info("🔄 Trading-Loop aktiv")
+        logger.info(f"Circuit Breaker: {'AKTIV (Production)' if not self.is_dry_run else 'INAKTIV (DRY_RUN)'}")
+        logger.info(f"Drawdown-Limit: {config.max_drawdown_limit * 100:.1f}%")
         logger.info("Drücke Ctrl+C zum Beenden\n")
         
         try:
-            while is_running:
+            while is_running and not self.circuit_breaker_triggered:
                 # Füge neue Kerze hinzu (simuliert neue Marktdaten)
                 self.add_new_candle()
                 
@@ -328,14 +385,23 @@ class LiveTradingBot:
                 if self.current_position == 1:
                     position_text = f"Long @ ${self.entry_price:.2f}"
                 
+                # Berechne aktuellen Drawdown für Status-Update
+                current_dd = calculate_current_drawdown(self.equity_curve) if len(self.equity_curve) > 1 else 0.0
+                
                 logger.info(
                     f"💹 Preis: ${current_price:.2f} | "
                     f"Position: {position_text} | "
-                    f"Capital: ${self.capital:.2f}"
+                    f"Capital: ${self.capital:.2f} | "
+                    f"DD: {current_dd:.2f}%"
                 )
                 
                 # Warte bis zum nächsten Update
                 time.sleep(config.update_interval)
+            
+            # Falls Circuit Breaker ausgelöst
+            if self.circuit_breaker_triggered:
+                logger.error("🚨 Trading wurde durch Circuit Breaker gestoppt!")
+                self.shutdown()
                 
         except KeyboardInterrupt:
             logger.info("\n⏹️ Benutzer-Abbruch erkannt")
@@ -359,11 +425,21 @@ class LiveTradingBot:
         
         trades = self.trade_logger.get_all_trades()
         
+        # Berechne Maximum Drawdown
+        from utils import calculate_max_drawdown
+        if len(self.equity_curve) > 1:
+            max_dd_pct, max_dd_val, peak_val, trough_val = calculate_max_drawdown(self.equity_curve)
+            logger.info(f"Maximum Drawdown: {max_dd_pct:.2f}%")
+        
         logger.info(f"Initial Capital:  ${self.initial_capital:,.2f}")
         logger.info(f"Final Capital:    ${self.capital:,.2f}")
         logger.info(f"Total P&L:        ${total_pnl:,.2f}")
         logger.info(f"ROI:              {roi:.2f}%")
         logger.info(f"Total Trades:     {len(trades)}")
+        
+        if self.circuit_breaker_triggered:
+            logger.critical("🚨 CIRCUIT BREAKER WAR AKTIV!")
+            logger.critical(f"Drawdown-Limit von {config.max_drawdown_limit * 100:.1f}% wurde überschritten")
         
         if self.current_position != 0:
             logger.warning("⚠️ Offene Position beim Beenden!")

@@ -32,3 +32,8 @@ allowed_order_types: LIMIT_ONLY
 # Maximum slippage (as decimal, e.g., 0.003 = 0.3%)
 # Orders with higher slippage will be rejected
 max_slippage: 0.003
+
+# Maximum drawdown limit (as decimal, e.g., 0.20 = 20%)
+# Circuit breaker: Trading stops automatically if drawdown exceeds this limit
+# Only active in production mode (not DRY_RUN)
+max_drawdown_limit: 0.20
