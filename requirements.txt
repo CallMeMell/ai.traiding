@@ -18,6 +18,14 @@ plotly>=5.18.0
 # streamlit>=1.28.0  # For interactive dashboard
 # Install with: pip install streamlit
 
+# Machine Learning & Reinforcement Learning
+tensorflow>=2.15.0
+gym>=0.26.0
+stable-baselines3>=2.0.0
+optuna>=3.5.0
+
+# Portfolio Optimization & Statistical Analysis
+scipy>=1.10.0
+
 # Optional: For extended features
 # seaborn>=0.12.0    # For visualizations
-# scipy>=1.10.0      # For statistical analysis

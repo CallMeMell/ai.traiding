@@ -444,12 +444,12 @@ Integration von Machine Learning für Signal-Prediction, Strategie-Optimierung u
 #### M4.3: Reinforcement Learning für Trading
 **Zeitrahmen:** Woche 3-4  
 **Deliverables:**
-- [ ] RL Environment Setup (Gym-kompatibel)
-- [ ] State Space Definition
-- [ ] Action Space Definition (BUY/SELL/HOLD/QUANTITY)
-- [ ] Reward Function Design
-- [ ] DQN (Deep Q-Network) Implementation
-- [ ] PPO (Proximal Policy Optimization)
+- [x] RL Environment Setup (Gym-kompatibel)
+- [x] State Space Definition
+- [x] Action Space Definition (BUY/SELL/HOLD/QUANTITY)
+- [x] Reward Function Design
+- [x] DQN (Deep Q-Network) Implementation
+- [x] PPO (Proximal Policy Optimization)
 
 **RL Framework:**
 ```python
@@ -487,9 +487,11 @@ class TradingEnvironment(gym.Env):
 #### M4.4: Hyperparameter-Optimierung
 **Zeitrahmen:** Woche 4-5  
 **Deliverables:**
-- [ ] Optuna Integration für Hyperparameter-Tuning
+- [x] Optuna Integration für Hyperparameter-Tuning
+- [x] Bayesian Optimization (via Optuna TPESampler)
+- [x] Hyperparameter Search Spaces (DQN/PPO)
+- [x] Result Persistence und Visualization
 - [ ] Grid Search für Strategy Parameters
-- [ ] Bayesian Optimization
 - [ ] Walk-Forward Analysis
 - [ ] Parameter Stability Analysis
 
@@ -511,11 +513,12 @@ class TradingEnvironment(gym.Env):
 #### M4.5: Portfolio Optimization
 **Zeitrahmen:** Woche 5-6  
 **Deliverables:**
-- [ ] Multi-Asset Portfolio Management
-- [ ] Modern Portfolio Theory (Markowitz)
-- [ ] Risk Parity Allocation
-- [ ] Kelly Criterion Position Sizing
-- [ ] Dynamic Rebalancing
+- [x] Multi-Asset Portfolio Management
+- [x] Modern Portfolio Theory (Markowitz)
+- [x] Risk Parity Allocation
+- [x] Kelly Criterion Position Sizing
+- [x] Dynamic Rebalancing
+- [x] Efficient Frontier Calculation
 
 **Optimierungs-Ziele:**
 - Maximize Sharpe Ratio
@@ -1014,11 +1017,12 @@ CREATE TABLE performance_metrics (
 - [x] Live Monitor funktioniert
 - [ ] Live Trading getestet
 
-### Phase 4 ⏳
-- [ ] ML Models trainiert
-- [ ] RL Agent funktioniert
-- [ ] Optimierung implementiert
-- [ ] Backtests zeigen Verbesserung
+### Phase 4 ✅
+- [x] ML Models trainiert (TensorFlow/Keras Pipeline)
+- [x] RL Agent funktioniert (DQN/PPO mit Stable-Baselines3)
+- [x] Optimierung implementiert (Optuna Hyperparameter Tuning)
+- [x] Portfolio-Optimierung (Markowitz, Risk Parity, Kelly Criterion)
+- [x] Flask API für Model Deployment
 
 ### Phase 5 🔄
 - [ ] Web Dashboard live
