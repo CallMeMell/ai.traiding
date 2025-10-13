@@ -8,6 +8,7 @@ import unittest
 import os
 import tempfile
 import shutil
+import logging
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -36,10 +37,36 @@ class TestSetupLogging(unittest.TestCase):
         self.test_dir = tempfile.mkdtemp()
         self.log_file = os.path.join(self.test_dir, "test.log")
     
+    def _cleanup_logging_handlers(self):
+        """Close all logging handlers to avoid PermissionError on Windows."""
+        # Get root logger and all other loggers
+        loggers = [logging.getLogger()] + [
+            logging.getLogger(name) for name in logging.root.manager.loggerDict
+        ]
+        
+        for logger in loggers:
+            # Close and remove all handlers
+            for handler in logger.handlers[:]:  # Use slice to avoid modification during iteration
+                try:
+                    handler.close()
+                except Exception:
+                    pass  # Ignore errors during cleanup
+                try:
+                    logger.removeHandler(handler)
+                except Exception:
+                    pass  # Ignore errors during cleanup
+        
+        # Clear handler list completely
+        logging.getLogger().handlers.clear()
+    
     def tearDown(self):
         """Clean up test environment"""
+        # Close handlers BEFORE deleting files to prevent PermissionError on Windows
+        # See: WINDOWS_PERMISSION_ERROR_FIX.md
+        self._cleanup_logging_handlers()
+        
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_setup_logging_creates_logger(self):
         """Test that setup_logging creates a logger"""
