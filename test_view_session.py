@@ -73,7 +73,7 @@ Order ID: SIM_1_1704110400000
     
     def tearDown(self):
         """Clean up test environment"""
-        shutil.rmtree(self.test_logs_dir)
+        shutil.rmtree(self.test_logs_dir, ignore_errors=True)
     
     def test_parse_session_log(self):
         """Test session log parsing"""
