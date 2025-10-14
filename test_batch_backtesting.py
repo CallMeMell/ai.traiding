@@ -48,7 +48,7 @@ class TestVisualizationFunctions(unittest.TestCase):
     def tearDown(self):
         """Clean up test fixtures"""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_equity_curve_matplotlib(self):
         """Test equity curve generation with Matplotlib"""
@@ -172,7 +172,7 @@ class TestBacktesterVisualization(unittest.TestCase):
     def tearDown(self):
         """Clean up test fixtures"""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_visualize_results(self):
         """Test visualization generation from backtester"""
@@ -221,7 +221,7 @@ class TestBatchBacktester(unittest.TestCase):
     def tearDown(self):
         """Clean up test fixtures"""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_add_strategy(self):
         """Test adding strategies to batch tester"""
@@ -354,7 +354,7 @@ class TestBatchBacktesterEdgeCases(unittest.TestCase):
     def tearDown(self):
         """Clean up test fixtures"""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_no_strategies(self):
         """Test running batch backtest with no strategies"""

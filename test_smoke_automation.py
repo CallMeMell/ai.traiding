@@ -25,7 +25,7 @@ class TestSmokeAutomation(unittest.TestCase):
     def tearDown(self):
         """Clean up test environment."""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_runner_dry_run(self):
         """Test runner executes successfully in dry-run mode."""

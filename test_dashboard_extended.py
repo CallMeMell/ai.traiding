@@ -86,7 +86,7 @@ class TestDashboardExtended(unittest.TestCase):
     
     def tearDown(self):
         """Clean up test environment"""
-        shutil.rmtree(self.temp_dir)
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_config_includes_new_metrics(self):
         """Test that default config includes new metrics"""

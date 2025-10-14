@@ -28,7 +28,7 @@ class TestAutomatedSetupClass(unittest.TestCase):
     def tearDown(self):
         """Clean up test fixtures."""
         if os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir)
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_automated_setup_can_be_imported(self):
         """Test that automated_setup module can be imported."""
