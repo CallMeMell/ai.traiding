@@ -410,7 +410,7 @@ class TestTradeLogger(unittest.TestCase):
     def tearDown(self):
         """Clean up test environment"""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_trade_logger_initialization(self):
         """Test TradeLogger initializes correctly"""

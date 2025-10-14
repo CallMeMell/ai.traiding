@@ -8,6 +8,7 @@ import unittest
 import os
 import tempfile
 import shutil
+import logging
 from unittest.mock import patch, MagicMock, Mock
 import pandas as pd
 import numpy as np
@@ -111,10 +112,35 @@ class TestLiveTradingBotInitialization(unittest.TestCase):
         if 'BINANCE_API_SECRET' in os.environ:
             del os.environ['BINANCE_API_SECRET']
     
+    def _cleanup_logging_handlers(self):
+        """Close all logging handlers to avoid PermissionError on Windows."""
+        # Get root logger and all other loggers
+        loggers = [logging.getLogger()] + [
+            logging.getLogger(name) for name in logging.root.manager.loggerDict
+        ]
+        
+        for logger in loggers:
+            # Close and remove all handlers
+            for handler in logger.handlers[:]:  # Use slice to avoid modification during iteration
+                try:
+                    handler.close()
+                except Exception:
+                    pass  # Ignore errors during cleanup
+                try:
+                    logger.removeHandler(handler)
+                except Exception:
+                    pass  # Ignore errors during cleanup
+        
+        # Clear root logger handler list
+        logging.getLogger().handlers.clear()
+    
     def tearDown(self):
         """Clean up test environment"""
+        # Close handlers BEFORE deleting files to prevent PermissionError on Windows
+        self._cleanup_logging_handlers()
+        
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
         
         if self.original_dry_run:
             os.environ['DRY_RUN'] = self.original_dry_run
