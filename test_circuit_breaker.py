@@ -111,7 +111,7 @@ class TestCircuitBreakerAutomationRunner(unittest.TestCase):
     def tearDown(self):
         """Clean up test environment"""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_circuit_breaker_not_triggered_in_dry_run(self):
         """Test: Circuit Breaker wird in DRY_RUN nicht ausgelöst"""

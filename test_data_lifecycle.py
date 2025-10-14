@@ -39,7 +39,7 @@ class TestDataLifecycle(unittest.TestCase):
     def tearDown(self):
         """Clean up test environment."""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def _create_old_log_file(self, filename: str, days_old: int = 10) -> Path:
         """Create a log file with modified time in the past."""
@@ -90,7 +90,7 @@ class TestDataLifecycle(unittest.TestCase):
     def test_rotate_logs_handles_missing_directory(self):
         """Test rotation handles missing logs directory gracefully."""
         # Remove logs directory
-        shutil.rmtree(self.logs_dir)
+        shutil.rmtree(self.logs_dir, ignore_errors=True)
         
         # Run rotation
         results = self.lifecycle.rotate_logs()
@@ -273,7 +273,7 @@ class TestConvenienceFunctions(unittest.TestCase):
     def tearDown(self):
         """Clean up test environment."""
         if os.path.exists(self.test_dir):
-            shutil.rmtree(self.test_dir)
+            shutil.rmtree(self.test_dir, ignore_errors=True)
     
     def test_rotate_logs_function(self):
         """Test standalone rotate_logs function."""
