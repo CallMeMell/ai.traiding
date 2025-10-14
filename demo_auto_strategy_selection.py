@@ -124,7 +124,8 @@ def demo_export_and_compare():
     best_name, best_score = selector.run_selection(data)
     
     # Export zu temporärer Datei
-    export_path = "/tmp/demo_strategy_ranking.csv"
+    import tempfile
+    export_path = os.path.join(tempfile.gettempdir(), "demo_strategy_ranking.csv")
     selector.export_ranking(export_path)
     
     print(f"\n✓ Ranking exportiert: {export_path}")
