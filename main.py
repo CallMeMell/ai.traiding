@@ -16,6 +16,7 @@ from datetime import datetime
 from config import config
 from strategy import TradingStrategy
 from utils import setup_logging, TradeLogger, generate_sample_data, validate_ohlcv_data, calculate_current_drawdown
+from alerts import AlertManager
 
 # Try to import Binance integration (Primary)
 try:
@@ -206,6 +207,12 @@ class LiveTradingBot:
         self.circuit_breaker_triggered = False
         self.is_dry_run = os.getenv('DRY_RUN', 'true').lower() == 'true'
         
+        # Alert System
+        self.alert_manager = AlertManager(
+            enable_telegram=os.getenv('ENABLE_TELEGRAM_ALERTS', 'false').lower() == 'true',
+            enable_email=os.getenv('ENABLE_EMAIL_ALERTS', 'false').lower() == 'true'
+        )
+        
         # Data (Simulation mode)
         self.data: Optional[pd.DataFrame] = None
         self.current_index = 0
@@ -339,6 +346,15 @@ class LiveTradingBot:
             logger.critical(f"Verlust: ${self.capital - self.initial_capital:,.2f}")
             logger.critical("Trading wird SOFORT gestoppt!")
             logger.critical("=" * 70)
+            
+            # Sende Circuit Breaker Alert
+            self.alert_manager.send_circuit_breaker_alert(
+                drawdown=current_drawdown,
+                limit=drawdown_limit_percent,
+                capital=self.capital,
+                initial_capital=self.initial_capital
+            )
+            
             return True
         
         return False
@@ -374,6 +390,16 @@ class LiveTradingBot:
             )
             
             logger.info(f"📈 BUY @ ${current_price:.2f} | Strategien: {strategies}")
+            
+            # Sende Trade Alert
+            self.alert_manager.send_trade_alert(
+                order_type='BUY',
+                symbol=config.trading_symbol,
+                price=current_price,
+                quantity=config.trade_size,
+                strategies=strategies,
+                capital=self.capital
+            )
         
         # SELL Signal und Long Position
         elif signal == -1 and self.current_position == 1:
@@ -400,6 +426,17 @@ class LiveTradingBot:
                 f"P&L: ${pnl:.2f} | "
                 f"Capital: ${self.capital:.2f} | "
                 f"Strategien: {strategies}"
+            )
+            
+            # Sende Trade Alert mit P&L
+            self.alert_manager.send_trade_alert(
+                order_type='SELL',
+                symbol=config.trading_symbol,
+                price=current_price,
+                quantity=config.trade_size,
+                strategies=strategies,
+                capital=self.capital,
+                pnl=pnl
             )
             
             # Prüfe Circuit Breaker nach Trade
