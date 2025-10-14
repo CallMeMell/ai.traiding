@@ -1038,8 +1038,39 @@ class SimulatedLiveTradingBrokerAdapter(BrokerInterface):
         return self.env.get_performance_metrics()
     
     def save_session_log(self, filepath: str = None):
-        """Save session log"""
-        self.env.save_session_log(filepath)
+        """Save session log as JSON"""
+        if filepath is None:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filepath = f"logs/simulated_trading_session_{timestamp}.json"
+        
+        import os
+        import json
+        os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else '.', exist_ok=True)
+        
+        # Get metrics and create JSON-serializable dict
+        metrics = self.env.get_performance_metrics()
+        
+        log_data = {
+            'initial_capital': self.env.initial_capital,
+            'final_equity': self.env.capital,
+            'total_pnl': getattr(self.env.metrics, 'total_pnl', 0) if hasattr(self.env, 'metrics') else 0,
+            'metrics': metrics if metrics else {},
+            'orders': [
+                {
+                    'order_id': getattr(order, 'order_id', ''),
+                    'symbol': getattr(order, 'symbol', ''),
+                    'side': getattr(order, 'side', ''),
+                    'quantity': getattr(order, 'filled_quantity', 0),
+                    'price': getattr(order, 'execution_price', 0),
+                    'timestamp': getattr(order, 'timestamp', datetime.now()).isoformat() if hasattr(getattr(order, 'timestamp', None), 'isoformat') else str(getattr(order, 'timestamp', ''))
+                }
+                for order in self.env.orders.values()
+            ] if hasattr(self.env, 'orders') and self.env.orders else []
+        }
+        
+        with open(filepath, 'w') as f:
+            json.dump(log_data, f, indent=2)
 
 
 class BrokerFactory:
