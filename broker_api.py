@@ -1039,23 +1039,28 @@ class SimulatedLiveTradingBrokerAdapter(BrokerInterface):
     
     def save_session_log(self, filepath: str = None):
         """Save session log as JSON"""
+        import os
+        import json
+        
         if filepath is None:
-            from datetime import datetime
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filepath = f"logs/simulated_trading_session_{timestamp}.json"
         
-        import os
-        import json
         os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else '.', exist_ok=True)
         
         # Get metrics and create JSON-serializable dict
-        metrics = self.env.get_performance_metrics()
+        try:
+            metrics_obj = self.env.get_performance_metrics()
+            # Convert metrics to dict if it has a to_dict method, otherwise use empty dict
+            metrics = metrics_obj.to_dict() if hasattr(metrics_obj, 'to_dict') else {}
+        except:
+            metrics = {}
         
         log_data = {
             'initial_capital': self.env.initial_capital,
             'final_equity': self.env.capital,
             'total_pnl': getattr(self.env.metrics, 'total_pnl', 0) if hasattr(self.env, 'metrics') else 0,
-            'metrics': metrics if metrics else {},
+            'metrics': metrics,
             'orders': [
                 {
                     'order_id': getattr(order, 'order_id', ''),
