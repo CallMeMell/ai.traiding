@@ -642,6 +642,11 @@ class EnhancedPaperTradingExecutor(BrokerInterface):
         
         self._initialized = True
     
+    @property
+    def cash(self) -> float:
+        """Alias for capital to match test expectations"""
+        return self.capital
+    
     def _generate_order_id(self) -> str:
         """Generate unique order ID"""
         order_id = f"PAPER_{self.next_order_id}"
@@ -649,35 +654,67 @@ class EnhancedPaperTradingExecutor(BrokerInterface):
         return order_id
     
     def place_market_order(self, symbol: str, quantity: float, 
-                          side: str, **kwargs) -> Dict[str, Any]:
+                          side: str, current_price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
         """Simulate market order execution"""
         if not self._initialized:
-            raise RuntimeError("Broker not initialized")
+            return {
+                'status': 'REJECTED',
+                'message': 'Broker not initialized'
+            }
         
-        # For paper trading, we need a price - use kwargs or simulate
-        price = kwargs.get('current_price', 50000.0)  # Default price if not provided
+        # Validation
+        if not symbol or not isinstance(symbol, str) or len(symbol.strip()) == 0:
+            return {
+                'status': 'REJECTED',
+                'message': 'Invalid symbol: must be a non-empty string'
+            }
+        
+        if quantity <= 0:
+            return {
+                'status': 'REJECTED',
+                'message': 'Invalid quantity: must be greater than zero'
+            }
+        
+        # For paper trading, we need a price - accept as positional or kwarg
+        if current_price is None:
+            current_price = kwargs.get('current_price', 50000.0)
+        price = current_price
+        
+        if price <= 0:
+            return {
+                'status': 'REJECTED',
+                'message': 'Invalid price: must be greater than zero'
+            }
         
         cost = quantity * price
         
         # Check capital for BUY orders
         if side.upper() == 'BUY' and cost > self.capital:
             logger.error(f"❌ Insufficient capital: Need ${cost:.2f}, Have ${self.capital:.2f}")
-            raise ValueError(f"Insufficient capital: {self.capital:.2f} < {cost:.2f}")
+            return {
+                'status': 'REJECTED',
+                'message': f'Insufficient funds: need ${cost:.2f}, have ${self.capital:.2f}'
+            }
         
         # Generate order
         order_id = self._generate_order_id()
         
         # Execute order
+        pnl = 0
         if side.upper() == 'BUY':
             self.capital -= cost
             self.positions[symbol] = {
+                'symbol': symbol,
                 'quantity': quantity,
                 'entry_price': price,
                 'entry_time': datetime.now()
             }
         elif side.upper() == 'SELL':
             if symbol not in self.positions:
-                raise ValueError(f"No position to sell for {symbol}")
+                return {
+                    'status': 'REJECTED',
+                    'message': f'No position to sell for {symbol}'
+                }
             
             position = self.positions[symbol]
             revenue = quantity * price
@@ -707,6 +744,10 @@ class EnhancedPaperTradingExecutor(BrokerInterface):
             'avg_price': price,
             'timestamp': datetime.now().isoformat()
         }
+        
+        # Add pnl for SELL orders
+        if side.upper() == 'SELL':
+            result['pnl'] = pnl
         
         self.orders[order_id] = result
         
@@ -811,14 +852,15 @@ class EnhancedPaperTradingExecutor(BrokerInterface):
         if not self._initialized:
             raise RuntimeError("Broker not initialized")
         
-        if asset == 'USDT' or asset is None:
-            return {
-                'free': self.capital,
-                'locked': 0.0,
-                'total': self.capital
-            }
+        # If asset is specified, return balance with asset as key -> value (simple float)
+        if asset:
+            if asset == 'USDT':
+                return {asset: self.capital}
+            else:
+                return {asset: 0.0}
         
-        return {'free': 0.0, 'locked': 0.0, 'total': 0.0}
+        # If no asset specified, return all balances
+        return {'USDT': self.capital}
     
     def get_positions(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get open positions"""
@@ -883,8 +925,10 @@ class SimulatedLiveTradingBrokerAdapter(BrokerInterface):
                  enable_fees: bool = True,
                  enable_execution_delay: bool = True,
                  api_key: Optional[str] = None,
-                 api_secret: Optional[str] = None):
+                 api_secret: Optional[str] = None,
+                 paper_trading: bool = True):
         """Initialize adapter with simulated environment"""
+        # paper_trading parameter is accepted for compatibility but ignored (always True)
         super().__init__(api_key, api_secret, True)
         
         from simulated_live_trading import SimulatedLiveTradingEnvironment
@@ -897,13 +941,17 @@ class SimulatedLiveTradingBrokerAdapter(BrokerInterface):
             enable_execution_delay=enable_execution_delay
         )
         
+        # Alias for compatibility with tests
+        self.executor = self.env
+        
         self._initialized = True
         logger.info(f"✓ Simulated Live Trading Broker initialized")
     
     def place_market_order(self, symbol: str, quantity: float, 
-                          side: str, **kwargs) -> Dict[str, Any]:
+                          side: str, current_price: Optional[float] = None, **kwargs) -> Dict[str, Any]:
         """Place market order through simulated environment"""
-        current_price = kwargs.get('current_price')
+        if current_price is None:
+            current_price = kwargs.get('current_price')
         result = self.env.place_market_order(symbol, quantity, side, current_price)
         
         # Convert to standard format
@@ -925,7 +973,10 @@ class SimulatedLiveTradingBrokerAdapter(BrokerInterface):
     def place_limit_order(self, symbol: str, quantity: float, 
                          side: str, price: float, **kwargs) -> Dict[str, Any]:
         """Limit orders not yet supported in simulated environment"""
-        raise NotImplementedError("Limit orders not yet supported in simulated environment")
+        return {
+            'status': 'REJECTED',
+            'message': 'Limit orders not yet supported in simulated environment'
+        }
     
     def cancel_order(self, symbol: str, order_id: str) -> bool:
         """Cancel order - not applicable for simulated market orders"""
