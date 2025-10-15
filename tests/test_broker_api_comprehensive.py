@@ -27,6 +27,7 @@ try:
         BrokerInterface,
         EnhancedPaperTradingExecutor,
         SimulatedLiveTradingBrokerAdapter,
+        BinanceOrderExecutor,
         BrokerFactory
     )
     BROKER_API_AVAILABLE = True
@@ -550,6 +551,368 @@ class TestBrokerLogging(unittest.TestCase):
             
             # Verify logging was called
             mock_log.assert_called()
+
+
+@unittest.skipIf(not BROKER_API_AVAILABLE, "broker_api not available")
+class TestBinanceOrderExecutor(unittest.TestCase):
+    """Tests for BinanceOrderExecutor"""
+    
+    def test_initialization_without_credentials(self):
+        """Test that initialization fails without API credentials"""
+        with self.assertRaises(ValueError):
+            BinanceOrderExecutor(api_key=None, api_secret=None)
+    
+    @patch('binance.client.Client')
+    def test_initialization_with_mock_credentials(self, mock_client_class):
+        """Test initialization with mocked Binance client"""
+        mock_client_class.return_value = MagicMock()
+        
+        # Should initialize without errors
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        self.assertTrue(executor._initialized)
+    
+    @patch('binance.client.Client')
+    def test_place_market_order_success(self, mock_client_class):
+        """Test successful market order placement"""
+        # Mock the Binance client
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Mock order response
+        mock_client.create_order.return_value = {
+            'orderId': 123456,
+            'symbol': 'BTCUSDT',
+            'side': 'BUY',
+            'type': 'MARKET',
+            'origQty': '0.1',
+            'executedQty': '0.1',
+            'status': 'FILLED',
+            'transactTime': 1640000000000
+        }
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        result = executor.place_market_order('BTCUSDT', 0.1, 'BUY')
+        
+        self.assertEqual(result['order_id'], 123456)
+        self.assertEqual(result['symbol'], 'BTCUSDT')
+        self.assertEqual(result['side'], 'BUY')
+        mock_client.create_order.assert_called_once()
+    
+    @patch('binance.client.Client')
+    def test_place_limit_order_success(self, mock_client_class):
+        """Test successful limit order placement"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        mock_client.create_order.return_value = {
+            'orderId': 123457,
+            'symbol': 'ETHUSDT',
+            'side': 'SELL',
+            'type': 'LIMIT',
+            'origQty': '1.0',
+            'price': '2000.0',
+            'status': 'NEW',
+            'transactTime': 1640000000000
+        }
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        result = executor.place_limit_order('ETHUSDT', 1.0, 'SELL', 2000.0)
+        
+        self.assertEqual(result['order_id'], 123457)
+        self.assertEqual(result['type'], 'LIMIT')
+    
+    @patch('binance.client.Client')
+    def test_cancel_order_success(self, mock_client_class):
+        """Test successful order cancellation"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Mock successful cancellation
+        mock_client.cancel_order.return_value = {'status': 'CANCELED'}
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        result = executor.cancel_order('BTCUSDT', '123456')
+        
+        self.assertTrue(result)
+        mock_client.cancel_order.assert_called_once()
+    
+    @patch('binance.client.Client')
+    def test_get_order_status(self, mock_client_class):
+        """Test getting order status"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        mock_client.get_order.return_value = {
+            'orderId': 123456,
+            'symbol': 'BTCUSDT',
+            'side': 'BUY',
+            'type': 'MARKET',
+            'origQty': '0.1',
+            'executedQty': '0.1',
+            'price': '50000',
+            'status': 'FILLED',
+            'time': 1640000000000
+        }
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        status = executor.get_order_status('BTCUSDT', '123456')
+        
+        self.assertEqual(status['order_id'], 123456)
+        self.assertEqual(status['status'], 'FILLED')
+    
+    @patch('binance.client.Client')
+    def test_get_open_orders(self, mock_client_class):
+        """Test getting open orders"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        mock_client.get_open_orders.return_value = [
+            {
+                'orderId': 123456,
+                'symbol': 'BTCUSDT',
+                'side': 'BUY',
+                'type': 'LIMIT',
+                'origQty': '0.1',
+                'price': '49000',
+                'status': 'NEW',
+                'executedQty': '0'
+            }
+        ]
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        orders = executor.get_open_orders('BTCUSDT')
+        
+        self.assertEqual(len(orders), 1)
+        self.assertEqual(orders[0]['symbol'], 'BTCUSDT')
+    
+    @patch('binance.client.Client')
+    def test_get_account_balance(self, mock_client_class):
+        """Test getting account balance"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        mock_client.get_account.return_value = {
+            'balances': [
+                {'asset': 'USDT', 'free': '10000.0', 'locked': '0.0'},
+                {'asset': 'BTC', 'free': '0.5', 'locked': '0.1'}
+            ]
+        }
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        # Test getting specific asset balance
+        balance = executor.get_account_balance('USDT')
+        self.assertEqual(balance['free'], 10000.0)
+        
+        # Test getting all balances
+        all_balances = executor.get_account_balance()
+        self.assertIn('USDT', all_balances)
+        self.assertIn('BTC', all_balances)
+    
+    @patch('binance.client.Client')
+    def test_get_positions(self, mock_client_class):
+        """Test getting positions"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        mock_client.get_account.return_value = {
+            'balances': [
+                {'asset': 'BTC', 'free': '0.5', 'locked': '0.0'},
+                {'asset': 'ETH', 'free': '10.0', 'locked': '0.0'}
+            ]
+        }
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        positions = executor.get_positions()
+        
+        self.assertIsInstance(positions, list)
+        # Should have positions with non-zero quantities
+        btc_pos = [p for p in positions if p['symbol'] == 'BTC']
+        self.assertTrue(len(btc_pos) > 0)
+    
+    @patch('binance.client.Client')
+    def test_close_position(self, mock_client_class):
+        """Test closing a position"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Mock getting current position
+        mock_client.get_account.return_value = {
+            'balances': [
+                {'asset': 'BTC', 'free': '0.5', 'locked': '0.0'}
+            ]
+        }
+        
+        # Mock placing sell order
+        mock_client.create_order.return_value = {
+            'orderId': 999999,
+            'symbol': 'BTCUSDT',
+            'side': 'SELL',
+            'type': 'MARKET',
+            'origQty': '0.5',
+            'status': 'FILLED',
+            'transactTime': 1640000000000
+        }
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        result = executor.close_position('BTCUSDT')
+        
+        self.assertTrue(result)
+    
+    @patch('binance.client.Client')
+    def test_runtime_error_when_not_initialized(self, mock_client_class):
+        """Test that operations fail when not initialized"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        # Force _initialized to False
+        executor._initialized = False
+        
+        with self.assertRaises(RuntimeError):
+            executor.place_market_order('BTCUSDT', 0.1, 'BUY')
+    
+    @patch('binance.client.Client')
+    def test_place_market_order_api_error(self, mock_client_class):
+        """Test handling of Binance API error"""
+        from binance.exceptions import BinanceAPIException
+        
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Simulate API error
+        api_error = BinanceAPIException(
+            response=MagicMock(status_code=400),
+            status_code=400,
+            text='{"code": -1013, "msg": "Invalid quantity"}'
+        )
+        mock_client.create_order.side_effect = api_error
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        with self.assertRaises(Exception):  # More generic exception catch
+            executor.place_market_order('BTCUSDT', 0.1, 'BUY')
+    
+    @patch('binance.client.Client')
+    def test_cancel_order_api_error(self, mock_client_class):
+        """Test handling of cancel order API error"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Simulate API error
+        from binance.exceptions import BinanceAPIException
+        mock_client.cancel_order.side_effect = BinanceAPIException(
+            response=MagicMock(status_code=400),
+            status_code=400,
+            text='{"code": -2011, "msg": "Unknown order"}'
+        )
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        result = executor.cancel_order('BTCUSDT', '999999')
+        
+        # Should return False on error
+        self.assertFalse(result)
+    
+    @patch('binance.client.Client')
+    def test_get_open_orders_empty(self, mock_client_class):
+        """Test getting open orders when none exist"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        mock_client.get_open_orders.return_value = []
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        orders = executor.get_open_orders()
+        
+        self.assertEqual(len(orders), 0)
+    
+    @patch('binance.client.Client')
+    def test_get_open_orders_api_error(self, mock_client_class):
+        """Test handling of get open orders API error"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Simulate API error
+        from binance.exceptions import BinanceAPIException
+        mock_client.get_open_orders.side_effect = BinanceAPIException(
+            response=MagicMock(status_code=500),
+            status_code=500,
+            text='{"code": -1001, "msg": "Internal error"}'
+        )
+        
+        executor = BinanceOrderExecutor(
+            api_key="test_key",
+            api_secret="test_secret",
+            paper_trading=True
+        )
+        
+        orders = executor.get_open_orders()
+        
+        # Should return empty list on error
+        self.assertEqual(orders, [])
 
 
 if __name__ == '__main__':
