@@ -17,6 +17,7 @@ from config import config
 from strategy import TradingStrategy
 from utils import setup_logging, TradeLogger, generate_sample_data, validate_ohlcv_data, calculate_current_drawdown
 from alerts import AlertManager
+from circuit_breaker import CircuitBreakerManager, CircuitBreakerActions
 
 # Try to import Binance integration (Primary)
 try:
@@ -202,7 +203,7 @@ class LiveTradingBot:
         self.capital = config.initial_capital
         self.initial_capital = self.capital
         
-        # Circuit Breaker - Drawdown Tracking
+        # Circuit Breaker - Legacy Tracking
         self.equity_curve = [self.initial_capital]
         self.circuit_breaker_triggered = False
         self.is_dry_run = os.getenv('DRY_RUN', 'true').lower() == 'true'
@@ -218,6 +219,19 @@ class LiveTradingBot:
             enable_telegram=os.getenv('ENABLE_TELEGRAM_ALERTS', 'false').lower() == 'true',
             enable_email=os.getenv('ENABLE_EMAIL_ALERTS', 'false').lower() == 'true'
         )
+        
+        # Erweiterte Circuit Breaker Logik
+        self.use_advanced_cb = config.use_advanced_circuit_breaker
+        if self.use_advanced_cb:
+            self.circuit_breaker_manager = CircuitBreakerManager(
+                enabled=True,
+                only_production=True
+            )
+            self._configure_advanced_circuit_breaker()
+            logger.info("✓ Erweiterte Circuit Breaker Logik aktiviert")
+        else:
+            self.circuit_breaker_manager = None
+            logger.info("Standard Circuit Breaker Logik aktiviert")
         
         # Database Integration
         if config.use_database or os.getenv('USE_DATABASE', 'false').lower() == 'true':
@@ -250,6 +264,62 @@ class LiveTradingBot:
             logger.info("  Use broker_api.py for advanced trading features")
         
         logger.info("=" * 70)
+    
+    def _configure_advanced_circuit_breaker(self):
+        """
+        Konfiguriere erweiterte Circuit Breaker mit Actions
+        """
+        if not self.circuit_breaker_manager:
+            return
+        
+        # Konfiguriere Schwellenwerte aus config
+        for threshold_name, threshold_config in config.circuit_breaker_thresholds.items():
+            level = threshold_config.get('level')
+            action_names = threshold_config.get('actions', [])
+            description = threshold_config.get('description', '')
+            
+            # Erstelle Actions basierend auf Namen
+            actions = []
+            for action_name in action_names:
+                if action_name == 'log':
+                    actions.append(
+                        CircuitBreakerActions.create_log_action(
+                            message=f"🚨 Circuit Breaker: {level}% Drawdown-Limit überschritten!",
+                            level='critical'
+                        )
+                    )
+                elif action_name == 'alert':
+                    # Alert wird dynamisch erstellt beim Auslösen
+                    def create_alert_action():
+                        if hasattr(self, 'alert_manager'):
+                            current_drawdown = self.circuit_breaker_manager.calculate_current_drawdown()
+                            self.alert_manager.send_circuit_breaker_alert(
+                                drawdown=current_drawdown,
+                                limit=level,
+                                capital=self.capital,
+                                initial_capital=self.initial_capital
+                            )
+                    actions.append(create_alert_action)
+                elif action_name == 'pause_trading':
+                    actions.append(
+                        CircuitBreakerActions.create_pause_trading_action(self)
+                    )
+                elif action_name == 'shutdown':
+                    actions.append(
+                        CircuitBreakerActions.create_shutdown_action(self)
+                    )
+                elif action_name == 'rebalance':
+                    # Rebalancing - aktuell Platzhalter
+                    actions.append(
+                        CircuitBreakerActions.create_rebalance_action(None)
+                    )
+            
+            # Füge Schwellenwert hinzu
+            self.circuit_breaker_manager.add_threshold(
+                level=level,
+                actions=actions,
+                description=description
+            )
     
     def initialize_data(self):
         """Initialize market data (from Binance or simulated)"""
@@ -340,6 +410,19 @@ class LiveTradingBot:
         Returns:
             True wenn Circuit Breaker ausgelöst wurde
         """
+        # Verwende erweiterten Circuit Breaker falls aktiviert
+        if self.use_advanced_cb and self.circuit_breaker_manager:
+            triggered = self.circuit_breaker_manager.check(
+                current_equity=self.capital,
+                is_dry_run=self.is_dry_run
+            )
+            
+            if triggered:
+                self.circuit_breaker_triggered = True
+            
+            return triggered
+        
+        # Legacy Circuit Breaker
         # Circuit Breaker nur im Production-Modus (nicht DRY_RUN)
         if self.is_dry_run:
             return False

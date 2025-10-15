@@ -1,0 +1,115 @@
+# Circuit Breaker Konfiguration - Erweiterte Logik
+# ================================================
+# Flexibles, mehrstufiges Circuit Breaker System für Live-Trading
+
+# Aktiviere erweiterten Circuit Breaker
+use_advanced_circuit_breaker: true
+
+# Schwellenwerte und Actions
+# Format:
+#   threshold_name:
+#     level: <Drawdown in Prozent>
+#     actions: [Liste von Actions]
+#     description: <Beschreibung>
+#
+# Verfügbare Actions:
+#   - log: Logge Warnung/Fehler
+#   - alert: Sende Telegram/Email Alert
+#   - pause_trading: Pausiere Trading
+#   - shutdown: Fahre Bot herunter
+#   - rebalance: Rebalanciere Portfolio
+
+circuit_breaker_thresholds:
+  # Stufe 1: Warning (10% Drawdown)
+  warning:
+    level: 10.0
+    actions:
+      - log
+      - alert
+    description: "Warning Level - Erste Warnung"
+  
+  # Stufe 2: Alert (15% Drawdown)
+  alert:
+    level: 15.0
+    actions:
+      - log
+      - alert
+    description: "Alert Level - Erhöhte Aufmerksamkeit"
+  
+  # Stufe 3: Critical (20% Drawdown)
+  critical:
+    level: 20.0
+    actions:
+      - log
+      - alert
+      - pause_trading
+    description: "Critical Level - Trading pausieren"
+  
+  # Stufe 4: Emergency (30% Drawdown)
+  emergency:
+    level: 30.0
+    actions:
+      - log
+      - alert
+      - shutdown
+      - rebalance
+    description: "Emergency Level - Sofortiger Shutdown"
+
+# Alternative: Konservative Einstellung für neue Strategien
+# circuit_breaker_thresholds:
+#   warning:
+#     level: 5.0
+#     actions: [log, alert]
+#     description: "Early Warning - 5%"
+#   
+#   alert:
+#     level: 10.0
+#     actions: [log, alert]
+#     description: "Alert - 10%"
+#   
+#   critical:
+#     level: 15.0
+#     actions: [log, alert, pause_trading]
+#     description: "Critical - 15%"
+#   
+#   emergency:
+#     level: 20.0
+#     actions: [log, alert, shutdown]
+#     description: "Emergency - 20%"
+
+# Alternative: Aggressive Einstellung für erprobte Strategien
+# circuit_breaker_thresholds:
+#   alert:
+#     level: 15.0
+#     actions: [log, alert]
+#     description: "Alert - 15%"
+#   
+#   critical:
+#     level: 25.0
+#     actions: [log, alert, pause_trading]
+#     description: "Critical - 25%"
+#   
+#   emergency:
+#     level: 35.0
+#     actions: [log, alert, shutdown]
+#     description: "Emergency - 35%"
+
+# Legacy Circuit Breaker (Fallback)
+# Falls use_advanced_circuit_breaker=false
+max_drawdown_limit: 0.20  # 20%
+
+# Environment-spezifische Einstellungen
+# Diese können über .env überschrieben werden:
+#
+# .env Beispiel:
+# DRY_RUN=false  # Circuit Breaker nur aktiv wenn false
+# USE_ADVANCED_CIRCUIT_BREAKER=true
+# MAX_DRAWDOWN_LIMIT=0.20
+
+# Notizen:
+# - Circuit Breaker ist nur in Production-Modus aktiv (DRY_RUN=false)
+# - Schwellenwerte werden aufsteigend sortiert
+# - Actions werden in der definierten Reihenfolge ausgeführt
+# - Bei Action-Fehlern wird der Circuit Breaker trotzdem ausgelöst
+# - Mehrere Schwellenwerte können gleichzeitig aktiv sein
+# - Jeder Schwellenwert wird nur einmal ausgelöst
