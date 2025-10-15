@@ -213,6 +213,19 @@ class LiveTradingBot:
             enable_email=os.getenv('ENABLE_EMAIL_ALERTS', 'false').lower() == 'true'
         )
         
+        # Database Integration
+        if config.use_database or os.getenv('USE_DATABASE', 'false').lower() == 'true':
+            try:
+                from db import DatabaseManager
+                self.db = DatabaseManager(config.database_path)
+                logger.info(f"✓ Database integration enabled: {config.database_path}")
+            except ImportError:
+                logger.warning("⚠️ Database module not found - running without database")
+                self.db = None
+        else:
+            self.db = None
+            logger.info("Database integration disabled")
+        
         # Data (Simulation mode)
         self.data: Optional[pd.DataFrame] = None
         self.current_index = 0
@@ -389,6 +402,21 @@ class LiveTradingBot:
                 symbol=config.trading_symbol
             )
             
+            # Log to database if enabled
+            if self.db:
+                try:
+                    self.db.insert_trade(
+                        symbol=config.trading_symbol,
+                        order_type='BUY',
+                        price=current_price,
+                        quantity=config.trade_size,
+                        strategies=strategies,
+                        capital=self.capital,
+                        pnl=0.0
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to log trade to database: {e}")
+            
             logger.info(f"📈 BUY @ ${current_price:.2f} | Strategien: {strategies}")
             
             # Sende Trade Alert
@@ -419,6 +447,27 @@ class LiveTradingBot:
                 pnl=pnl,
                 symbol=config.trading_symbol
             )
+            
+            # Log to database if enabled
+            if self.db:
+                try:
+                    self.db.insert_trade(
+                        symbol=config.trading_symbol,
+                        order_type='SELL',
+                        price=current_price,
+                        quantity=config.trade_size,
+                        strategies=strategies,
+                        capital=self.capital,
+                        pnl=pnl
+                    )
+                    # Also update equity curve
+                    drawdown = calculate_current_drawdown(self.equity_curve)
+                    self.db.insert_equity_point(
+                        capital=self.capital,
+                        drawdown=drawdown
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to log trade to database: {e}")
             
             pnl_emoji = "💰" if pnl > 0 else "📉"
             logger.info(
