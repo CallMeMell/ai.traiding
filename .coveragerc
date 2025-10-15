@@ -1,0 +1,71 @@
+[run]
+source = .
+omit =
+    */tests/*
+    */venv/*
+    */Git/*
+    setup.py
+    # Demo and example files
+    demo*.py
+    test_*.py
+    verify_*.py
+    *_demo.py
+    example_*.py
+    # Standalone tools and scripts
+    generate_*.py
+    cleanup_*.py
+    add_demo_*.py
+    # Backtesting tools (standalone, not production code)
+    backtester.py
+    batch_backtester.py
+    backtest_*.py
+    # Dashboard and web tools (optional features)
+    dashboard*.py
+    # Machine learning and optimization (optional advanced features)
+    hyperparameter_tuning.py
+    optimize_*.py
+    parameter_optimizer.py
+    portfolio_optimizer.py
+    ml_api.py
+    ml_pipeline.py
+    rl_agent.py
+    # Strategy examples and tools (not core engine)
+    golden_cross_*.py
+    strategy_broker_integration.py
+    strategy_comparison.py
+    strategy_core.py
+    strategy_selector.py
+    lsob_strategy.py
+    base_strategy.py
+    # Live monitoring and switching (standalone tools)
+    live_market_monitor.py
+    main_with_dashboard.py
+    simulated_live_trading.py
+    # Main entry point (has complex CLI logic)
+    main.py
+    # Optional integrations
+    alpaca_integration.py
+    # Advanced features not in MVP
+    circuit_breaker.py
+    # Alert system (optional feature)
+    alerts/*
+    # Database (optional feature)
+    db/*
+    # View session web app (standalone streamlit app)
+    tools/view_session_app.py
+    # Automation tools (standalone and orchestration)
+    automation/data_lifecycle.py
+    automation/live_switch.py
+    automation/runner.py
+    # System errors (just exception definitions)
+    system/errors/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstract
