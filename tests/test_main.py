@@ -197,11 +197,18 @@ class TestCircuitBreaker(unittest.TestCase):
     def setUp(self):
         """Set up test environment"""
         os.environ['DRY_RUN'] = 'false'  # Enable circuit breaker
+        # Force legacy circuit breaker for these tests
+        from config import config
+        self.original_use_advanced_cb = config.use_advanced_circuit_breaker
+        config.use_advanced_circuit_breaker = False
         self.bot = LiveTradingBot(use_live_data=False)
     
     def tearDown(self):
         """Clean up"""
         os.environ['DRY_RUN'] = 'true'
+        # Restore original config
+        from config import config
+        config.use_advanced_circuit_breaker = self.original_use_advanced_cb
     
     def test_circuit_breaker_not_triggered_within_limit(self):
         """Test circuit breaker doesn't trigger when within drawdown limit"""
@@ -376,6 +383,11 @@ class TestSignalProcessing(unittest.TestCase):
         """Test signals are ignored when circuit breaker is triggered"""
         # Disable DRY_RUN to enable circuit breaker
         os.environ['DRY_RUN'] = 'false'
+        # Force legacy circuit breaker for this test
+        from config import config
+        original_use_advanced_cb = config.use_advanced_circuit_breaker
+        config.use_advanced_circuit_breaker = False
+        
         bot = LiveTradingBot(use_live_data=False)
         bot.initialize_data()
         
@@ -400,6 +412,7 @@ class TestSignalProcessing(unittest.TestCase):
         
         # Clean up
         os.environ['DRY_RUN'] = 'true'
+        config.use_advanced_circuit_breaker = original_use_advanced_cb
 
 
 class TestShutdown(unittest.TestCase):
