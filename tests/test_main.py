@@ -223,6 +223,11 @@ class TestCircuitBreaker(unittest.TestCase):
                                  self.bot.initial_capital * 0.95,
                                  self.bot.initial_capital * 0.90]
         
+        # Also update the advanced circuit breaker's equity curve if it exists
+        if self.bot.use_advanced_cb and self.bot.circuit_breaker_manager:
+            for equity in self.bot.equity_curve:
+                self.bot.circuit_breaker_manager.update_equity(equity)
+        
         triggered = self.bot.check_circuit_breaker()
         
         self.assertTrue(triggered)
@@ -382,6 +387,11 @@ class TestSignalProcessing(unittest.TestCase):
         # Simulate large loss to trigger circuit breaker
         bot.capital = bot.initial_capital * 0.70  # 30% loss
         bot.equity_curve = [bot.initial_capital, bot.initial_capital * 0.90, bot.initial_capital * 0.80]
+        
+        # Also update the advanced circuit breaker's equity curve if it exists
+        if bot.use_advanced_cb and bot.circuit_breaker_manager:
+            for equity in bot.equity_curve:
+                bot.circuit_breaker_manager.update_equity(equity)
         
         initial_position = bot.current_position
         
