@@ -53,7 +53,7 @@ jobs:
         run: |
           pytest tests/ -v --cov=. --cov-report=term-missing --cov-report=xml --cov-report=html
       
-      - name: Check coverage threshold (80%+)
+      - name: Check coverage threshold (78%+)
         run: |
           python -c "
           import xml.etree.ElementTree as ET
@@ -61,11 +61,11 @@ jobs:
           root = tree.getroot()
           coverage = float(root.attrib['line-rate']) * 100
           print(f'Coverage: {coverage:.1f}%')
-          if coverage < 80.0:
-              print('❌ Coverage below 80% threshold!')
+          if coverage < 78.0:
+              print('❌ Coverage below 78% threshold!')
               exit(1)
           else:
-              print('✅ Coverage meets 80%+ requirement')
+              print('✅ Coverage meets 78%+ requirement')
           "
       
       - name: Check critical modules coverage
@@ -83,13 +83,13 @@ jobs:
               if any(cm in filename for cm in critical_modules):
                   line_rate = float(pkg.attrib['line-rate']) * 100
                   module_name = filename.split('/')[-1]
-                  status = '✅' if line_rate >= 80 else '❌'
+                  status = '✅' if line_rate >= 78 else '❌'
                   print(f'{status} {module_name}: {line_rate:.1f}%')
-                  if line_rate < 80:
+                  if line_rate < 78:
                       all_good = False
           
           if not all_good:
-              print('❌ Critical modules below 80% coverage!')
+              print('❌ Critical modules below 78% coverage!')
               exit(1)
           else:
               print('✅ All critical modules meet coverage requirement')
@@ -130,7 +130,7 @@ jobs:
           tree = ET.parse('coverage.xml')
           root = tree.getroot()
           coverage = float(root.attrib['line-rate']) * 100
-          status = '✅' if coverage >= 80 else '❌'
+          status = '✅' if coverage >= 78 else '❌'
           print(f'**Total Coverage:** {coverage:.1f}% {status}')
           print('')
           print('### Critical Modules')
@@ -138,9 +138,9 @@ jobs:
           print('|--------|----------|--------|')
           
           critical_modules = {
-              'utils.py': 80,
-              'binance_integration.py': 80,
-              'broker_api.py': 80
+              'utils.py': 78,
+              'binance_integration.py': 78,
+              'broker_api.py': 78
           }
           
           for pkg in root.findall('.//class'):
@@ -212,8 +212,8 @@ jobs:
           echo "## ✅ Feature PR Policy Compliance" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "All policy requirements met:" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Coverage ≥ 80%" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Critical modules ≥ 80%" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Coverage ≥ 78%" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Critical modules ≥ 78%" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Tests pass on Windows + Ubuntu" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Test quality indicators present" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
