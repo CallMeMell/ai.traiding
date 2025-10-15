@@ -45,7 +45,32 @@ class TradingConfig:
     max_positions: int = 10
     risk_per_trade: float = 0.02  # 2% pro Trade
     max_daily_loss: float = 0.05  # 5% maximaler Tagesverlust
-    max_drawdown_limit: float = 0.20  # 20% maximaler Drawdown - Circuit Breaker
+    max_drawdown_limit: float = 0.20  # 20% maximaler Drawdown - Circuit Breaker (Legacy)
+    
+    # Erweiterte Circuit Breaker Konfiguration
+    use_advanced_circuit_breaker: bool = True  # Verwende erweiterte CB Logic
+    circuit_breaker_thresholds: Dict[str, Dict[str, Any]] = field(default_factory=lambda: {
+        "warning": {
+            "level": 10.0,  # 10% Drawdown
+            "actions": ["log", "alert"],
+            "description": "Warning Level - Erste Warnung"
+        },
+        "alert": {
+            "level": 15.0,  # 15% Drawdown
+            "actions": ["log", "alert"],
+            "description": "Alert Level - Erhöhte Aufmerksamkeit"
+        },
+        "critical": {
+            "level": 20.0,  # 20% Drawdown
+            "actions": ["log", "alert", "pause_trading"],
+            "description": "Critical Level - Trading pausieren"
+        },
+        "emergency": {
+            "level": 30.0,  # 30% Drawdown
+            "actions": ["log", "alert", "shutdown", "rebalance"],
+            "description": "Emergency Level - Sofortiger Shutdown"
+        }
+    })
     
     # Kelly Criterion Position Sizing
     enable_kelly_criterion: bool = False  # Kelly Criterion für Positionsgrößen
