@@ -403,5 +403,210 @@ class TestPaperTradingExecutorEdgeCases(unittest.TestCase):
         self.assertEqual(result['status'], 'error')
 
 
+@unittest.skipIf(not BINANCE_INTEGRATION_AVAILABLE, "binance_integration not available")
+class TestBinanceDataProviderAdditional(unittest.TestCase):
+    """Additional tests for BinanceDataProvider"""
+    
+    @patch('binance_integration.Client')
+    def test_get_symbol_info(self, mock_client_class):
+        """Test getting symbol information"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Mock symbol info response
+        mock_client.get_symbol_info.return_value = {
+            'symbol': 'BTCUSDT',
+            'status': 'TRADING',
+            'baseAsset': 'BTC',
+            'quoteAsset': 'USDT',
+            'pricePrecision': 2,
+            'quantityPrecision': 6,
+            'filters': [
+                {
+                    'filterType': 'LOT_SIZE',
+                    'minQty': '0.00001',
+                    'maxQty': '9000',
+                    'stepSize': '0.00001'
+                },
+                {
+                    'filterType': 'MIN_NOTIONAL',
+                    'minNotional': '10.0'
+                }
+            ]
+        }
+        
+        provider = BinanceDataProvider(
+            api_key='test_key',
+            api_secret='test_secret',
+            testnet=True
+        )
+        
+        info = provider.get_symbol_info('BTCUSDT')
+        
+        self.assertEqual(info['symbol'], 'BTCUSDT')
+        self.assertEqual(info['baseAsset'], 'BTC')
+        self.assertGreater(info['minQty'], 0)
+    
+    @patch('binance_integration.Client')
+    def test_get_symbol_info_error(self, mock_client_class):
+        """Test handling symbol info error"""
+        from binance.exceptions import BinanceAPIException
+        
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Simulate API error
+        mock_client.get_symbol_info.side_effect = BinanceAPIException(
+            response=MagicMock(status_code=400),
+            status_code=400,
+            text='{"code": -1121, "msg": "Invalid symbol"}'
+        )
+        
+        provider = BinanceDataProvider(
+            api_key='test_key',
+            api_secret='test_secret',
+            testnet=True
+        )
+        
+        with self.assertRaises(Exception):
+            provider.get_symbol_info('INVALID')
+    
+    @patch('binance_integration.Client')
+    def test_get_account_balance_error(self, mock_client_class):
+        """Test handling balance error"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Simulate error
+        mock_client.get_asset_balance.side_effect = Exception("Connection error")
+        
+        provider = BinanceDataProvider(
+            api_key='test_key',
+            api_secret='test_secret',
+            testnet=True
+        )
+        
+        balance = provider.get_account_balance('USDT')
+        
+        # Should return 0.0 on error
+        self.assertEqual(balance, 0.0)
+    
+    @patch('binance_integration.Client')
+    def test_get_account_balance_not_found(self, mock_client_class):
+        """Test getting balance for asset not in account"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Return None for asset not found
+        mock_client.get_asset_balance.return_value = None
+        
+        provider = BinanceDataProvider(
+            api_key='test_key',
+            api_secret='test_secret',
+            testnet=True
+        )
+        
+        balance = provider.get_account_balance('UNKNOWN')
+        
+        # Should return 0.0 for unknown asset
+        self.assertEqual(balance, 0.0)
+    
+    @patch('binance_integration.Client')
+    def test_close_with_websocket(self, mock_client_class):
+        """Test closing provider with WebSocket manager"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        provider = BinanceDataProvider(
+            api_key='test_key',
+            api_secret='test_secret',
+            testnet=True
+        )
+        
+        # Mock WebSocket manager
+        mock_ws = MagicMock()
+        provider.ws_manager = mock_ws
+        
+        # Close provider
+        provider.close()
+        
+        # Verify WebSocket was stopped
+        mock_ws.stop.assert_called_once()
+        self.assertIsNone(provider.ws_manager)
+    
+    @patch('binance_integration.Client')
+    def test_close_without_websocket(self, mock_client_class):
+        """Test closing provider without WebSocket manager"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        provider = BinanceDataProvider(
+            api_key='test_key',
+            api_secret='test_secret',
+            testnet=True
+        )
+        
+        # Ensure ws_manager is None
+        provider.ws_manager = None
+        
+        # Should not raise error
+        provider.close()
+    
+    @patch('binance_integration.Client')
+    def test_get_historical_klines_error_handling(self, mock_client_class):
+        """Test error handling in get_historical_klines"""
+        from binance.exceptions import BinanceAPIException
+        
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Simulate API error
+        mock_client.get_historical_klines.side_effect = BinanceAPIException(
+            response=MagicMock(status_code=500),
+            status_code=500,
+            text='{"code": -1001, "msg": "Internal error"}'
+        )
+        
+        provider = BinanceDataProvider(
+            api_key='test_key',
+            api_secret='test_secret',
+            testnet=True
+        )
+        
+        with self.assertRaises(Exception):
+            provider.get_historical_klines('BTCUSDT', '1h')
+    
+    @patch('binance_integration.Client')
+    def test_get_historical_klines_empty_result(self, mock_client_class):
+        """Test handling empty klines result"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Return empty list
+        mock_client.get_historical_klines.return_value = []
+        
+        provider = BinanceDataProvider(
+            api_key='test_key',
+            api_secret='test_secret',
+            testnet=True
+        )
+        
+        df = provider.get_historical_klines('BTCUSDT', '1h')
+        
+        # Should return empty DataFrame
+        self.assertTrue(df.empty)
+    
+    @patch('binance_integration.Client')
+    def test_initialization_without_binance(self, mock_client_class):
+        """Test initialization behavior"""
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        
+        # Test with default parameters (from env)
+        provider = BinanceDataProvider()
+        
+        self.assertIsNotNone(provider.client)
+
+
 if __name__ == '__main__':
     unittest.main()
