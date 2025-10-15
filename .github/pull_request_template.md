@@ -54,6 +54,24 @@
 # Or via VS Code: Ctrl+Shift+P -> "Tasks: Run Task" -> "Dev: Live Session"
 ```
 
+### Test Coverage (für Feature-PRs)
+<!-- 
+Für Feature-PRs: Füge einen Coverage-Report hinzu (siehe .github/COVERAGE_COMMENT_TEMPLATE.md)
+Minimum: 80% Coverage für neuen Code
+-->
+
+- [ ] Coverage ≥ 80% für neue Code
+- [ ] Coverage-Report als Kommentar oder Artifact hinzugefügt
+- [ ] Keine Coverage-Regression bei kritischen Modulen (utils, binance_integration, broker_api)
+
+**Coverage Summary:**
+```
+# Füge Coverage-Statistik ein (Beispiel):
+# Total Coverage: 81% (Target: 80%+) ✅
+# New Tests: +15 tests
+# Coverage Report: [Link to artifact]
+```
+
 ---
 
 ## 📎 Additional Context

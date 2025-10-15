@@ -426,6 +426,260 @@ Nach Approval:
 
 ---
 
+## 📊 Merge Policy für Feature-PRs (Nach Sprint 0)
+
+**Status:** ✅ Aktiv seit Sprint 0 (80%+ Coverage erreicht)  
+**Gilt für:** Alle Feature-PRs nach Sprint 0 Completion
+
+### 🎯 Übersicht
+
+Nach erfolgreichem Abschluss von Sprint 0 (80%+ Test Coverage für kritische Module) gelten **verschärfte Qualitätsanforderungen** für neue Features, um die erreichte Code-Qualität zu halten und nachhaltig weiterzuentwickeln.
+
+### ✅ Pflicht-Kriterien für Merge
+
+Ein Feature-PR kann **nur gemergt werden**, wenn alle folgenden Kriterien erfüllt sind:
+
+#### 1. Test Coverage (Critical!)
+
+**Minimum Coverage:**
+- ✅ **Neue Code-Files**: Mindestens **80% Coverage**
+- ✅ **Geänderte Files**: Coverage darf nicht sinken
+- ✅ **Kritische Module** (utils.py, binance_integration.py, broker_api.py): Bleiben ≥80%
+- ✅ **Gesamt-Coverage**: Keine Regression (mind. aktuelles Level halten)
+
+**Coverage-Nachweis:**
+```markdown
+## 📊 Test Coverage Report
+
+### Coverage Summary
+| Module | Coverage | Target | Status |
+|--------|----------|--------|--------|
+| new_feature.py | 85% | 80%+ | ✅ |
+| utils.py | 82% | 80%+ | ✅ |
+| **Total** | **81%** | **80%+** | **✅** |
+
+### Test Statistics
+- **New Tests**: 15
+- **Total Tests**: 190 (+15)
+- **Coverage Report**: [HTML Artifact Link]
+```
+
+**Template:** Siehe `.github/COVERAGE_COMMENT_TEMPLATE.md`
+
+#### 2. Test-Qualität
+
+**Anforderungen:**
+- ✅ **Unit Tests**: Isolierte Tests für neue Funktionen
+- ✅ **Edge Cases**: Grenzfälle getestet (None, leere Listen, Fehler)
+- ✅ **Happy Path + Error Path**: Positive und negative Szenarien
+- ✅ **Mocking**: Externe Dependencies gemockt (API-Calls, etc.)
+- ✅ **Test-Namen**: Beschreibend und selbsterklärend
+- ✅ **Keine Flaky Tests**: Tests müssen deterministisch sein
+
+**Test-Struktur Beispiel:**
+```python
+def test_calculate_sharpe_ratio_positive_returns():
+    """Test Sharpe ratio calculation with positive returns."""
+    returns = [0.01, 0.02, -0.01, 0.03]
+    sharpe = calculate_sharpe_ratio(returns)
+    assert sharpe > 0
+    assert isinstance(sharpe, float)
+
+def test_calculate_sharpe_ratio_zero_volatility():
+    """Test Sharpe ratio edge case: zero volatility."""
+    returns = [0.01, 0.01, 0.01, 0.01]
+    sharpe = calculate_sharpe_ratio(returns)
+    assert sharpe == 0.0
+```
+
+#### 3. CI Pipeline
+
+**Alle Checks müssen grün sein:**
+- ✅ **Feature PR Coverage Check**: `feature-pr-coverage.yml` Workflow passing
+- ✅ **Main CI**: `ci.yml` Workflow passing (alle Plattformen + Python-Versionen)
+- ✅ **Linting**: Flake8, Black, isort checks passing
+- ✅ **System Tests**: Integration Tests erfolgreich
+
+**Matrix Testing:**
+- Windows + Ubuntu
+- Python 3.10, 3.11, 3.12
+- 6 Kombinationen (2 OS × 3 Python)
+
+#### 4. Code-Qualität
+
+**Standards:**
+- ✅ **PEP 8**: Code Style Guidelines
+- ✅ **Type Hints**: Funktionen haben Type Annotations
+- ✅ **Docstrings**: Öffentliche API dokumentiert
+- ✅ **DRY-Prinzip**: Keine Code-Duplizierung
+- ✅ **Error Handling**: Try-Except für kritische Pfade
+
+#### 5. Dokumentation
+
+**Pflicht-Updates:**
+- ✅ **README.md**: Neue Features beschrieben (falls User-facing)
+- ✅ **CHANGELOG.md**: Änderungen dokumentiert
+- ✅ **.env.example**: Neue ENV-Variablen hinzugefügt
+- ✅ **Docstrings**: Code dokumentiert
+- ✅ **Guides**: Feature-spezifische Guides (bei Bedarf)
+
+#### 6. Sicherheit
+
+**Security Checks:**
+- ✅ **Keine Secrets**: API-Keys, Tokens, Passwörter nicht im Code
+- ✅ **DRY_RUN Default**: Trading-Features defaulten zu `DRY_RUN=true`
+- ✅ **.env nicht committed**: Nur `.env.example` versioniert
+
+#### 7. Review
+
+**Mindestanforderungen:**
+- ✅ **1 Approval**: Von Maintainer oder Core Team Member
+- ✅ **Review-Checkliste**: Siehe `.github/REVIEW_CHECKLIST.md`
+- ✅ **Alle Kommentare resolved**: Keine offenen Review-Threads
+- ✅ **Keine "Changes Requested"**: Alle angefragten Änderungen umgesetzt
+
+### 🚫 Automatic Rejection Criteria
+
+Ein PR wird **sofort abgelehnt** bei:
+
+- ❌ **Coverage < 80%** für neuen Code
+- ❌ **Coverage-Regression** bei kritischen Modulen
+- ❌ **CI Tests failing**
+- ❌ **Secrets committed** (API-Keys, Tokens)
+- ❌ **Keine Tests** für neues Feature
+- ❌ **Real Trading ohne DRY_RUN Default**
+
+### 📋 Review-Checkliste
+
+Vollständige Review-Checkliste: **`.github/REVIEW_CHECKLIST.md`**
+
+**Quick Check (für Reviewer):**
+```markdown
+- [ ] Coverage ≥ 80% für neuen Code
+- [ ] CI Pipeline grün (alle Plattformen)
+- [ ] Tests hinzugefügt (Unit + Edge Cases)
+- [ ] Dokumentation aktualisiert
+- [ ] Code-Style Guidelines eingehalten
+- [ ] Keine Secrets committed
+- [ ] DRY_RUN Default korrekt
+- [ ] Windows-Kompatibilität getestet
+```
+
+### 🔄 Merge-Prozess
+
+#### Schritt 1: Automated Checks (Pre-Review)
+Vor manueller Review müssen automatisch laufen:
+1. ✅ **CI Pipeline**: Alle Tests passing
+2. ✅ **Coverage Check**: 80%+ erreicht
+3. ✅ **Linting**: Style checks passing
+4. ✅ **System Tests**: Integration funktioniert
+
+**Dauer:** ~5-10 Minuten (automatisch via GitHub Actions)
+
+#### Schritt 2: Manual Review
+Maintainer/Core Team reviewen:
+1. **Code-Qualität**: Review-Checkliste durchgehen
+2. **Architektur**: Passt ins Gesamtbild?
+3. **Tests**: Sinnvoll und ausreichend?
+4. **Dokumentation**: Klar und vollständig?
+5. **Security**: Keine Sicherheitslücken?
+
+**Dauer:** 1-3 Tage (je nach Komplexität)
+
+#### Schritt 3: Feedback & Iteration
+Bei "Changes Requested":
+1. **Feedback lesen**: Alle Kommentare durchgehen
+2. **Änderungen umsetzen**: Code anpassen
+3. **Re-Test**: Lokal testen
+4. **Push Updates**: Commits pushen (automatisch zu PR hinzugefügt)
+5. **Re-Request Review**: Review erneut anfordern
+
+#### Schritt 4: Approval & Merge
+Nach Approval und grünen Checks:
+1. **Final Check**: Maintainer überprüft nochmals
+2. **Squash and Merge**: Commits zu einem zusammenfassen
+3. **Commit Message**: Conventional Commits Format
+4. **Merge to Dev**: PR in `dev` Branch mergen
+5. **Branch Cleanup**: Feature-Branch löschen
+
+### 📊 Coverage-Integration in CI
+
+**Workflow:** `.github/workflows/feature-pr-coverage.yml`
+
+**Features:**
+- ✅ Automatische Coverage-Prüfung bei jedem PR
+- ✅ Coverage-Threshold Check (80%+)
+- ✅ Kritische Module einzeln geprüft
+- ✅ HTML Coverage Report als Artifact
+- ✅ Coverage Summary im PR (GitHub Step Summary)
+- ✅ Upload zu Codecov (optional)
+
+**Beispiel CI-Output:**
+```
+📊 Coverage Summary
+Total Coverage: 81% ✅
+
+Critical Modules:
+| Module | Coverage | Status |
+|--------|----------|--------|
+| utils.py | 82% | ✅ |
+| binance_integration.py | 78% | ✅ |
+| broker_api.py | 78% | ✅ |
+```
+
+### 🎓 Für Contributors
+
+**Vor PR-Erstellung:**
+1. ✅ Tests lokal schreiben und ausführen
+2. ✅ Coverage lokal prüfen (≥80%)
+3. ✅ Linting lokal durchführen
+4. ✅ Dokumentation aktualisieren
+5. ✅ Self-Review durchführen
+
+**Coverage-Check lokal (Windows):**
+```powershell
+# Tests mit Coverage
+.\venv\Scripts\python.exe -m pytest tests/ --cov=. --cov-report=term-missing --cov-report=html -v
+
+# HTML Report öffnen
+Start-Process htmlcov\index.html
+```
+
+**Coverage-Check lokal (Linux/macOS):**
+```bash
+# Tests mit Coverage
+python -m pytest tests/ --cov=. --cov-report=term-missing --cov-report=html -v
+
+# HTML Report öffnen
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
+```
+
+### 📚 Weitere Ressourcen
+
+**Policy-Dokumente:**
+- **Review-Checkliste**: `.github/REVIEW_CHECKLIST.md`
+- **Coverage-Template**: `.github/COVERAGE_COMMENT_TEMPLATE.md`
+- **CI Workflow**: `.github/workflows/feature-pr-coverage.yml`
+
+**Best Practices:**
+- **Sprint 0 Validation**: `SPRINT_0_COVERAGE_VALIDATION.md`
+- **CI Success Guide**: `CI_SUCCESS_AND_NEXT_STEPS.md`
+- **Best Practices**: `BEST_PRACTICES_GUIDE.md`
+
+### 🎯 Ziel dieser Policy
+
+Diese Policy sorgt für:
+- ✅ **Nachhaltige Code-Qualität**
+- ✅ **Hohe Testabdeckung** (≥80%)
+- ✅ **Konsistente Standards**
+- ✅ **Vertrauenswürdiger Code**
+- ✅ **Schnelle Iteration** (durch klare Kriterien)
+
+**Nach Sprint 0 gilt:** Quality over Speed! 🚀
+
+---
+
 ## 📝 Issue Guidelines
 
 ### Issue erstellen

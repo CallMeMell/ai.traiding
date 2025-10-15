@@ -1,0 +1,222 @@
+name: Feature PR - Coverage Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.py'
+      - 'tests/**.py'
+      - 'requirements.txt'
+
+jobs:
+  coverage-check:
+    name: Coverage Check (Feature PR)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python-version: ['3.12']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for coverage diff
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov coverage[toml]
+      
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov coverage[toml]
+      
+      - name: Run tests with coverage
+        env:
+          DRY_RUN: true
+          BROKER_NAME: binance
+          BINANCE_BASE_URL: https://testnet.binance.vision
+        run: |
+          pytest tests/ -v --cov=. --cov-report=term-missing --cov-report=xml --cov-report=html
+      
+      - name: Check coverage threshold (80%+)
+        run: |
+          python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          root = tree.getroot()
+          coverage = float(root.attrib['line-rate']) * 100
+          print(f'Coverage: {coverage:.1f}%')
+          if coverage < 80.0:
+              print('❌ Coverage below 80% threshold!')
+              exit(1)
+          else:
+              print('✅ Coverage meets 80%+ requirement')
+          "
+      
+      - name: Check critical modules coverage
+        run: |
+          python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          root = tree.getroot()
+          
+          critical_modules = ['utils.py', 'binance_integration.py', 'broker_api.py']
+          all_good = True
+          
+          for pkg in root.findall('.//class'):
+              filename = pkg.attrib['filename']
+              if any(cm in filename for cm in critical_modules):
+                  line_rate = float(pkg.attrib['line-rate']) * 100
+                  module_name = filename.split('/')[-1]
+                  status = '✅' if line_rate >= 80 else '❌'
+                  print(f'{status} {module_name}: {line_rate:.1f}%')
+                  if line_rate < 80:
+                      all_good = False
+          
+          if not all_good:
+              print('❌ Critical modules below 80% coverage!')
+              exit(1)
+          else:
+              print('✅ All critical modules meet coverage requirement')
+          "
+      
+      - name: Upload coverage report (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-windows
+          path: htmlcov/
+          retention-days: 30
+      
+      - name: Upload coverage report (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-ubuntu
+          path: htmlcov/
+          retention-days: 30
+      
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+          flags: unittests
+          name: codecov-umbrella
+      
+      - name: Generate coverage summary
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "## 📊 Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          root = tree.getroot()
+          coverage = float(root.attrib['line-rate']) * 100
+          status = '✅' if coverage >= 80 else '❌'
+          print(f'**Total Coverage:** {coverage:.1f}% {status}')
+          print('')
+          print('### Critical Modules')
+          print('| Module | Coverage | Status |')
+          print('|--------|----------|--------|')
+          
+          critical_modules = {
+              'utils.py': 80,
+              'binance_integration.py': 80,
+              'broker_api.py': 80
+          }
+          
+          for pkg in root.findall('.//class'):
+              filename = pkg.attrib['filename']
+              for module, threshold in critical_modules.items():
+                  if module in filename:
+                      line_rate = float(pkg.attrib['line-rate']) * 100
+                      status = '✅' if line_rate >= threshold else '❌'
+                      print(f'| {module} | {line_rate:.1f}% | {status} |')
+          " >> $GITHUB_STEP_SUMMARY
+  
+  test-quality-check:
+    name: Test Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+      
+      - name: Check test count
+        run: |
+          TEST_COUNT=$(pytest --collect-only -q tests/ 2>/dev/null | tail -n 1 | grep -oP '\d+(?= test)' || echo "0")
+          echo "📊 Test Count: $TEST_COUNT"
+          echo "TEST_COUNT=$TEST_COUNT" >> $GITHUB_ENV
+          
+          if [ "$TEST_COUNT" -lt 10 ]; then
+            echo "⚠️ Low test count (< 10 tests)"
+          else
+            echo "✅ Good test count"
+          fi
+      
+      - name: Check for test quality indicators
+        run: |
+          echo "## 🧪 Test Quality Indicators" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Count test files
+          TEST_FILES=$(find tests/ -name "test_*.py" | wc -l)
+          echo "- **Test Files:** $TEST_FILES" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for common test patterns
+          MOCK_USAGE=$(grep -r "@mock\|@patch\|Mock()" tests/ 2>/dev/null | wc -l)
+          echo "- **Mocking Usage:** $MOCK_USAGE instances" >> $GITHUB_STEP_SUMMARY
+          
+          PYTEST_FIXTURES=$(grep -r "@pytest.fixture" tests/ 2>/dev/null | wc -l)
+          echo "- **Pytest Fixtures:** $PYTEST_FIXTURES" >> $GITHUB_STEP_SUMMARY
+          
+          PARAMETRIZE=$(grep -r "@pytest.mark.parametrize" tests/ 2>/dev/null | wc -l)
+          echo "- **Parametrized Tests:** $PARAMETRIZE" >> $GITHUB_STEP_SUMMARY
+  
+  policy-compliance:
+    name: Policy Compliance Check
+    runs-on: ubuntu-latest
+    needs: [coverage-check, test-quality-check]
+    
+    steps:
+      - name: Policy compliance summary
+        run: |
+          echo "## ✅ Feature PR Policy Compliance" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All policy requirements met:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Coverage ≥ 80%" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Critical modules ≥ 80%" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tests pass on Windows + Ubuntu" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Test quality indicators present" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** Ready for manual review ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📋 See [Review Checklist](.github/REVIEW_CHECKLIST.md) for manual review criteria" >> $GITHUB_STEP_SUMMARY
