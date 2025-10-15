@@ -44,6 +44,11 @@ class TestCircuitBreakerIntegration(unittest.TestCase):
         bot.capital = initial_capital * 0.70  # 30% loss
         bot.equity_curve = [initial_capital, initial_capital * 0.90, initial_capital * 0.85, initial_capital * 0.75]
         
+        # Also update the advanced circuit breaker's equity curve if it exists
+        if bot.use_advanced_cb and bot.circuit_breaker_manager:
+            for equity in bot.equity_curve:
+                bot.circuit_breaker_manager.update_equity(equity)
+        
         # Check circuit breaker
         triggered = bot.check_circuit_breaker()
         
@@ -75,6 +80,11 @@ class TestCircuitBreakerIntegration(unittest.TestCase):
         bot = LiveTradingBot(use_live_data=False)
         bot.capital = bot.initial_capital * 0.70
         bot.equity_curve = [bot.initial_capital, bot.capital]
+        
+        # Also update the advanced circuit breaker's equity curve if it exists
+        if bot.use_advanced_cb and bot.circuit_breaker_manager:
+            for equity in bot.equity_curve:
+                bot.circuit_breaker_manager.update_equity(equity)
         
         # Trigger circuit breaker
         with self.assertLogs(level='CRITICAL') as log:

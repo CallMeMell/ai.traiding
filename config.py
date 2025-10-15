@@ -72,6 +72,9 @@ class TradingConfig:
         }
     })
     
+    # Advanced Circuit Breaker (Feature flag for PR #187)
+    use_advanced_circuit_breaker: bool = False  # Set to True to enable advanced CB logic
+    
     # Kelly Criterion Position Sizing
     enable_kelly_criterion: bool = False  # Kelly Criterion für Positionsgrößen
     kelly_fraction: float = 0.5  # Fraktionaler Kelly (0.5 = Half Kelly, konservativ)

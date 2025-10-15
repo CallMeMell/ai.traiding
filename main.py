@@ -208,6 +208,12 @@ class LiveTradingBot:
         self.circuit_breaker_triggered = False
         self.is_dry_run = os.getenv('DRY_RUN', 'true').lower() == 'true'
         
+        # Advanced Circuit Breaker (Feature flag for PR #187)
+        # When use_advanced_circuit_breaker is True, we'd use CircuitBreakerManager
+        # For now, just set the flag to False (legacy circuit breaker)
+        self.use_advanced_cb = config.use_advanced_circuit_breaker
+        self.circuit_breaker_manager = None  # Would be initialized if use_advanced_cb=True
+        
         # Alert System
         self.alert_manager = AlertManager(
             enable_telegram=os.getenv('ENABLE_TELEGRAM_ALERTS', 'false').lower() == 'true',
