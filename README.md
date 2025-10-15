@@ -15,7 +15,7 @@ Diese Master-Version konsolidiert die besten Features aus vier Evolutionsstufen 
 | binance_integration.py | 78% | ✅ Good |
 | broker_api.py | 78% | ✅ Good |
 
-📊 **175 Tests** | [View Detailed Report](TEST_COVERAGE_REPORT.md) | [Run Coverage Check](scripts/check_coverage.ps1)
+📊 **175 Tests** | [View Detailed Report](TEST_COVERAGE_REPORT.md) | [Sprint 0 Validation](SPRINT_0_COVERAGE_VALIDATION.md) | [Run Coverage Check](scripts/check_coverage.ps1)
 
 ## 🔥 Now with Binance API Integration!
 
