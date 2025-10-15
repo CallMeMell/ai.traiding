@@ -1,0 +1,3 @@
+timestamp,symbol,order_type,price,quantity,triggering_strategies,capital,pnl,is_real_money,profit_factor,win_rate,sharpe_ratio
+2025-10-15T21:48:33.032966,BTC/USDT,BUY,30000.00,0.1,"RSI, MACD",10000.00,0.00,False,0.00,0.00,0.00
+2025-10-15T21:48:33.033978,BTC/USDT,SELL,31500.00,0.1,MACD,10150.00,150.00,False,0.00,0.00,0.00
