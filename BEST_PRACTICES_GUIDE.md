@@ -678,6 +678,297 @@ def set_position_size(self, size: float):
 
 ---
 
+## 🧪 CI/CD Best Practices (NEW - Oktober 2025)
+
+### ✅ Status: Fully Implemented
+
+Nach erfolgreicher CI-Stabilisierung (Issue #193) haben wir folgende Best Practices etabliert:
+
+### Windows-Compatible Test Patterns
+
+#### 1. Logging Handler Cleanup Pattern
+
+**Problem:** Windows locks files opened by logging handlers, preventing cleanup.
+
+**Solution:**
+```python
+def _cleanup_logging_handlers(self):
+    """Close all logging handlers before file deletion."""
+    loggers = [logging.getLogger()] + [
+        logging.getLogger(name) for name in logging.root.manager.loggerDict
+    ]
+    
+    for logger in loggers:
+        for handler in logger.handlers[:]:
+            try:
+                handler.close()
+            except Exception:
+                pass
+            try:
+                logger.removeHandler(handler)
+            except Exception:
+                pass
+    
+    logging.getLogger().handlers.clear()
+
+def tearDown(self):
+    # IMPORTANT: Close handlers BEFORE deleting files
+    self._cleanup_logging_handlers()
+    
+    if os.path.exists(self.test_dir):
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+```
+
+**When to use:**
+- Any test that creates logging handlers
+- Tests using `setup_logging()` function
+- Tests that write to log files
+
+#### 2. Safe Directory Cleanup
+
+**Pattern:**
+```python
+def tearDown(self):
+    """Safe cleanup that works on Windows and Linux."""
+    if os.path.exists(self.test_dir):
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+```
+
+**Rationale:**
+- `ignore_errors=True` prevents PermissionError on Windows
+- Acts as safety net if any file handles are still open
+- Doesn't fail test if cleanup has issues
+
+**When to use:**
+- ALL tearDown methods that delete temp directories
+- Even if no logging is involved (defense in depth)
+
+#### 3. Cross-Platform Path Handling
+
+**✅ RICHTIG:**
+```python
+# Use os.path.join
+log_file = os.path.join("logs", "subdir", "file.log")
+
+# Or pathlib
+from pathlib import Path
+log_file = Path("logs") / "subdir" / "file.log"
+```
+
+**❌ FALSCH:**
+```python
+# Hard-coded backslashes (Windows-only)
+log_file = "logs\\subdir\\file.log"
+
+# Hard-coded forward slashes (works but not idiomatic)
+log_file = "logs/subdir/file.log"
+```
+
+### CI Configuration Best Practices
+
+#### 1. Fail-Fast: False
+
+**Configuration (.github/workflows/ci.yml):**
+```yaml
+strategy:
+  fail-fast: false  # Continue testing all combinations
+  matrix:
+    os: [ubuntu-latest, windows-latest]
+    python-version: ['3.10', '3.11', '3.12']
+```
+
+**Benefits:**
+- Get complete feedback, not just first failure
+- See which specific OS/Python combinations fail
+- Saves debugging time
+
+#### 2. Matrix Testing
+
+**Why:**
+- Catches platform-specific bugs
+- Validates Python version compatibility
+- Ensures broad compatibility
+
+**Our Matrix:**
+- 2 Operating Systems (Ubuntu, Windows)
+- 3 Python Versions (3.10, 3.11, 3.12)
+- = 6 Total Combinations
+
+#### 3. DRY_RUN Default
+
+**Always in Tests:**
+```python
+# In test setup or fixtures
+os.environ['DRY_RUN'] = 'true'
+```
+
+**In CI Workflow:**
+```yaml
+env:
+  DRY_RUN: true
+  PYTHONUNBUFFERED: 1
+```
+
+**Why:**
+- Prevents accidental real trading in tests
+- Safety first approach
+- Makes tests predictable
+
+### Test Writing Best Practices
+
+#### 1. Test Isolation
+
+**✅ RICHTIG:**
+```python
+class TestFeature(unittest.TestCase):
+    def setUp(self):
+        """Each test gets fresh state."""
+        self.test_dir = tempfile.mkdtemp()
+        self.bot = TradingBot()
+    
+    def tearDown(self):
+        """Clean up after EACH test."""
+        self._cleanup_logging_handlers()
+        if os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir, ignore_errors=True)
+```
+
+**❌ FALSCH:**
+```python
+class TestFeature(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Shared state across tests - BAD!"""
+        cls.test_dir = tempfile.mkdtemp()
+        cls.bot = TradingBot()
+    
+    # No tearDown - leaves garbage
+```
+
+**Why Isolation Matters:**
+- Tests can run in any order
+- One test failure doesn't affect others
+- Easier to debug
+- No flaky tests
+
+#### 2. No External Dependencies
+
+**✅ RICHTIG:**
+```python
+def test_api_call():
+    """Test with mocked API."""
+    with patch('binance.Client') as mock_client:
+        mock_client.return_value.get_klines.return_value = [...]
+        result = fetch_data()
+        assert len(result) == 100
+```
+
+**❌ FALSCH:**
+```python
+def test_api_call():
+    """Test depends on real API - BAD!"""
+    result = fetch_data_from_binance()  # Real API call
+    assert len(result) > 0  # Flaky - depends on network
+```
+
+**Why:**
+- Tests must be deterministic
+- No network = no flaky tests
+- Fast test execution
+- Can test error cases
+
+#### 3. Descriptive Test Names
+
+**✅ RICHTIG:**
+```python
+def test_calculate_sharpe_ratio_positive_returns():
+    """Test Sharpe ratio with positive returns."""
+    
+def test_calculate_sharpe_ratio_negative_returns():
+    """Test Sharpe ratio with negative returns."""
+
+def test_calculate_sharpe_ratio_zero_volatility():
+    """Test Sharpe ratio edge case: zero volatility."""
+```
+
+**❌ FALSCH:**
+```python
+def test_sharpe():
+    """Test sharpe."""
+
+def test_sharpe2():
+    """Test sharpe again."""
+```
+
+### Error Handling in Tests
+
+**Pattern:**
+```python
+def test_error_recovery():
+    """Test that errors are handled gracefully."""
+    call_count = 0
+    
+    def flaky_function():
+        nonlocal call_count
+        call_count += 1
+        if call_count < 2:
+            raise ConnectionError("Transient error")
+        return "success"
+    
+    runner = AutomationRunner()
+    result = runner._retry_with_backoff(flaky_function)
+    
+    assert result == "success"
+    assert call_count == 2  # Failed once, then succeeded
+```
+
+### Coverage Goals per Module
+
+| Module | Current | Target | Priority |
+|--------|---------|--------|----------|
+| main.py | 89% | 90%+ | ✅ Good |
+| strategy.py | 90% | 90%+ | ✅ Good |
+| orchestrator.py | 72% | 80%+ | 🟡 Medium |
+| utils.py | 36% | 70%+ | 🔴 Critical |
+| binance_integration.py | 0% | 60%+ | 🔴 Critical |
+| broker_api.py | 0% | 60%+ | 🔴 Critical |
+
+**Action Items:**
+- [ ] Prioritize critical modules (0% coverage)
+- [ ] Add integration tests for API modules
+- [ ] Add error recovery tests
+- [ ] Achieve 80%+ overall coverage
+
+### Documentation Requirements
+
+**For Each New Feature:**
+1. ✅ User-facing documentation (guide)
+2. ✅ Code comments for complex logic
+3. ✅ Tests (>80% coverage for new code)
+4. ✅ Update CHANGELOG.md
+5. ✅ Update ROADMAP.md if applicable
+
+**CI Best Practices Summary:**
+
+✅ **DO's:**
+- Always use `ignore_errors=True` in tearDown
+- Close logging handlers before file deletion
+- Use `os.path.join()` for paths
+- Set `fail-fast: false` in CI matrix
+- Isolate each test completely
+- Mock external dependencies
+- Write descriptive test names
+
+❌ **DON'Ts:**
+- Never hardcode path separators (\ or /)
+- Don't share state between tests
+- Don't skip cleanup (causes flaky tests)
+- Don't depend on external APIs in tests
+- Don't assume order of test execution
+- Don't commit without running tests locally
+
+---
+
 ## 📝 Checkliste für Production Deployment
 
 ### Pre-Deployment
