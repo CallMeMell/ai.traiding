@@ -4,6 +4,19 @@
 
 Diese Master-Version konsolidiert die besten Features aus vier Evolutionsstufen in eine produktionsreife, modulare Anwendung.
 
+## 🧪 Test Coverage
+
+**Sprint 0: Test Coverage Excellence - Completed!** ✅
+
+| Module | Coverage | Status |
+|--------|----------|--------|
+| **Combined Critical Modules** | **80%** | ✅ Target reached! |
+| utils.py | 82% | ✅ Excellent |
+| binance_integration.py | 78% | ✅ Good |
+| broker_api.py | 78% | ✅ Good |
+
+📊 **175 Tests** | [View Detailed Report](TEST_COVERAGE_REPORT.md) | [Run Coverage Check](scripts/check_coverage.ps1)
+
 ## 🔥 Now with Binance API Integration!
 
 The bot now uses **Binance API** as the primary trading platform:
