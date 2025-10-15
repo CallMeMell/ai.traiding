@@ -415,12 +415,19 @@ open htmlcov/index.html
 - [ ] Dokumentation aktualisiert
 - [ ] CHANGELOG.md aktualisiert
 - [ ] PR Description klar und vollständig
+- [ ] **Merge Policy eingehalten** (siehe CONTRIBUTING.md)
 
 **Review Process:**
-1. Automated checks (CI, Linting)
-2. Code review von Maintainer
+1. Automated checks (CI, Linting, Coverage)
+2. Code review von Maintainer (Review-Checkliste)
 3. Testing auf beiden Plattformen
 4. Merge nach Approval
+
+**Wichtig:** Seit Sprint 0 gilt die **verschärfte Merge Policy** für Feature-PRs:
+- 📋 **Review-Checkliste**: `.github/REVIEW_CHECKLIST.md`
+- 📊 **Coverage-Template**: `.github/COVERAGE_COMMENT_TEMPLATE.md`
+- 🔄 **Merge Policy**: `CONTRIBUTING.md` - Abschnitt "Merge Policy für Feature-PRs"
+- ✅ **CI Workflow**: `.github/workflows/feature-pr-coverage.yml`
 
 ---
 
