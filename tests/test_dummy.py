@@ -1,6 +1,10 @@
 """
 test_dummy.py - Dummy Test for CI Validation
-Simple test to validate test discovery and pytest configuration.
+
+Dummy test to ensure test discovery always works.
+
+This test file guarantees that pytest will always find at least one test,
+preventing test collection failures in CI environments.
 """
 
 import pytest
