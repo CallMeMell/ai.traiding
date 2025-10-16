@@ -12,16 +12,16 @@ import pytest
 
 class TestDummy:
     """Dummy test class to validate test discovery."""
-    
+
     def test_dummy_always_passes(self):
         """Dummy test that always passes - validates test discovery works."""
         assert True
-    
+
     def test_dummy_basic_math(self):
         """Basic math test to validate pytest is working."""
         assert 1 + 1 == 2
         assert 2 * 2 == 4
-    
+
     def test_dummy_string_operations(self):
         """Basic string test to validate pytest is working."""
         assert "hello" + " " + "world" == "hello world"
