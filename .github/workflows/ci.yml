@@ -31,14 +31,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov
+          pip install pytest>=8.0.0 pytest-cov>=5.0.0 coverage[toml]>=7.0.0
       
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov
+          pip install pytest>=8.0.0 pytest-cov>=5.0.0 coverage[toml]>=7.0.0
       
       - name: Run tests
         env:
