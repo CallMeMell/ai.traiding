@@ -14,6 +14,10 @@
 
 <!-- Check all that apply to this PR -->
 
+### PR Synchronization
+- [ ] **PR is synchronized with main branch** (required before merge)
+- [ ] CI synchronization check is passing
+
 ### Environment & Configuration
 - [ ] Code uses `venv\Scripts\python.exe` directly (Windows paths)
 - [ ] Environment variables loaded via `python-dotenv` CLI with `--override` flag
