@@ -439,7 +439,56 @@ Nach erfolgreichem Abschluss von Sprint 0 (80%+ Test Coverage für kritische Mod
 
 Ein Feature-PR kann **nur gemergt werden**, wenn alle folgenden Kriterien erfüllt sind:
 
+#### 0. PR Synchronisation (Critical!)
+
+**Anforderung:**
+- ✅ **PR ist mit main synchronisiert**: Branch muss auf dem aktuellen Stand von `main` basieren
+- ✅ **CI/CD prüft automatisch**: GitHub Actions Workflow blockiert Merge bei veralteten PRs
+- ✅ **Keine veralteten Branches**: Verhindert Merge-Konflikte und veraltete Tests
+
+**Automatische Prüfung:**
+Der Workflow `.github/workflows/require-up-to-date-main.yml` prüft automatisch bei jedem PR:
+- Merge-Base wird mit aktuellem main-HEAD verglichen
+- Bei Abweichung: PR wird blockiert mit Anleitung zur Synchronisation
+- Bei Erfolg: Grünes Häkchen, PR kann weiter geprüft werden
+
+**Synchronisation durchführen:**
+
+Windows PowerShell:
+```powershell
+# Option 1: Rebase (empfohlen für saubere History)
+git fetch origin main
+git rebase origin/main
+git push --force-with-lease
+
+# Option 2: Merge (einfacher, aber zusätzlicher Merge-Commit)
+git fetch origin main
+git merge origin/main
+git push
+```
+
+Linux/macOS:
+```bash
+# Option 1: Rebase (empfohlen)
+git fetch origin main
+git rebase origin/main
+git push --force-with-lease
+
+# Option 2: Merge
+git fetch origin main
+git merge origin/main
+git push
+```
+
+**Warum ist das wichtig?**
+- ✅ Tests laufen gegen aktuelle main-Basis
+- ✅ Coverage-Checks reflektieren neuesten Stand
+- ✅ Keine Merge-Konflikte beim finalen Merge
+- ✅ Alle neuen Features/Fixes aus main sind integriert
+
 #### 1. Test Coverage (Critical!)
+
+#### 2. Test Coverage (Critical!)
 
 **Minimum Coverage:**
 - ✅ **Neue Code-Files**: Mindestens **80% Coverage**
@@ -466,7 +515,7 @@ Ein Feature-PR kann **nur gemergt werden**, wenn alle folgenden Kriterien erfül
 
 **Template:** Siehe `.github/COVERAGE_COMMENT_TEMPLATE.md`
 
-#### 2. Test-Qualität
+#### 3. Test-Qualität
 
 **Anforderungen:**
 - ✅ **Unit Tests**: Isolierte Tests für neue Funktionen
@@ -492,9 +541,10 @@ def test_calculate_sharpe_ratio_zero_volatility():
     assert sharpe == 0.0
 ```
 
-#### 3. CI Pipeline
+#### 4. CI Pipeline
 
 **Alle Checks müssen grün sein:**
+- ✅ **PR Synchronization Check**: `require-up-to-date-main.yml` Workflow passing
 - ✅ **Feature PR Coverage Check**: `feature-pr-coverage.yml` Workflow passing
 - ✅ **Main CI**: `ci.yml` Workflow passing (alle Plattformen + Python-Versionen)
 - ✅ **Linting**: Flake8, Black, isort checks passing
@@ -505,7 +555,7 @@ def test_calculate_sharpe_ratio_zero_volatility():
 - Python 3.10, 3.11, 3.12
 - 6 Kombinationen (2 OS × 3 Python)
 
-#### 4. Code-Qualität
+#### 5. Code-Qualität
 
 **Standards:**
 - ✅ **PEP 8**: Code Style Guidelines
@@ -514,7 +564,7 @@ def test_calculate_sharpe_ratio_zero_volatility():
 - ✅ **DRY-Prinzip**: Keine Code-Duplizierung
 - ✅ **Error Handling**: Try-Except für kritische Pfade
 
-#### 5. Dokumentation
+#### 6. Dokumentation
 
 **Pflicht-Updates:**
 - ✅ **README.md**: Neue Features beschrieben (falls User-facing)
@@ -523,14 +573,14 @@ def test_calculate_sharpe_ratio_zero_volatility():
 - ✅ **Docstrings**: Code dokumentiert
 - ✅ **Guides**: Feature-spezifische Guides (bei Bedarf)
 
-#### 6. Sicherheit
+#### 7. Sicherheit
 
 **Security Checks:**
 - ✅ **Keine Secrets**: API-Keys, Tokens, Passwörter nicht im Code
 - ✅ **DRY_RUN Default**: Trading-Features defaulten zu `DRY_RUN=true`
 - ✅ **.env nicht committed**: Nur `.env.example` versioniert
 
-#### 7. Review
+#### 8. Review
 
 **Mindestanforderungen:**
 - ✅ **1 Approval**: Von Maintainer oder Core Team Member
@@ -542,6 +592,7 @@ def test_calculate_sharpe_ratio_zero_volatility():
 
 Ein PR wird **sofort abgelehnt** bei:
 
+- ❌ **PR nicht mit main synchronisiert**
 - ❌ **Coverage < 80%** für neuen Code
 - ❌ **Coverage-Regression** bei kritischen Modulen
 - ❌ **CI Tests failing**
@@ -555,6 +606,7 @@ Vollständige Review-Checkliste: **`.github/REVIEW_CHECKLIST.md`**
 
 **Quick Check (für Reviewer):**
 ```markdown
+- [ ] PR mit main synchronisiert
 - [ ] Coverage ≥ 80% für neuen Code
 - [ ] CI Pipeline grün (alle Plattformen)
 - [ ] Tests hinzugefügt (Unit + Edge Cases)
