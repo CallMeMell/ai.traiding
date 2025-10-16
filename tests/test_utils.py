@@ -712,6 +712,16 @@ class TestProfitFactor(unittest.TestCase):
         ]
         result = calculate_profit_factor(trades)
         self.assertEqual(result, float('inf'))
+    
+    def test_all_zero_pnl_string_trades(self):
+        """Test with all zero PnL trades as strings (should be filtered out)"""
+        trades = [
+            {'pnl': '0.00'},
+            {'pnl': '0.00'},
+            {'pnl': '0.00'}
+        ]
+        result = calculate_profit_factor(trades)
+        self.assertEqual(result, 0.0)  # Empty list after filtering
 
 
 class TestKellyCriterion(unittest.TestCase):
@@ -900,6 +910,19 @@ class TestSaveLoadTrades(unittest.TestCase):
         
         save_trades_to_csv(trades, nested_path)
         self.assertTrue(os.path.exists(nested_path))
+    
+    def test_load_corrupted_csv(self):
+        """Test loading from corrupted/invalid CSV file"""
+        corrupted_path = os.path.join(self.test_dir, "corrupted.csv")
+        
+        # Create a binary file that can't be read as CSV
+        with open(corrupted_path, 'wb') as f:
+            f.write(b'\x80\x81\x82\x83\x84\x85')  # Invalid UTF-8 bytes
+        
+        # Should handle the exception and return empty list
+        result = load_trades_from_csv(corrupted_path)
+        self.assertIsInstance(result, list)
+        self.assertEqual(result, [])
 
 
 class TestVisualizationFunctions(unittest.TestCase):
