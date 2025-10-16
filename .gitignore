@@ -81,3 +81,6 @@ build/
 # Note: If you accidentally committed a Git/ folder, it needs to be removed from history
 # Use: git rm -r --cached Git/ (then commit and push)
 Git/
+
+# Accidental pip install artifacts
+=*
