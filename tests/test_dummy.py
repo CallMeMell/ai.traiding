@@ -33,15 +33,3 @@ def test_dummy_standalone():
     assert isinstance("test", str)
     assert isinstance(42, int)
     assert isinstance(3.14, float)
-
-
-def test_dummy_basic_assertion():
-    """Test basic Python assertions."""
-    assert 1 + 1 == 2
-    assert "test" in "test_dummy"
-    assert [] == []
-
-
-def test_dummy_import_pytest():
-    """Test that pytest can be imported."""
-    assert pytest is not None
