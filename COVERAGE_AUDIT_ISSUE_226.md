@@ -86,13 +86,13 @@ To prevent regression:
 
 ## Verification Steps
 
-To reproduce these results locally:
+To reproduce these results locally (run from project root):
 
 ```powershell
-# Windows (PowerShell)
+# Windows (PowerShell) - Run from project root directory
 .\venv\Scripts\python.exe -m pip install pytest pytest-cov coverage
 
-# Run coverage check
+# Run coverage check (forward slashes work on modern Windows)
 .\venv\Scripts\python.exe -m pytest tests/test_utils.py -v --cov=utils --cov-report=term-missing --cov-report=html
 
 # View HTML report
@@ -100,7 +100,7 @@ start htmlcov\index.html
 ```
 
 ```bash
-# Linux/macOS
+# Linux/macOS - Run from project root directory
 python -m pip install pytest pytest-cov coverage
 
 # Run coverage check
