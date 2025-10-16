@@ -282,12 +282,14 @@ streamlit run tools/view_session_app.py
    - Commit-Messages auf Deutsch, klar und beschreibend
 
 4. **Self-Checks zwischen Schritten**:
+   - [ ] PR mit main synchronisiert (siehe MERGE_POLICY_QUICK_REF.md)
    - [ ] Linting: `python -m flake8 <file>` (falls konfiguriert)
    - [ ] Tests: `python -m pytest test_<module>.py`
    - [ ] Format: Code-Style konsistent mit Projekt
    - [ ] Funktionalität: Manuelles Testen der neuen Features
 
 5. **PR finalisieren**:
+   - **PR mit main synchronisieren** (siehe unten)
    - Status von Draft auf Ready for Review ändern
    - Alle Tests müssen grün sein
    - Dokumentation aktualisiert
@@ -298,7 +300,64 @@ streamlit run tools/view_session_app.py
    - Issue schließen mit Referenz auf PR
    - PROGRESS.md aktualisieren
 
-### VS Code Setup
+### PR Synchronisation mit main (Wichtig!)
+
+**Status:** ✅ Seit Oktober 2025 erforderlich für alle PRs  
+**Workflow:** `.github/workflows/require-up-to-date-main.yml`
+
+Alle Pull Requests müssen mit dem aktuellen `main` Branch synchronisiert sein, bevor sie gemergt werden können.
+
+#### Warum ist das wichtig?
+- ✅ Tests laufen gegen die aktuelle Codebasis
+- ✅ Coverage-Checks reflektieren den neuesten Stand
+- ✅ Keine Merge-Konflikte beim finalen Merge
+- ✅ Alle neuen Features und Fixes aus main sind integriert
+
+#### Automatischer Check
+Der CI/CD Workflow prüft automatisch bei jedem PR:
+- Vergleicht Merge-Base mit main HEAD
+- Blockiert Merge wenn PR veraltet ist
+- Zeigt klare Anleitung zur Synchronisation
+
+#### Synchronisation durchführen
+
+**Windows PowerShell (empfohlen):**
+```powershell
+# Option 1: Rebase (saubere History)
+git fetch origin main
+git rebase origin/main
+git push --force-with-lease
+
+# Option 2: Merge (einfacher, zusätzlicher Commit)
+git fetch origin main
+git merge origin/main
+git push
+```
+
+**Linux/macOS:**
+```bash
+# Option 1: Rebase (empfohlen)
+git fetch origin main
+git rebase origin/main
+git push --force-with-lease
+
+# Option 2: Merge
+git fetch origin main
+git merge origin/main
+git push
+```
+
+**Wann synchronisieren?**
+- Vor dem Finalisieren des PR (Ready for Review)
+- Nach längerer Entwicklungszeit
+- Wenn der CI Check fehlschlägt mit "not up-to-date"
+- Vor jedem Re-Request Review
+
+**Siehe auch:**
+- CONTRIBUTING.md (Abschnitt "PR Synchronisation")
+- MERGE_POLICY_QUICK_REF.md (Abschnitt "PR Synchronisation")
+
+---
 
 - **Extension**: GitHub Pull Requests and Issues installieren
 - **Panel öffnen**: Sidebar → GitHub-Icon

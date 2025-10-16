@@ -1,0 +1,86 @@
+name: Require Up-to-date main
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  check-sync:
+    name: Check PR is up-to-date with main
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      
+      - name: Fetch main branch
+        run: |
+          git fetch origin main:main
+      
+      - name: Check if PR is up-to-date with main
+        run: |
+          echo "🔍 Checking if PR branch is up-to-date with main..."
+          
+          # Get the merge-base (common ancestor) of the PR branch and main
+          BASE=$(git merge-base HEAD origin/main)
+          MAIN_HEAD=$(git rev-parse origin/main)
+          
+          echo "📌 Merge base: $BASE"
+          echo "📌 Main HEAD:  $MAIN_HEAD"
+          
+          # Check if the merge-base equals main's HEAD
+          # If they are equal, the PR branch is up-to-date with main
+          if [ "$BASE" != "$MAIN_HEAD" ]; then
+            echo ""
+            echo "❌ ERROR: PR branch is not up-to-date with main!"
+            echo ""
+            echo "📋 Your PR branch is based on an older version of main."
+            echo "   Please synchronize your branch with main before merging."
+            echo ""
+            echo "🔄 To fix this, you can:"
+            echo "   1. Rebase your branch: git rebase origin/main"
+            echo "   2. Or merge main: git merge origin/main"
+            echo ""
+            echo "💡 After updating, push your changes to trigger CI again."
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ SUCCESS: PR branch is up-to-date with main!"
+          echo "   Your branch is based on the latest main commit."
+          echo ""
+      
+      - name: Add status comment (summary)
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "## ✅ PR Synchronization Check Passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Your PR branch is up-to-date with \`main\` and ready for merge! 🚀" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ PR Synchronization Check Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Action Required:** Your PR branch is not synchronized with \`main\`." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔄 How to Fix:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Option 1: Rebase (recommended)**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`powershell" >> $GITHUB_STEP_SUMMARY
+            echo "git fetch origin main" >> $GITHUB_STEP_SUMMARY
+            echo "git rebase origin/main" >> $GITHUB_STEP_SUMMARY
+            echo "git push --force-with-lease" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Option 2: Merge**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`powershell" >> $GITHUB_STEP_SUMMARY
+            echo "git fetch origin main" >> $GITHUB_STEP_SUMMARY
+            echo "git merge origin/main" >> $GITHUB_STEP_SUMMARY
+            echo "git push" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📚 See [CONTRIBUTING.md](../CONTRIBUTING.md) for more details." >> $GITHUB_STEP_SUMMARY
+          fi
