@@ -44,5 +44,4 @@ def test_dummy_basic_assertion():
 
 def test_dummy_import_pytest():
     """Test that pytest can be imported."""
-    import pytest
     assert pytest is not None
