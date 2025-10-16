@@ -1,6 +1,10 @@
 """
 test_dummy.py - Dummy Test for CI Validation
-Simple test to validate test discovery and pytest configuration.
+
+Dummy test to ensure test discovery always works.
+
+This test file guarantees that pytest will always find at least one test,
+preventing test collection failures in CI environments.
 """
 
 import pytest
@@ -29,16 +33,6 @@ def test_dummy_standalone():
     assert isinstance("test", str)
     assert isinstance(42, int)
     assert isinstance(3.14, float)
-Dummy test to ensure test discovery always works.
-
-This test file guarantees that pytest will always find at least one test,
-preventing test collection failures in CI environments.
-"""
-
-
-def test_dummy_always_passes():
-    """A dummy test that always passes to ensure test discovery works."""
-    assert True, "Dummy test should always pass"
 
 
 def test_dummy_basic_assertion():

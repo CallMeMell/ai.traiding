@@ -1,0 +1,31 @@
+Defaulting to user installation because normal site-packages is not writeable
+Collecting pytest
+  Downloading pytest-8.4.2-py3-none-any.whl.metadata
+     - 7.7 kB ? 0:00:00
+Collecting pytest-cov
+  Downloading pytest_cov-7.0.0-py3-none-any.whl.metadata
+     - 31.2 kB ? 0:00:00
+Collecting coverage[toml]
+  Downloading coverage-7.11.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata
+     - 9.0 kB ? 0:00:00
+Collecting iniconfig>=1 (from pytest)
+  Downloading iniconfig-2.1.0-py3-none-any.whl.metadata
+     - 2.7 kB ? 0:00:00
+Requirement already satisfied: packaging>=20 in /usr/lib/python3/dist-packages (from pytest) (24.0)
+Collecting pluggy<2,>=1.5 (from pytest)
+  Downloading pluggy-1.6.0-py3-none-any.whl.metadata
+     - 4.8 kB ? 0:00:00
+Requirement already satisfied: pygments>=2.7.2 in /usr/lib/python3/dist-packages (from pytest) (2.17.2)
+Downloading pytest-8.4.2-py3-none-any.whl
+   - 365.8 kB 203.6 MB/s 0:00:00
+Downloading pluggy-1.6.0-py3-none-any.whl
+   - 20.5 kB 104.0 MB/s 0:00:00
+Downloading pytest_cov-7.0.0-py3-none-any.whl
+   - 22.4 kB 143.7 MB/s 0:00:00
+Downloading coverage-7.11.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
+   - 250.6 kB 207.4 MB/s 0:00:00
+Downloading iniconfig-2.1.0-py3-none-any.whl
+   - 6.0 kB ? 0:00:00
+Installing collected packages: pluggy, iniconfig, coverage, pytest, pytest-cov
+
+Successfully installed coverage-7.11.0 iniconfig-2.1.0 pluggy-1.6.0 pytest-8.4.2 pytest-cov-7.0.0
