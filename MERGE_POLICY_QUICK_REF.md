@@ -13,6 +13,7 @@ Schnelle Übersicht der Merge-Policy für Feature-PRs nach Sprint 0.
 Ein PR ist merge-ready wenn:
 
 ```markdown
+- [ ] PR mit main synchronisiert ✅
 - [ ] Coverage ≥ 80% für neuen Code ✅
 - [ ] CI Pipeline grün (Windows + Ubuntu) ✅
 - [ ] Kritische Module ≥ 80% (utils, binance_integration, broker_api) ✅
@@ -30,12 +31,57 @@ Ein PR ist merge-ready wenn:
 
 PR wird **sofort abgelehnt** bei:
 
+- ❌ **PR nicht mit main synchronisiert**
 - ❌ **Coverage < 80%** für neuen Code
 - ❌ **Coverage-Regression** bei kritischen Modulen
 - ❌ **CI Tests failing**
 - ❌ **Secrets committed** (API-Keys, Tokens)
 - ❌ **Keine Tests** für neues Feature
 - ❌ **Real Trading ohne DRY_RUN Default**
+
+---
+
+## 🔄 PR Synchronisation
+
+### Warum wichtig?
+PRs müssen mit dem aktuellen `main` Branch synchronisiert sein, damit:
+- ✅ Tests gegen aktuelle Codebasis laufen
+- ✅ Coverage-Checks neuesten Stand reflektieren
+- ✅ Keine Merge-Konflikte beim finalen Merge entstehen
+- ✅ Alle neuen Features/Fixes aus main integriert sind
+
+### Automatischer Check
+Der Workflow `.github/workflows/require-up-to-date-main.yml` prüft automatisch:
+- ✅ Merge-Base = main HEAD? → Grün
+- ❌ Merge-Base ≠ main HEAD? → Rot mit Anleitung
+
+### Synchronisation durchführen
+
+**Windows PowerShell:**
+```powershell
+# Option 1: Rebase (empfohlen)
+git fetch origin main
+git rebase origin/main
+git push --force-with-lease
+
+# Option 2: Merge (einfacher)
+git fetch origin main
+git merge origin/main
+git push
+```
+
+**Linux/macOS:**
+```bash
+# Option 1: Rebase (empfohlen)
+git fetch origin main
+git rebase origin/main
+git push --force-with-lease
+
+# Option 2: Merge (einfacher)
+git fetch origin main
+git merge origin/main
+git push
+```
 
 ---
 
@@ -67,6 +113,7 @@ PR wird **sofort abgelehnt** bei:
 ## 🔄 Merge-Prozess (4 Schritte)
 
 ### 1. Automated Checks (~5-10 Min)
+- ✅ PR Synchronization Check
 - ✅ CI Pipeline (Tests, Linting)
 - ✅ Coverage Check (80%+)
 - ✅ System Integration Tests

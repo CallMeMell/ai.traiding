@@ -74,6 +74,7 @@ Diese Checkliste dient als Leitfaden für Code-Reviews von Feature-PRs nach erfo
 ### 5. Continuous Integration
 
 #### CI Pipeline
+- [ ] **PR Synchronized**: PR ist mit main Branch synchronisiert (automatischer Check)
 - [ ] **All Tests Pass**: Alle CI-Tests sind grün (Windows + Ubuntu)
 - [ ] **Matrix Testing**: Tests laufen auf allen Python-Versionen (3.10, 3.11, 3.12)
 - [ ] **Linting Pass**: Flake8, Black, isort checks bestehen
@@ -147,6 +148,7 @@ Jeder Feature-PR sollte einen Coverage-Kommentar enthalten:
 
 ### 1. Automated Checks (Pre-Review)
 Vor manueller Review müssen diese automatisch laufen:
+- ✅ PR Synchronization Check grün
 - ✅ CI Pipeline grün
 - ✅ Coverage Check grün (80%+)
 - ✅ Linting Pass
@@ -195,8 +197,9 @@ Reviewer prüfen:
 Ein PR ist **merge-ready** wenn:
 
 1. ✅ **Alle Pflicht-Kriterien erfüllt** (siehe oben)
-2. ✅ **Coverage ≥ 80%** für neue Code
-3. ✅ **CI Pipeline grün** (alle Plattformen)
+2. ✅ **PR mit main synchronisiert**
+3. ✅ **Coverage ≥ 80%** für neue Code
+4. ✅ **CI Pipeline grün** (alle Plattformen)
 4. ✅ **Mindestens 1 Approval** von Maintainer
 5. ✅ **Dokumentation vollständig**
 6. ✅ **Keine offenen Review-Kommentare**
