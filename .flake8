@@ -1,0 +1,41 @@
+[flake8]
+# Maximum line length
+max-line-length = 127
+
+# Maximum cyclomatic complexity
+max-complexity = 10
+
+# Exclude directories and files
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    .env,
+    build,
+    dist,
+    *.egg-info,
+    .tox,
+    .pytest_cache,
+    .mypy_cache,
+    Git,
+    data,
+    models,
+    static,
+    templates
+
+# Ignore specific error codes (whitespace-related non-critical warnings)
+# W293: blank line contains whitespace (cosmetic)
+# W291: trailing whitespace (cosmetic)
+# F401: module imported but unused (often intentional for __init__.py)
+# F541: f-string without placeholders (sometimes intentional)
+ignore = W293,W291,F401,F541
+
+# Select only critical errors for CI blocking
+#select = E9,F63,F7,F82
+
+# Report configuration
+show-source = True
+statistics = True
+count = True
