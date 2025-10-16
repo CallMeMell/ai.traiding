@@ -198,6 +198,36 @@ class TestValidateOHLCVData(unittest.TestCase):
         self.assertFalse(is_valid)
         self.assertIn('High < Low', error)
     
+    def test_invalid_ohlc_logic_high_less_than_close(self):
+        """Test validation fails when high < close"""
+        df = pd.DataFrame({
+            'open': [100, 101, 102],
+            'high': [105, 106, 103],  # Third high < close
+            'low': [95, 96, 97],
+            'close': [102, 103, 108],
+            'volume': [1000, 1100, 1200]
+        })
+        
+        is_valid, error = validate_ohlcv_data(df)
+        
+        self.assertFalse(is_valid)
+        self.assertIn('High < Close', error)
+    
+    def test_invalid_ohlc_logic_low_greater_than_close(self):
+        """Test validation fails when low > close"""
+        df = pd.DataFrame({
+            'open': [100, 101, 102],
+            'high': [105, 106, 107],
+            'low': [95, 96, 103],  # Third low > close
+            'close': [102, 103, 100],
+            'volume': [1000, 1100, 1200]
+        })
+        
+        is_valid, error = validate_ohlcv_data(df)
+        
+        self.assertFalse(is_valid)
+        self.assertIn('Low > Close', error)
+    
     def test_too_few_rows(self):
         """Test validation fails with too few rows"""
         df = pd.DataFrame({
@@ -343,6 +373,14 @@ class TestCurrentDrawdown(unittest.TestCase):
     def test_current_drawdown_empty_list(self):
         """Test current drawdown with empty list"""
         equity_curve = []
+        
+        dd = calculate_current_drawdown(equity_curve)
+        
+        self.assertEqual(dd, 0.0)
+    
+    def test_current_drawdown_zero_peak(self):
+        """Test current drawdown when peak is zero"""
+        equity_curve = [0, 0, 0]
         
         dd = calculate_current_drawdown(equity_curve)
         
@@ -953,6 +991,56 @@ class TestVisualizationFunctions(unittest.TestCase):
         
         # Should handle string conversion
         # Result may be None if matplotlib not available, which is ok
+    
+    def test_generate_equity_curve_chart_with_plotly(self):
+        """Test equity curve chart with plotly"""
+        equity_curve = [10000, 10500, 10200, 10800]
+        output_file = os.path.join(self.test_dir, "equity_plotly.html")
+        
+        result = generate_equity_curve_chart(equity_curve, output_file=output_file, use_plotly=True)
+        
+        if result:
+            self.assertTrue(os.path.exists(output_file))
+            self.assertTrue(output_file.endswith('.html'))
+    
+    def test_generate_equity_curve_chart_plotly_with_dicts(self):
+        """Test equity curve chart with plotly using dict format"""
+        equity_curve = [
+            {'timestamp': '2023-01-01', 'capital': 10000},
+            {'timestamp': '2023-01-02', 'capital': 10500},
+            {'timestamp': '2023-01-03', 'capital': 10800}
+        ]
+        output_file = os.path.join(self.test_dir, "equity_dict_plotly.html")
+        
+        result = generate_equity_curve_chart(equity_curve, output_file=output_file, use_plotly=True)
+        
+        if result:
+            self.assertTrue(os.path.exists(output_file))
+    
+    def test_generate_drawdown_chart_with_plotly(self):
+        """Test drawdown chart with plotly"""
+        equity_curve = [10000, 9500, 9800, 10200]
+        output_file = os.path.join(self.test_dir, "drawdown_plotly.html")
+        
+        result = generate_drawdown_chart(equity_curve, output_file=output_file, use_plotly=True)
+        
+        if result:
+            self.assertTrue(os.path.exists(output_file))
+            self.assertTrue(output_file.endswith('.html'))
+    
+    def test_generate_drawdown_chart_plotly_with_dicts(self):
+        """Test drawdown chart with plotly using dict format"""
+        equity_curve = [
+            {'timestamp': '2023-01-01', 'capital': 10000},
+            {'timestamp': '2023-01-02', 'capital': 9500},
+            {'timestamp': '2023-01-03', 'capital': 9800}
+        ]
+        output_file = os.path.join(self.test_dir, "drawdown_dict_plotly.html")
+        
+        result = generate_drawdown_chart(equity_curve, output_file=output_file, use_plotly=True)
+        
+        if result:
+            self.assertTrue(os.path.exists(output_file))
 
 
 if __name__ == '__main__':
