@@ -66,6 +66,7 @@ To lint PowerShell scripts in CI/CD pipelines:
 - `scripts/setup_live.ps1` - Live trading setup wizard wrapper
 - `scripts/start_live.ps1` - Dev live session launcher
 - `scripts/start_live_prod.ps1` - Production live trading runner
+- `scripts/set-executionpolicy.ps1` - Helper wrapper to run scripts with safe execution policy bypass
 
 ---
 
@@ -89,3 +90,140 @@ To lint PowerShell scripts in CI/CD pipelines:
 ---
 
 **Made for Windows ⭐ | PowerShell-First | PSScriptAnalyzer**
+
+---
+
+## 🧪 Testing the set-executionpolicy.ps1 Wrapper
+
+### What is set-executionpolicy.ps1?
+
+The `set-executionpolicy.ps1` script is a helper wrapper designed to solve a common issue for first-time users: PowerShell's ExecutionPolicy restrictions that prevent script execution.
+
+**Key Features:**
+- ✅ Sets ExecutionPolicy to Bypass **only** for the current process (Scope=Process)
+- ✅ Automatically starts `start_live.ps1` 
+- ✅ Properly forwards exit codes
+- ✅ Temporary - reverts automatically when the session ends
+- ✅ Safe for development and testing
+
+### When to Use It
+
+Use `set-executionpolicy.ps1` when you encounter errors like:
+```
+start_live.ps1 cannot be loaded because running scripts is disabled on this system.
+```
+
+**Instead of manually running:**
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\start_live.ps1
+```
+
+**Simply run:**
+```powershell
+.\scripts\set-executionpolicy.ps1
+```
+
+### Manual Testing Instructions
+
+#### Test 1: Basic Execution
+1. Open PowerShell in the repository root
+2. Run the wrapper script:
+   ```powershell
+   .\scripts\set-executionpolicy.ps1
+   ```
+3. **Expected Result:**
+   - Script displays security notice
+   - Sets ExecutionPolicy (Process scope)
+   - Starts `start_live.ps1` successfully
+   - Shows both processes starting (Automation Runner + Streamlit)
+
+#### Test 2: Exit Code Forwarding
+1. Modify `start_live.ps1` temporarily to exit with a specific code (e.g., add `exit 42` at line 5)
+2. Run the wrapper script:
+   ```powershell
+   .\scripts\set-executionpolicy.ps1
+   echo $LASTEXITCODE
+   ```
+3. **Expected Result:**
+   - `$LASTEXITCODE` should be 42
+   - Wrapper properly forwards the exit code from `start_live.ps1`
+4. **Important:** Revert the temporary change to `start_live.ps1`
+
+#### Test 3: ExecutionPolicy Scope Verification
+1. Before running the script, check current ExecutionPolicy:
+   ```powershell
+   Get-ExecutionPolicy -List
+   ```
+2. Run the wrapper script in a new PowerShell window
+3. After script completes, check ExecutionPolicy again:
+   ```powershell
+   Get-ExecutionPolicy -List
+   ```
+4. **Expected Result:**
+   - ExecutionPolicy is unchanged in the "LocalMachine" and "CurrentUser" scopes
+   - Only the Process scope was temporarily modified
+   - System-wide settings remain secure
+
+#### Test 4: Error Handling
+1. Temporarily rename `start_live.ps1` to `start_live.ps1.bak`
+2. Run the wrapper script:
+   ```powershell
+   .\scripts\set-executionpolicy.ps1
+   ```
+3. **Expected Result:**
+   - PowerShell displays an error (file not found)
+   - Exit code is non-zero (error state)
+4. **Important:** Rename the file back to `start_live.ps1`
+
+### Automated Testing (Optional)
+
+Since PowerShell script testing requires Windows-specific tooling, you can create a simple test using Pester (PowerShell testing framework) if desired:
+
+```powershell
+# Install Pester if not already installed
+Install-Module -Name Pester -Force -SkipPublisherCheck
+
+# Run tests (if test file exists)
+Invoke-Pester -Path tests/set-executionpolicy.Tests.ps1
+```
+
+**Note:** A Pester test file is optional and not required for this issue, as manual testing is sufficient for this helper script.
+
+### Security Considerations
+
+**Q: Is it safe to set ExecutionPolicy to Bypass?**
+
+A: Yes, when using `-Scope Process` as this wrapper does:
+- ✅ Only affects the current PowerShell session
+- ✅ Automatically reverts when you close PowerShell
+- ✅ Does NOT change system-wide security settings
+- ✅ Does NOT affect other PowerShell windows
+- ✅ Recommended by Microsoft for development scenarios
+
+**Q: Should I use this in production?**
+
+A: No, this wrapper is designed for:
+- Development environments
+- Testing scenarios  
+- First-time setup for new contributors
+- Local development machines
+
+For production, properly sign your scripts or adjust ExecutionPolicy at the appropriate scope (CurrentUser or LocalMachine).
+
+### Troubleshooting
+
+**Problem:** Script still won't run even with wrapper
+
+**Solution:** Run PowerShell as Administrator and execute:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+**Problem:** Exit code is always 0 even when `start_live.ps1` fails
+
+**Solution:** Ensure `start_live.ps1` properly sets exit codes on errors using `exit 1` or similar.
+
+---
+
+**Helper Script for First-Time Users ⭐ | Safe & Temporary | Windows-First**
