@@ -50,7 +50,8 @@ Write-Host ""
 
 # Capture and forward the exit code from the executed script
 # This ensures that any errors or success codes are properly propagated
-$exitCode = $LASTEXITCODE
+# Use 0 as default if LASTEXITCODE is null or undefined
+$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
 
 # Display completion message
 Write-Host ""

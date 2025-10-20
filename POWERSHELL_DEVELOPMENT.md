@@ -139,16 +139,55 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    - Shows both processes starting (Automation Runner + Streamlit)
 
 #### Test 2: Exit Code Forwarding
-1. Modify `start_live.ps1` temporarily to exit with a specific code (e.g., add `exit 42` at line 5)
-2. Run the wrapper script:
+
+**Option A: Create a test script (Recommended)**
+1. Create a temporary test script:
+   ```powershell
+   # Create a test script that exits with code 42
+   @'
+   Write-Host "Test script running..."
+   exit 42
+   '@ | Out-File -FilePath "scripts\test_exitcode.ps1" -Encoding UTF8
+   ```
+2. Temporarily modify `set-executionpolicy.ps1` to call the test script:
+   - Change line with `start_live.ps1` to `test_exitcode.ps1`
+3. Run the modified wrapper:
    ```powershell
    .\scripts\set-executionpolicy.ps1
    echo $LASTEXITCODE
    ```
-3. **Expected Result:**
+4. **Expected Result:**
    - `$LASTEXITCODE` should be 42
-   - Wrapper properly forwards the exit code from `start_live.ps1`
-4. **Important:** Revert the temporary change to `start_live.ps1`
+   - Wrapper properly forwards the exit code
+5. **Clean up:**
+   ```powershell
+   # Remove test script and revert set-executionpolicy.ps1
+   Remove-Item "scripts\test_exitcode.ps1"
+   git checkout scripts\set-executionpolicy.ps1
+   ```
+
+**Option B: Simple exit code test**
+1. Create a simple test wrapper that verifies exit code behavior without modifying production scripts:
+   ```powershell
+   # Test the exit code handling
+   $testScript = {
+       Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+       powershell -Command "exit 42"
+       $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
+       exit $exitCode
+   }
+   
+   $job = Start-Job -ScriptBlock $testScript
+   Wait-Job $job
+   $result = Receive-Job $job
+   Remove-Job $job
+   
+   if ($result -eq 42) {
+       Write-Host "✅ Exit code forwarding works correctly" -ForegroundColor Green
+   } else {
+       Write-Host "❌ Exit code forwarding failed: Got $result" -ForegroundColor Red
+   }
+   ```
 
 #### Test 3: ExecutionPolicy Scope Verification
 1. Before running the script, check current ExecutionPolicy:
@@ -166,15 +205,24 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    - System-wide settings remain secure
 
 #### Test 4: Error Handling
-1. Temporarily rename `start_live.ps1` to `start_live.ps1.bak`
-2. Run the wrapper script:
+1. Test with a non-existent script path:
    ```powershell
-   .\scripts\set-executionpolicy.ps1
+   # Create a temporary copy that points to non-existent script
+   $testWrapper = Get-Content scripts\set-executionpolicy.ps1 -Raw
+   $testWrapper = $testWrapper -replace 'start_live\.ps1', 'nonexistent_script.ps1'
+   $testWrapper | Out-File -FilePath "test_wrapper_error.ps1" -Encoding UTF8
+   
+   # Run the test wrapper
+   .\test_wrapper_error.ps1
+   echo "Exit code: $LASTEXITCODE"
+   
+   # Clean up
+   Remove-Item "test_wrapper_error.ps1"
    ```
-3. **Expected Result:**
+2. **Expected Result:**
    - PowerShell displays an error (file not found)
    - Exit code is non-zero (error state)
-4. **Important:** Rename the file back to `start_live.ps1`
+   - Wrapper handles the error gracefully
 
 ### Automated Testing (Optional)
 
