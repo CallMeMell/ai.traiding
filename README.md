@@ -340,7 +340,12 @@ Copy-Item .env.example .env
 ```
 
 **💡 Tipp: Bei ExecutionPolicy-Fehler**
-Falls PowerShell die Skript-Ausführung blockiert:
+Falls PowerShell die Skript-Ausführung blockiert, verwende den Wrapper:
+```powershell
+.\scripts\set-executionpolicy.ps1
+```
+
+Oder setze die Policy manuell:
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\scripts\start_live.ps1
@@ -497,6 +502,13 @@ Nach dem Start ist das Dashboard erreichbar unter:
 #### Windows-Spezifisch
 
 **Problem: "ExecutionPolicy" - Skript kann nicht ausgeführt werden**
+
+**Einfachste Lösung:** Verwende den Wrapper-Skript:
+```powershell
+.\scripts\set-executionpolicy.ps1
+```
+
+**Alternative Lösungen:**
 ```powershell
 # Temporär für aktuelle PowerShell-Session
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -504,6 +516,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 # Oder dauerhaft für aktuellen Benutzer
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
+
+📖 **Weitere Informationen:** Siehe [POWERSHELL_DEVELOPMENT.md](POWERSHELL_DEVELOPMENT.md) für Details zum Wrapper-Skript.
 
 **Problem: "Python not found" (Windows)**
 ```powershell
