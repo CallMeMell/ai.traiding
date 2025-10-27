@@ -351,6 +351,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\scripts\start_live.ps1
 ```
 
+📖 **[Vollständige ExecutionPolicy Anleitung](docs/windows-executionpolicy.md)** - Temporäre & permanente Lösungen, Sicherheitshinweise, Best Practices
+
 ### ⚡ Schnellstart für Linux/macOS
 
 **Live-Session starten:**
@@ -616,6 +618,10 @@ rmdir /s venv  # Windows
 - [AUTOMATION_RUNNER_GUIDE.md](AUTOMATION_RUNNER_GUIDE.md) - Automation Runner Details
 - [VIEW_SESSION_GUIDE.md](VIEW_SESSION_GUIDE.md) - View Session Features
 - [VIEW_SESSION_STREAMLIT_GUIDE.md](VIEW_SESSION_STREAMLIT_GUIDE.md) - Streamlit Dashboard
+
+**Windows-Spezifische Dokumentation:**
+- [docs/windows-executionpolicy.md](docs/windows-executionpolicy.md) - 🔐 PowerShell ExecutionPolicy Anleitung (temporär & permanent)
+- [POWERSHELL_DEVELOPMENT.md](POWERSHELL_DEVELOPMENT.md) - PowerShell-Entwicklungsrichtlinien
 
 ---
 
