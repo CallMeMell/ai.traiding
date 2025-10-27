@@ -24,6 +24,10 @@ class TestCircuitBreakerIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test environment"""
         self.original_dry_run = os.environ.get('DRY_RUN')
+        # Force legacy circuit breaker for these tests
+        from config import config
+        self.original_use_advanced_cb = config.use_advanced_circuit_breaker
+        config.use_advanced_circuit_breaker = False
     
     def tearDown(self):
         """Clean up"""
@@ -31,6 +35,9 @@ class TestCircuitBreakerIntegration(unittest.TestCase):
             os.environ['DRY_RUN'] = self.original_dry_run
         elif 'DRY_RUN' in os.environ:
             del os.environ['DRY_RUN']
+        # Restore original config
+        from config import config
+        config.use_advanced_circuit_breaker = self.original_use_advanced_cb
     
     def test_circuit_breaker_stops_trading_on_large_loss(self):
         """Test that circuit breaker stops trading after large loss"""
