@@ -620,6 +620,47 @@ def save_trades_to_csv(trades: list, filepath: str = "data/trades.csv"):
     logging.info(f"✓ {len(trades)} Trades gespeichert in {filepath}")
 
 
+def export_trades_to_json(trades: list, filepath: str = "data/trades.json", pretty: bool = True):
+    """
+    Exportiere Trades als JSON-Datei
+    
+    Args:
+        trades: Liste von Trade-Dictionaries
+        filepath: Pfad zur JSON-Datei
+        pretty: Formatierung mit Einrückung für bessere Lesbarkeit
+    
+    Returns:
+        Pfad zur erstellten Datei
+    """
+    import json
+    
+    if not trades:
+        logging.warning("Keine Trades zum Exportieren")
+        return None
+    
+    # Erstelle Verzeichnis falls nicht vorhanden
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+    # Konvertiere zu JSON-serialisierbarem Format
+    trades_data = []
+    for trade in trades:
+        trade_dict = dict(trade)
+        # Konvertiere datetime zu ISO-Format falls vorhanden
+        if 'timestamp' in trade_dict and isinstance(trade_dict['timestamp'], datetime):
+            trade_dict['timestamp'] = trade_dict['timestamp'].isoformat()
+        trades_data.append(trade_dict)
+    
+    # Schreibe JSON-Datei
+    with open(filepath, 'w', encoding='utf-8') as f:
+        if pretty:
+            json.dump(trades_data, f, indent=2, ensure_ascii=False)
+        else:
+            json.dump(trades_data, f, ensure_ascii=False)
+    
+    logging.info(f"✓ {len(trades)} Trades exportiert nach {filepath}")
+    return filepath
+
+
 def load_trades_from_csv(filepath: str = "data/trades.csv") -> list:
     """
     Lade Trades aus CSV-Datei
@@ -1022,3 +1063,337 @@ def generate_pnl_distribution_chart(trades: list, output_file: str = None,
         except ImportError:
             logging.error("Neither Plotly nor Matplotlib available")
             return None
+
+
+# ==============================================================================
+# ENHANCED REPORTING & EXPORT FUNCTIONS
+# ==============================================================================
+
+def calculate_roi(initial_capital: float, final_capital: float) -> float:
+    """
+    Berechne Return on Investment (ROI)
+    
+    Args:
+        initial_capital: Startkapital
+        final_capital: Endkapital
+    
+    Returns:
+        ROI in Prozent
+    """
+    if initial_capital <= 0:
+        return 0.0
+    
+    roi = ((final_capital - initial_capital) / initial_capital) * 100
+    return roi
+
+
+def generate_comprehensive_report(trades: list, equity_curve: list = None, 
+                                  initial_capital: float = 10000.0) -> dict:
+    """
+    Erstelle umfassenden Performance-Report mit allen Metriken
+    
+    Args:
+        trades: Liste von Trade-Dictionaries
+        equity_curve: Optional Liste von Kapitalwerten
+        initial_capital: Startkapital für ROI-Berechnung
+    
+    Returns:
+        Dictionary mit allen Performance-Metriken
+    """
+    # Basis-Metriken
+    metrics = calculate_performance_metrics(trades, equity_curve, initial_capital)
+    
+    # ROI berechnen
+    if equity_curve and len(equity_curve) >= 1:
+        final_capital = equity_curve[-1] if isinstance(equity_curve[-1], (int, float)) else equity_curve[-1].get('capital', initial_capital)
+        roi = calculate_roi(initial_capital, final_capital)
+    else:
+        # Fallback: ROI aus PnL berechnen
+        total_pnl = metrics.get('total_pnl', 0.0)
+        roi = calculate_roi(initial_capital, initial_capital + total_pnl)
+    
+    metrics['roi'] = roi
+    metrics['initial_capital'] = initial_capital
+    
+    if equity_curve and len(equity_curve) >= 1:
+        final_capital = equity_curve[-1] if isinstance(equity_curve[-1], (int, float)) else equity_curve[-1].get('capital', initial_capital)
+        metrics['final_capital'] = final_capital
+    else:
+        metrics['final_capital'] = initial_capital + metrics.get('total_pnl', 0.0)
+    
+    # Zusätzliche Metadaten
+    metrics['report_generated_at'] = datetime.now().isoformat()
+    metrics['total_real_money_trades'] = sum(1 for t in trades if str(t.get('is_real_money', False)).lower() in ('true', '1', 'yes'))
+    metrics['total_dry_run_trades'] = metrics['total_trades'] - metrics['total_real_money_trades']
+    
+    return metrics
+
+
+def export_report_to_csv(report: dict, filepath: str = "data/performance_report.csv"):
+    """
+    Exportiere Performance-Report als CSV
+    
+    Args:
+        report: Report-Dictionary von generate_comprehensive_report()
+        filepath: Pfad zur CSV-Datei
+    
+    Returns:
+        Pfad zur erstellten Datei
+    """
+    if not report:
+        logging.warning("Kein Report zum Exportieren")
+        return None
+    
+    # Erstelle Verzeichnis falls nicht vorhanden
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+    # Konvertiere Report zu DataFrame (jede Metrik als Zeile)
+    data = []
+    for key, value in report.items():
+        if isinstance(value, (int, float)):
+            data.append({'metric': key, 'value': f"{value:.4f}"})
+        else:
+            data.append({'metric': key, 'value': str(value)})
+    
+    df = pd.DataFrame(data)
+    df.to_csv(filepath, index=False, encoding='utf-8')
+    
+    logging.info(f"✓ Performance-Report exportiert nach {filepath}")
+    return filepath
+
+
+def export_report_to_json(report: dict, filepath: str = "data/performance_report.json", pretty: bool = True):
+    """
+    Exportiere Performance-Report als JSON
+    
+    Args:
+        report: Report-Dictionary von generate_comprehensive_report()
+        filepath: Pfad zur JSON-Datei
+        pretty: Formatierung mit Einrückung
+    
+    Returns:
+        Pfad zur erstellten Datei
+    """
+    import json
+    
+    if not report:
+        logging.warning("Kein Report zum Exportieren")
+        return None
+    
+    # Erstelle Verzeichnis falls nicht vorhanden
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+    # Schreibe JSON-Datei
+    with open(filepath, 'w', encoding='utf-8') as f:
+        if pretty:
+            json.dump(report, f, indent=2, ensure_ascii=False)
+        else:
+            json.dump(report, f, ensure_ascii=False)
+    
+    logging.info(f"✓ Performance-Report exportiert nach {filepath}")
+    return filepath
+
+
+def export_trade_history_with_metrics(trades: list, filepath: str = "data/trade_history_detailed.csv"):
+    """
+    Exportiere detaillierte Trade-History mit allen Metriken als CSV
+    
+    Args:
+        trades: Liste von Trade-Dictionaries
+        filepath: Pfad zur CSV-Datei
+    
+    Returns:
+        Pfad zur erstellten Datei
+    """
+    if not trades:
+        logging.warning("Keine Trades zum Exportieren")
+        return None
+    
+    # Erstelle Verzeichnis falls nicht vorhanden
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+    # Berechne kumulative Metriken für jeden Trade
+    detailed_trades = []
+    cumulative_pnl = 0.0
+    
+    for i, trade in enumerate(trades, 1):
+        pnl = float(trade.get('pnl', 0))
+        cumulative_pnl += pnl
+        
+        detailed_trade = {
+            'trade_number': i,
+            'timestamp': trade.get('timestamp', ''),
+            'symbol': trade.get('symbol', ''),
+            'order_type': trade.get('order_type', trade.get('type', '')),
+            'price': trade.get('price', 0),
+            'quantity': trade.get('quantity', 0),
+            'pnl': pnl,
+            'cumulative_pnl': cumulative_pnl,
+            'capital': trade.get('capital', 0),
+            'is_real_money': trade.get('is_real_money', False),
+            'triggering_strategies': trade.get('triggering_strategies', ''),
+            'profit_factor': trade.get('profit_factor', 0),
+            'win_rate': trade.get('win_rate', 0),
+            'sharpe_ratio': trade.get('sharpe_ratio', 0)
+        }
+        detailed_trades.append(detailed_trade)
+    
+    # Speichere als CSV
+    df = pd.DataFrame(detailed_trades)
+    df.to_csv(filepath, index=False, encoding='utf-8')
+    
+    logging.info(f"✓ Detaillierte Trade-History mit {len(trades)} Trades exportiert nach {filepath}")
+    return filepath
+
+
+class ReportingModule:
+    """
+    Umfassendes Reporting-Modul für Performance-Analyse und Export
+    """
+    
+    def __init__(self, trades_file: str = "data/trades.csv"):
+        """
+        Args:
+            trades_file: Pfad zur Trades-CSV-Datei
+        """
+        self.trades_file = trades_file
+        self.trades = []
+        self.equity_curve = []
+        self.report = {}
+    
+    def load_trades(self, filepath: str = None):
+        """Lade Trades aus CSV-Datei"""
+        filepath = filepath or self.trades_file
+        self.trades = load_trades_from_csv(filepath)
+        logging.info(f"✓ {len(self.trades)} Trades geladen aus {filepath}")
+        return self.trades
+    
+    def calculate_equity_curve(self, initial_capital: float = 10000.0):
+        """
+        Berechne Equity Curve aus Trades
+        
+        Args:
+            initial_capital: Startkapital
+        """
+        self.equity_curve = [initial_capital]
+        capital = initial_capital
+        
+        for trade in self.trades:
+            pnl = float(trade.get('pnl', 0))
+            capital += pnl
+            self.equity_curve.append(capital)
+        
+        logging.info(f"✓ Equity Curve berechnet: {len(self.equity_curve)} Datenpunkte")
+        return self.equity_curve
+    
+    def generate_report(self, initial_capital: float = 10000.0):
+        """
+        Generiere umfassenden Performance-Report
+        
+        Args:
+            initial_capital: Startkapital
+        
+        Returns:
+            Report-Dictionary
+        """
+        if not self.trades:
+            self.load_trades()
+        
+        if not self.equity_curve:
+            self.calculate_equity_curve(initial_capital)
+        
+        self.report = generate_comprehensive_report(
+            self.trades, 
+            self.equity_curve, 
+            initial_capital
+        )
+        
+        logging.info("✓ Performance-Report generiert")
+        return self.report
+    
+    def export_all(self, output_dir: str = "data/reports", prefix: str = ""):
+        """
+        Exportiere alle Reports und Trade-Daten in verschiedenen Formaten
+        
+        Args:
+            output_dir: Ausgabeverzeichnis
+            prefix: Optional Präfix für Dateinamen (z.B. Datum)
+        
+        Returns:
+            Dictionary mit Pfaden zu allen exportierten Dateien
+        """
+        os.makedirs(output_dir, exist_ok=True)
+        
+        if not self.report:
+            self.generate_report()
+        
+        prefix = prefix or datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        exported_files = {}
+        
+        # Export Performance-Report
+        exported_files['report_csv'] = export_report_to_csv(
+            self.report,
+            os.path.join(output_dir, f"{prefix}_performance_report.csv")
+        )
+        
+        exported_files['report_json'] = export_report_to_json(
+            self.report,
+            os.path.join(output_dir, f"{prefix}_performance_report.json")
+        )
+        
+        # Export Trade-History
+        exported_files['trades_csv'] = os.path.join(output_dir, f"{prefix}_trades.csv")
+        save_trades_to_csv(self.trades, exported_files['trades_csv'])
+        
+        exported_files['trades_json'] = export_trades_to_json(
+            self.trades,
+            os.path.join(output_dir, f"{prefix}_trades.json")
+        )
+        
+        # Export detaillierte Trade-History
+        exported_files['trade_history_detailed'] = export_trade_history_with_metrics(
+            self.trades,
+            os.path.join(output_dir, f"{prefix}_trade_history_detailed.csv")
+        )
+        
+        logging.info(f"✓ Alle Reports exportiert nach {output_dir}")
+        return exported_files
+    
+    def print_report_summary(self):
+        """Drucke Report-Zusammenfassung auf Console"""
+        if not self.report:
+            self.generate_report()
+        
+        print("\n" + "="*70)
+        print("📊 PERFORMANCE REPORT SUMMARY")
+        print("="*70)
+        
+        print(f"\n💼 TRADING STATISTIKEN:")
+        print(f"  Total Trades:         {self.report.get('total_trades', 0)}")
+        print(f"  💰 Echtgeld-Trades:   {self.report.get('total_real_money_trades', 0)}")
+        print(f"  🧪 Dry-Run Trades:    {self.report.get('total_dry_run_trades', 0)}")
+        
+        print(f"\n💰 FINANCIAL METRICS:")
+        print(f"  Initial Capital:      ${self.report.get('initial_capital', 0):,.2f}")
+        print(f"  Final Capital:        ${self.report.get('final_capital', 0):,.2f}")
+        print(f"  Total P&L:            ${self.report.get('total_pnl', 0):,.2f}")
+        print(f"  ROI:                  {self.report.get('roi', 0):.2f}%")
+        
+        print(f"\n📈 PERFORMANCE METRICS:")
+        print(f"  Win Rate:             {self.report.get('win_rate', 0):.2f}%")
+        print(f"  Sharpe Ratio:         {self.report.get('sharpe_ratio', 0):.4f}")
+        print(f"  Profit Factor:        {self.report.get('profit_factor', 0):.2f}")
+        print(f"  Max Drawdown:         {self.report.get('max_drawdown', 0):.2f}%")
+        print(f"  Calmar Ratio:         {self.report.get('calmar_ratio', 0):.4f}")
+        print(f"  Volatility:           {self.report.get('volatility', 0):.4f}")
+        
+        print(f"\n📊 TRADE STATISTICS:")
+        print(f"  Best Trade:           ${self.report.get('best_trade', 0):,.2f}")
+        print(f"  Worst Trade:          ${self.report.get('worst_trade', 0):,.2f}")
+        print(f"  Avg P&L per Trade:    ${self.report.get('avg_pnl', 0):,.2f}")
+        print(f"  Avg Trade Duration:   {self.report.get('avg_trade_duration', 0):.0f}s")
+        
+        print(f"\n⏰ REPORT INFO:")
+        print(f"  Generated At:         {self.report.get('report_generated_at', 'N/A')}")
+        print("="*70 + "\n")

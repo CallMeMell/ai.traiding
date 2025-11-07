@@ -44,6 +44,13 @@ data/session/summary.json
 data/strategy_ranking.csv
 data/demo_strategy_ranking.csv
 data/strategy_comparison.csv
+data/reports/
+data/demo_*.csv
+data/demo_*.json
+data/*_report.csv
+data/*_report.json
+data/*_detailed.csv
+data/*_api.json
 
 # Environment
 .env
