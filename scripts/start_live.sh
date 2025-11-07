@@ -1,109 +1,68 @@
-#!/bin/bash
-# start_live.sh - One-click Dev Live Session Launcher
-# Starts Automation Runner (Dry-Run) + Streamlit View Session
+#!/usr/bin/env bash
+# start_live.sh - improved: checks venv, env, deps and chooses free Streamlit port automatically
+set -euo pipefail
 
-set -e
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
 
-echo "=========================================="
-echo "🚀 Starting Dev Live Session"
-echo "=========================================="
-
-# Check if Python is available
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Error: Python 3 is not installed!"
-    exit 1
-fi
-
-# Set working directory to project root
-cd "$(dirname "$0")/.."
-
-# Create venv if it doesn't exist
-if [ ! -d "venv" ]; then
-    echo "📦 Creating virtual environment..."
-    python3 -m venv venv
-fi
-
-# Activate venv
-echo "🔧 Activating virtual environment..."
-source venv/bin/activate
-
-# Upgrade pip
-echo "📦 Upgrading pip..."
-pip install --upgrade pip --quiet
-
-# Install dependencies
-echo "📦 Installing dependencies..."
-if [ -f "requirements.txt" ]; then
-    pip install -r requirements.txt --quiet || echo "⚠️  Warning: Some requirements.txt packages failed"
-fi
-
-# Install Streamlit and required packages
-echo "📦 Installing Streamlit and visualization packages..."
-pip install streamlit plotly pandas requests python-dotenv pydantic jsonschema --quiet
-
-# Load environment variables from .env file (if exists)
-if [ -f ".env" ]; then
-    echo "🔧 Loading environment variables from .env file..."
-    export $(cat .env | grep -v '^#' | xargs)
-fi
-
-# Set default environment variables for DRY_RUN (if not set in .env)
-export DRY_RUN=${DRY_RUN:-true}
-export BROKER_NAME=${BROKER_NAME:-binance}
-export BINANCE_BASE_URL=${BINANCE_BASE_URL:-https://testnet.binance.vision}
-
-echo ""
-echo "=========================================="
-echo "✅ Setup complete!"
-echo "=========================================="
-echo ""
-echo "Configuration:"
-echo "  DRY_RUN: $DRY_RUN"
-echo "  BROKER_NAME: $BROKER_NAME"
-echo "  BINANCE_BASE_URL: $BINANCE_BASE_URL"
-echo ""
-echo "Starting processes in parallel..."
-echo "- Automation Runner (Dry-Run mode)"
-echo "- Streamlit View Session (http://localhost:8501)"
-echo ""
-echo "Press Ctrl+C to stop all processes"
-echo "=========================================="
-echo ""
-
-# Function to cleanup on exit
-cleanup() {
-    echo ""
-    echo "🛑 Stopping all processes..."
-    pkill -P $$ || true
-    exit 0
+# 1) Ensure env/venv and python
+python3 -m pip --version >/dev/null 2>&1 || python -m pip --version >/dev/null 2>&1 || {
+  echo "[ERROR] pip not found. Run scripts/env-check.py for diagnostics."
+  python3 scripts/env-check.py || true
+  exit 1
 }
 
-trap cleanup INT TERM
+# 2) Run env-check (non-fatal, but informative)
+python3 scripts/env-check.py || true
 
-# Start Automation Runner in background
-echo "🤖 Starting Automation Runner..."
-python automation/runner.py &
-RUNNER_PID=$!
+# 3) Verify deps; if --auto-install is passed, forward it
+AUTO_INSTALL=${1:-""}
+if [ "$AUTO_INSTALL" = "--auto-install" ]; then
+  python3 scripts/verify-deps.py --install || { echo "[ERROR] verify-deps failed"; exit 1; }
+else
+  python3 scripts/verify-deps.py || echo "[INFO] Some packages are missing. Run: python3 scripts/verify-deps.py --install"
+fi
 
-# Wait a moment for runner to start
-sleep 2
+# 4) Find free port starting at 8501
+START_PORT=8501
+MAX_PORT=8510
+FREE_PORT=""
+for ((p=START_PORT; p<=MAX_PORT; p++)); do
+  python3 - <<PY >/dev/null 2>&1 || true
+import socket, sys
+s = socket.socket()
+try:
+    s.bind(('127.0.0.1',$p))
+    s.close()
+    print("FREE")
+except Exception:
+    sys.exit(1)
+PY
+  if [ $? -eq 0 ]; then
+    FREE_PORT=$p
+    break
+  fi
+done
 
-# Start Streamlit in background
-echo "📊 Starting Streamlit View Session..."
-streamlit run tools/view_session_app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true &
-STREAMLIT_PID=$!
+if [ -z "$FREE_PORT" ]; then
+  echo "[ERROR] No free port found in range $START_PORT..$MAX_PORT"
+  exit 1
+fi
 
-echo ""
-echo "✅ Both processes started!"
-echo "   - Automation Runner PID: $RUNNER_PID"
-echo "   - Streamlit PID: $STREAMLIT_PID"
-echo ""
-echo "🌐 View Session available at:"
-echo "   http://localhost:8501"
-echo ""
-echo "📊 Events are being generated and can be viewed in real-time"
-echo "🛑 Press Ctrl+C to stop"
-echo ""
+echo "[INFO] Using Streamlit port: $FREE_PORT"
+# 5) Activate venv if present
+if [ -d "venv" ]; then
+  echo "[INFO] Activating venv"
+  # shellcheck disable=SC1091
+  source venv/bin/activate
+fi
 
-# Wait for both processes
+# 6) Start runner (dry-run by default) and dashboard in background
+# Start automation runner in background (dry-run)
+python3 -u automation/runner.py &
+
+# Start Streamlit dashboard
+streamlit run tools/view_session_app.py --server.port "$FREE_PORT" &
+sleep 0.5
+echo "[INFO] View Session should be available at http://localhost:$FREE_PORT"
 wait
