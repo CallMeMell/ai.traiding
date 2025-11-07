@@ -20,6 +20,10 @@ import subprocess
 from pathlib import Path
 
 
+# Configuration
+MIN_PYTHON_VERSION = (3, 8)  # Minimum Python version required
+
+
 def print_header(message):
     """Print a formatted header."""
     print("=" * 70)
@@ -54,7 +58,6 @@ def check_python_version():
     Returns:
         tuple: (success: bool, message: str)
     """
-    MIN_PYTHON_VERSION = (3, 8)
     current_version = sys.version_info
     
     if current_version >= MIN_PYTHON_VERSION:

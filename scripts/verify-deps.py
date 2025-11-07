@@ -22,6 +22,14 @@ import argparse
 from pathlib import Path
 from typing import List, Tuple, Dict
 
+# Try to import packaging for proper version comparison
+try:
+    from packaging.version import parse as parse_version
+    HAS_PACKAGING = True
+except ImportError:
+    HAS_PACKAGING = False
+    parse_version = None
+
 
 def print_header(message):
     """Print a formatted header."""
@@ -72,8 +80,10 @@ def get_installed_packages() -> Dict[str, str]:
         packages = {}
         for line in result.stdout.strip().split('\n'):
             if '==' in line:
-                name, version = line.split('==', 1)
-                packages[name.lower()] = version
+                parts = line.split('==', 1)
+                if len(parts) == 2:
+                    name, version = parts
+                    packages[name.lower()] = version
         
         return packages
     except subprocess.TimeoutExpired:
@@ -107,16 +117,16 @@ def parse_requirements_file(requirements_path: Path) -> List[Tuple[str, str, str
                     continue
                 
                 # Parse package specification
-                # Handle various formats: package, package>=1.0, package==1.0, etc.
+                # Check compound operators first (>=, <=, ==) then single operators (>, <)
                 if '>=' in line:
                     name, version = line.split('>=', 1)
                     requirements.append((name.strip().lower(), '>=', version.strip()))
-                elif '==' in line:
-                    name, version = line.split('==', 1)
-                    requirements.append((name.strip().lower(), '==', version.strip()))
                 elif '<=' in line:
                     name, version = line.split('<=', 1)
                     requirements.append((name.strip().lower(), '<=', version.strip()))
+                elif '==' in line:
+                    name, version = line.split('==', 1)
+                    requirements.append((name.strip().lower(), '==', version.strip()))
                 elif '>' in line:
                     name, version = line.split('>', 1)
                     requirements.append((name.strip().lower(), '>', version.strip()))
@@ -149,11 +159,17 @@ def check_version_compatibility(installed_version: str, operator: str, required_
         # No version requirement, any version is acceptable
         return True
     
+    if not HAS_PACKAGING:
+        # If packaging is not available, only do exact match for '=='
+        if operator == '==':
+            return installed_version == required_version
+        else:
+            # For other operators, we can't reliably compare without packaging
+            # Warn user and assume compatible
+            print_warning(f"Cannot verify version compatibility without 'packaging' module (pip install packaging)")
+            return True
+    
     try:
-        # Simple version comparison (works for most cases)
-        # For production, consider using packaging.version
-        from packaging.version import parse as parse_version
-        
         installed = parse_version(installed_version)
         required = parse_version(required_version)
         
@@ -168,15 +184,6 @@ def check_version_compatibility(installed_version: str, operator: str, required_
         elif operator == '<':
             return installed < required
         else:
-            return True
-    except ImportError:
-        # If packaging is not available, do simple string comparison
-        if operator == '==':
-            return installed_version == required_version
-        else:
-            # For other operators, we can't reliably compare without packaging
-            # Assume compatible
-            print_warning(f"Cannot verify version compatibility without 'packaging' module")
             return True
     except Exception as e:
         print_warning(f"Version comparison failed: {str(e)}")
